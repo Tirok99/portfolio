@@ -230,15 +230,22 @@ textarea {
   appearance: none
 }
 .input {
-  border-radius: 0!important;
+  border-radius: .9375rem;
   width: 100%;
   display: block;
   padding: 0 20px;
+  border: 1px solid var(--main-green);
   caret-color: inherit;
   font-size: 1.25rem;
   font-weight: 500;
   line-height: 1.25;
   padding: 1.75rem .625rem
+}
+.input:focus-visible {
+  outline: 0
+}
+.input._form-focus {
+  border: 1px solid var(--green-bg-40)
 }
 .input[placeholder]:not([data-placeholder-nohiden])::-webkit-input-placeholder {
   -webkit-transition: opacity .3s;
@@ -1075,8 +1082,7 @@ textarea.input {
 }
 .block-content__label {
   position: relative;
-  border-radius: .9375rem;
-  border: .0625rem solid var(--main-green)
+  border-radius: .9375rem
 }
 .block-content__label::after {
   position: absolute;
