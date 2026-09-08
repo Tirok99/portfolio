@@ -185,3 +185,9 @@
 .admin-fieldset { border: 1px solid var(--border, #e8e8ec); border-radius: var(--radius-md, 12px); padding: 1rem 1.15rem; margin: 0 0 1.5rem; min-width: 0; }
 .admin-fieldset legend { padding: 0 0.4rem; }
 .admin-fieldset legend h2 { font-size: 1rem; margin: 0; }
+
+/* --- card screen (Projects / Services) --- */
+.admin-page--wide { max-width: 960px; }
+.admin-cardscreen { display: grid; grid-template-columns: 240px 1fr; gap: 1.5rem; align-items: start; }
+@media (max-width: 760px) { .admin-cardscreen { grid-template-columns: 1fr; } }
+.admin-cardscreen__editor { min-width: 0; }
