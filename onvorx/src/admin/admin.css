@@ -176,3 +176,8 @@
 
 .admin-empty { padding: 2rem; text-align: center; color: var(--text-2, #5b5d66); border: 1px dashed var(--border-strong, #dcdce2); border-radius: var(--radius-sm, 8px); }
 .admin-empty__title { font-weight: 600; margin: 0 0 0.35rem; }
+
+/* --- section fieldset (Content screen) --- */
+.admin-fieldset { border: 1px solid var(--border, #e8e8ec); border-radius: var(--radius-md, 12px); padding: 1rem 1.15rem; margin: 0 0 1.5rem; min-width: 0; }
+.admin-fieldset legend { padding: 0 0.4rem; }
+.admin-fieldset legend h2 { font-size: 1rem; margin: 0; }
