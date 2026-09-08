@@ -1,5 +1,7 @@
+import { useLocation } from "react-router-dom";
 import { useI18n } from "../../i18n/i18n";
 import { useSiteContent } from "../../content/useSiteContent";
+import { useEstimateForm } from "../../components/EstimateForm/useEstimateForm";
 import { Icon, type IconName } from "../../components/Icon/Icon";
 import { Reveal } from "../../components/Reveal/Reveal";
 import "./Hero.css";
@@ -14,6 +16,8 @@ const CARD_ICONS: IconName[] = ["target", "users", "document", "sitemap"];
 export function Hero() {
   const { t, tx } = useI18n();
   const { section } = useSiteContent();
+  const { open } = useEstimateForm();
+  const { pathname } = useLocation();
   const hero = section("hero");
   const cards = tx<HeroCard[]>("hero.cards");
   const launch = tx<HeroCard>("hero.launch");
@@ -39,9 +43,13 @@ export function Hero() {
               {hero.body}
             </Reveal>
             <Reveal variant="up" delay={180}>
-              <a href="#" className="btn hero__cta">
+              <button
+                type="button"
+                className="btn hero__cta"
+                onClick={() => open(pathname)}
+              >
                 {hero.ctaLabel}
-              </a>
+              </button>
             </Reveal>
           </div>
 

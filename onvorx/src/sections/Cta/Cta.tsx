@@ -1,4 +1,6 @@
+import { useLocation } from "react-router-dom";
 import { useSiteContent } from "../../content/useSiteContent";
+import { useEstimateForm } from "../../components/EstimateForm/useEstimateForm";
 import { Icon } from "../../components/Icon/Icon";
 import { Reveal } from "../../components/Reveal/Reveal";
 import "./Cta.css";
@@ -6,6 +8,8 @@ import "./Cta.css";
 export function Cta() {
   const { section } = useSiteContent();
   const cta = section("cta");
+  const { open } = useEstimateForm();
+  const { pathname } = useLocation();
 
   return (
     <section className="section cta" data-theme="dark" id="contact">
@@ -34,7 +38,11 @@ export function Cta() {
             <h2 className="h2 cta__title">{cta.title}</h2>
             <span className="cta__dash" aria-hidden="true" />
             <p className="cta__description">{cta.body}</p>
-            <button type="button" className="btn cta__button">
+            <button
+              type="button"
+              className="btn cta__button"
+              onClick={() => open(pathname)}
+            >
               {cta.ctaLabel}
               <Icon name="arrow-right" size={16} className="btn__arrow" />
             </button>

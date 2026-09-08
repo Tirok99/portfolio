@@ -6,6 +6,7 @@ import {
   SiteContentProvider,
   useSiteContentRaw,
 } from '../content/SiteContentProvider'
+import { EstimateFormProvider } from '../components/EstimateForm/useEstimateForm'
 import { Hero } from './Hero/Hero'
 import { Cta } from './Cta/Cta'
 import { About } from './About/About'
@@ -31,8 +32,10 @@ const wrap = (ui: React.ReactNode) =>
   render(
     <I18nProvider>
       <SiteContentProvider>
-        <MemoryRouter>{ui}</MemoryRouter>
-        <Editor />
+        <EstimateFormProvider>
+          <MemoryRouter>{ui}</MemoryRouter>
+          <Editor />
+        </EstimateFormProvider>
       </SiteContentProvider>
     </I18nProvider>,
   )
