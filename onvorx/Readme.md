@@ -54,7 +54,9 @@ An owner-facing panel at `/admin` (built in phases — see
 `docs/superpowers/specs/2026-09-08-admin-panel-design.md`). Phase 1 introduces a
 shared content store (`src/content/`) that backs the site's managed content
 (section texts, project & service cards, per-page SEO) plus a public
-"Request an Estimate" form. Data currently persists to `localStorage` only.
+"Request an Estimate" form. This store is separate from the Supabase CMS above —
+it is the Phase-1 prototype and persists to `localStorage` only; a real backend
+later replaces `src/content/persistence.ts` (see `src/content/README.md`).
 
 ## Deployment
 

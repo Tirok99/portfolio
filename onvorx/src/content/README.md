@@ -9,7 +9,8 @@ persisted to `localStorage` under `onvorx.admin.v1`.
 - **Read/write** the raw object via `useSiteContentRaw()` — used by the `/admin`
   screens (added in a later plan).
 - **Mutations** are pure functions in `src/admin/actions.ts`; the provider binds
-  them and persists after each change (debounced, with cross-tab `storage` sync).
+  them and persists synchronously after each change, with cross-tab `storage`
+  sync.
 
 Unmanaged strings (nav, hero feature cards, "how we work" steps, About stats,
 footer, 404) still come from `useI18n()` and `src/i18n/*.json`.
