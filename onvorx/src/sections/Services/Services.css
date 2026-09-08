@@ -199,3 +199,11 @@
     align-items: flex-start;
   }
 }
+
+.services__card-icon--empty {
+  display: inline-block;
+  width: 48px;
+  height: 48px;
+  border: 1px dashed var(--color-border, rgba(255, 255, 255, 0.25));
+  border-radius: 10px;
+}

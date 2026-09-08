@@ -5,25 +5,11 @@ import { Icon } from "../../components/Icon/Icon";
 import { Reveal } from "../../components/Reveal/Reveal";
 import "./Projects.css";
 
-interface ProjectItem {
-  id: string;
-  index: string;
-  title: string;
-  tags: string[];
-  text: string;
-  /** absolute URL (Supabase Storage) or repo path; falls back to /assets/projects/<id>.png */
-  image?: string;
-  imageAlt: string;
-}
-
-const projectImage = (item: ProjectItem) =>
-  item.image || `/assets/projects/${item.id}.png`;
-
 export function Projects() {
-  const { t, tx } = useI18n();
-  const { section } = useSiteContent();
+  const { t } = useI18n();
+  const { section, projectsHome } = useSiteContent();
   const projects = section("projects");
-  const items = tx<ProjectItem[]>("projects.items");
+  const items = projectsHome();
 
   return (
     <section className="section projects" data-theme="light" id="projects">
@@ -51,15 +37,19 @@ export function Projects() {
                   className={`projects__item ${i % 2 === 1 ? "projects__item--reverse" : ""}`}
                 >
                   <div className="projects__media">
-                    <img
-                      src={projectImage(item)}
-                      alt={item.imageAlt}
-                      loading="lazy"
-                      decoding="async"
-                    />
+                    {item.imageSrc ? (
+                      <img
+                        src={item.imageSrc}
+                        alt={item.imageAlt}
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    ) : (
+                      <span className="projects__media-empty" aria-hidden="true" />
+                    )}
                   </div>
                   <div className="projects__content">
-                    <span className="projects__index">{item.index}</span>
+                    <span className="projects__index">{item.indexLabel}</span>
                     <h3 className="projects__project-title">{item.title}</h3>
                     <p className="projects__tags">
                       {item.tags.map((tag, k) => (
@@ -69,7 +59,7 @@ export function Projects() {
                         </span>
                       ))}
                     </p>
-                    <p className="projects__text">{item.text}</p>
+                    <p className="projects__text">{item.description}</p>
                     <Link to={`/projects/${item.id}`} className="link-arrow">
                       {t("projects.viewProject")}
                       <Icon name="arrow-right" size={15} />

@@ -5,42 +5,20 @@ import { Icon } from "../../components/Icon/Icon";
 import { Reveal } from "../../components/Reveal/Reveal";
 import "./Services.css";
 
-interface ServiceItem {
-  id: string;
-  title: string;
-  text: string;
-  featured?: boolean;
-  /** optional CMS overrides; otherwise resolved from the known slug map */
-  icon?: string;
-  preview?: string;
-}
-
-/** design assets keyed by service slug */
-const ASSETS: Record<string, { icon: string; preview: string }> = {
-  "web-development": {
-    icon: "/assets/services/icon-web.png",
-    preview: "/assets/services/preview-web.png",
-  },
-  support: {
-    icon: "/assets/services/icon-support.png",
-    preview: "/assets/services/preview-support.png",
-  },
-  "business-analysis": {
-    icon: "/assets/services/icon-analysis.png",
-    preview: "/assets/services/preview-analysis.png",
-  },
-  "google-ads": {
-    icon: "/assets/services/icon-ads.png",
-    preview: "/assets/services/preview-ads.png",
-  },
+/** design preview assets keyed by service slug */
+const PREVIEWS: Record<string, string> = {
+  "web-development": "/assets/services/preview-web.png",
+  support: "/assets/services/preview-support.png",
+  "business-analysis": "/assets/services/preview-analysis.png",
+  "google-ads": "/assets/services/preview-ads.png",
 };
-const FALLBACK = ASSETS["web-development"];
+const FALLBACK_PREVIEW = PREVIEWS["web-development"];
 
 export function Services() {
-  const { t, tx } = useI18n();
-  const { section } = useSiteContent();
+  const { t } = useI18n();
+  const { section, servicesHome } = useSiteContent();
   const services = section("services");
-  const items = tx<ServiceItem[]>("services.items");
+  const items = servicesHome();
 
   return (
     <section className="section services" data-theme="dark" id="services">
@@ -61,47 +39,48 @@ export function Services() {
             </div>
 
             <ul className="services__grid">
-              {items.map((item, i) => {
-                const assets = ASSETS[item.id] ?? FALLBACK;
-                return (
-                  <Reveal
-                    as="li"
-                    key={item.id}
-                    className="services__cell"
-                    variant={i % 2 === 0 ? "left" : "right"}
-                    delay={(i % 2) * 90}
+              {items.map((item, i) => (
+                <Reveal
+                  as="li"
+                  key={item.id}
+                  className="services__cell"
+                  variant={i % 2 === 0 ? "left" : "right"}
+                  delay={(i % 2) * 90}
+                >
+                  <article
+                    className={`services__card ${item.featured ? "services__card--featured" : ""}`}
                   >
-                    <article
-                      className={`services__card ${item.featured ? "services__card--featured" : ""}`}
-                    >
-                      <div className="services__card-content">
-                        <div className="services__card-head">
+                    <div className="services__card-content">
+                      <div className="services__card-head">
+                        {item.iconSrc ? (
                           <img
                             className="services__card-icon"
-                            src={item.icon || assets.icon}
+                            src={item.iconSrc}
                             alt=""
                             loading="lazy"
                             decoding="async"
                           />
-                          <h3 className="services__card-title">{item.title}</h3>
-                        </div>
-                        <p className="services__card-text">{item.text}</p>
-                        <Link to={`/${item.id}`} className="link-arrow services__card-link">
-                          {t("services.linkLabel")}
-                          <Icon name="arrow-right" size={15} />
-                        </Link>
+                        ) : (
+                          <span className="services__card-icon services__card-icon--empty" aria-hidden="true" />
+                        )}
+                        <h3 className="services__card-title">{item.title}</h3>
                       </div>
-                      <img
-                        className="services__card-preview"
-                        src={item.preview || assets.preview}
-                        alt=""
-                        loading="lazy"
-                        decoding="async"
-                      />
-                    </article>
-                  </Reveal>
-                );
-              })}
+                      <p className="services__card-text">{item.text}</p>
+                      <Link to={`/${item.id}`} className="link-arrow services__card-link">
+                        {t("services.linkLabel")}
+                        <Icon name="arrow-right" size={15} />
+                      </Link>
+                    </div>
+                    <img
+                      className="services__card-preview"
+                      src={PREVIEWS[item.id] ?? FALLBACK_PREVIEW}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </article>
+                </Reveal>
+              ))}
             </ul>
           </div>
         </div>
