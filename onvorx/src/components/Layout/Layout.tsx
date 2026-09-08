@@ -3,6 +3,8 @@ import { Outlet, useLocation } from "react-router-dom";
 import { DocumentHead } from "../DocumentHead/DocumentHead";
 import { SiteHeader } from "../SiteHeader/SiteHeader";
 import { SiteFooter } from "../SiteFooter/SiteFooter";
+import { EstimateFormProvider } from "../EstimateForm/useEstimateForm";
+import { EstimateForm } from "../EstimateForm/EstimateForm";
 import { useI18n } from "../../i18n/i18n";
 import "./Layout.css";
 
@@ -26,7 +28,7 @@ export function Layout() {
   useRouteScroll();
 
   return (
-    <>
+    <EstimateFormProvider>
       <DocumentHead />
       <a href="#main" className="skip-link">
         {t("nav.skip")}
@@ -36,6 +38,7 @@ export function Layout() {
         <Outlet />
       </main>
       <SiteFooter />
-    </>
+      <EstimateForm />
+    </EstimateFormProvider>
   );
 }

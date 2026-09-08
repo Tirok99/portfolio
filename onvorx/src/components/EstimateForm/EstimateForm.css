@@ -1,0 +1,92 @@
+.estimate-form__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal, 1000);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 5vh 1rem;
+  background: rgba(6, 8, 11, 0.6);
+  overflow-y: auto;
+}
+
+.estimate-form {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  background: var(--surface, #14161a);
+  color: var(--text, #f4f5f7);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  border-radius: var(--radius-lg, 16px);
+  padding: 2rem clamp(1.25rem, 4vw, 2.25rem);
+}
+
+.estimate-form__close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.9rem;
+  background: none;
+  border: 0;
+  color: inherit;
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.estimate-form__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.estimate-form__body h2 {
+  margin: 0 0 0.25rem;
+}
+.estimate-form__body label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+}
+.estimate-form__body input,
+.estimate-form__body select,
+.estimate-form__body textarea {
+  font: inherit;
+  padding: 0.6rem 0.7rem;
+  border-radius: var(--radius-sm, 8px);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.18));
+  background: var(--bg, #0b0d10);
+  color: inherit;
+}
+.estimate-form__body input[aria-invalid='true'],
+.estimate-form__body textarea[aria-invalid='true'] {
+  border-color: #e0564f;
+}
+.estimate-form__error {
+  color: #f08a84;
+  font-size: 0.8rem;
+}
+.estimate-form__interests {
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.14));
+  border-radius: var(--radius-sm, 8px);
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.estimate-form__checkbox {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 0.5rem;
+}
+.estimate-form__submit {
+  margin-top: 0.25rem;
+}
+.estimate-form__note {
+  font-size: 0.78rem;
+  opacity: 0.7;
+  margin: 0;
+}
+.estimate-form__done {
+  text-align: center;
+  padding: 1.5rem 0;
+}
