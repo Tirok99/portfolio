@@ -87,12 +87,14 @@ export function adminApiDev(): Plugin {
             env,
           )
           if (!result) return next()
+          // Parity with the Vercel adapter: auth responses must never be cached.
+          res.setHeader('Cache-Control', 'no-store')
           if (result.setCookie) res.setHeader('Set-Cookie', result.setCookie)
           res.statusCode = result.status
           res.setHeader('Content-Type', 'application/json')
           res.end(JSON.stringify(result.body))
         }
-        void run()
+        run().catch(() => next())
       })
     },
   }
