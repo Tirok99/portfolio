@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "vite",
     "prebuild": "node scripts/build-content.mjs",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && tsc -p tsconfig.api.json && vite build",
     "postbuild": "node scripts/restore-content.mjs",
     "content:pull": "node scripts/build-content.mjs",
     "content:restore": "node scripts/restore-content.mjs",

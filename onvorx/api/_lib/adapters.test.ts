@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import loginHandler from './login'
-import sessionHandler from './session'
-import logoutHandler from './logout'
+import loginHandler from '../admin/login'
+import sessionHandler from '../admin/session'
+import logoutHandler from '../admin/logout'
 
 function mockRes() {
   const res: Record<string, unknown> = {}
