@@ -58,4 +58,12 @@ describe('DocumentHead', () => {
     mount('/nope')
     expect(document.title).toMatch(/ONVORX/)
   })
+
+  it('falls back to home SEO for a mapped-but-unrendered route (/projects)', () => {
+    // /projects has a ROUTE_SEO entry but is not a registered route, so it
+    // renders NotFoundPage — DocumentHead must not stamp the "Projects" title.
+    mount('/projects')
+    expect(document.title).not.toMatch(/Projects/)
+    expect(document.title).toMatch(/ONVORX/)
+  })
 })
