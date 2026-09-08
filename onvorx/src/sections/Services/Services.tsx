@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useI18n } from "../../i18n/i18n";
+import { useSiteContent } from "../../content/useSiteContent";
 import { Icon } from "../../components/Icon/Icon";
 import { Reveal } from "../../components/Reveal/Reveal";
 import "./Services.css";
@@ -37,6 +38,8 @@ const FALLBACK = ASSETS["web-development"];
 
 export function Services() {
   const { t, tx } = useI18n();
+  const { section } = useSiteContent();
+  const services = section("services");
   const items = tx<ServiceItem[]>("services.items");
 
   return (
@@ -45,11 +48,11 @@ export function Services() {
         <div className="services__inner">
           <Reveal className="services__header" variant="up">
             <span className="eyebrow eyebrow--stacked services__eyebrow">
-              <span>{t("services.eyebrow")}</span>
+              <span>{services.eyebrow}</span>
               <span className="eyebrow__line" />
             </span>
-            <h2 className="h2 services__title">{t("services.title")}</h2>
-            <p className="services__description">{t("services.description")}</p>
+            <h2 className="h2 services__title">{services.title}</h2>
+            <p className="services__description">{services.body}</p>
           </Reveal>
 
           <div className="services__body">

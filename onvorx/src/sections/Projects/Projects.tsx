@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useI18n } from "../../i18n/i18n";
+import { useSiteContent } from "../../content/useSiteContent";
 import { Icon } from "../../components/Icon/Icon";
 import { Reveal } from "../../components/Reveal/Reveal";
 import "./Projects.css";
@@ -20,6 +21,8 @@ const projectImage = (item: ProjectItem) =>
 
 export function Projects() {
   const { t, tx } = useI18n();
+  const { section } = useSiteContent();
+  const projects = section("projects");
   const items = tx<ProjectItem[]>("projects.items");
 
   return (
@@ -29,12 +32,12 @@ export function Projects() {
           <Reveal className="projects__header" variant="up">
             <div className="projects__intro">
               <span className="eyebrow eyebrow--stacked">
-                <span>{t("projects.eyebrow")}</span>
+                <span>{projects.eyebrow}</span>
                 <span className="eyebrow__line" />
               </span>
-              <h2 className="h2 projects__title">{t("projects.title")}</h2>
+              <h2 className="h2 projects__title">{projects.title}</h2>
             </div>
-            <p className="projects__lede">{t("projects.lede")}</p>
+            <p className="projects__lede">{projects.body}</p>
             <a href="#" className="btn btn--outline projects__view-all">
               {t("projects.viewAll")}
               <Icon name="arrow-right" size={16} className="btn__arrow" />
