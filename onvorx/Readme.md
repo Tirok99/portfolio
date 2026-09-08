@@ -58,6 +58,10 @@ shared content store (`src/content/`) that backs the site's managed content
 it is the Phase-1 prototype and persists to `localStorage` only; a real backend
 later replaces `src/content/persistence.ts` (see `src/content/README.md`).
 
+`/admin` is gated by a single shared password (`ADMIN_PASSWORD`), verified by a
+Vercel function with a signed session cookie; `npm run dev` serves the same
+`/api/admin/*` routes via a Vite plugin. See `src/admin/auth/README.md`.
+
 ## Deployment
 
 Vercel (framework preset **Vite**). `vercel.json` adds the SPA rewrite so deep
