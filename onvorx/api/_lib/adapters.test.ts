@@ -37,6 +37,7 @@ describe('login adapter', () => {
     )
     expect((res as unknown as { statusCode: number }).statusCode).toBe(200)
     expect((res as unknown as { headers: Record<string, string> }).headers['Set-Cookie']).toContain('admin_session=')
+    expect((res as unknown as { headers: Record<string, string> }).headers['Cache-Control']).toBe('no-store')
   })
 })
 
@@ -46,6 +47,19 @@ describe('session adapter', () => {
     const res = mockRes()
     sessionHandler({ method: 'GET', headers: {} } as never, res)
     expect((res as unknown as { body: unknown }).body).toEqual({ authenticated: false })
+    expect((res as unknown as { headers: Record<string, string> }).headers['Cache-Control']).toBe('no-store')
+  })
+
+  it('is Secure on Vercel even without x-forwarded-proto=https', () => {
+    process.env.VERCEL = '1'
+    process.env.ADMIN_PASSWORD = 'pw12345678'
+    process.env.ADMIN_SESSION_SECRET = 'secretsecretsecretsecretsecret12'
+    const res = mockRes()
+    loginHandler(
+      { method: 'POST', body: { password: 'pw12345678' }, headers: {} } as never,
+      res,
+    )
+    expect((res as unknown as { headers: Record<string, string> }).headers['Set-Cookie']).toContain('Secure')
   })
 })
 

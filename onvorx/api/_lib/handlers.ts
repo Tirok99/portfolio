@@ -39,21 +39,25 @@ export function handleLogin(
   }
 }
 
+/**
+ * Verify the admin session cookie. Shared by `handleSession` and (Plan 3) every
+ * mutating admin endpoint, so nothing re-derives the cookie/verify dance.
+ * `parseCookies` is guaranteed not to throw; a missing secret means "not
+ * configured" → treated as unauthenticated.
+ */
+export function requireSession(cookieHeader: string | undefined, env: AuthEnv): boolean {
+  const secret = env.ADMIN_SESSION_SECRET
+  if (!secret) return false
+  const token = parseCookies(cookieHeader)[SESSION_COOKIE] ?? ''
+  return verifyToken(token, secret)
+}
+
 export function handleSession(
   input: { method: string; cookieHeader: string | undefined },
   env: AuthEnv,
 ): HandlerResult {
   if (input.method !== 'GET') return { status: 405, body: { error: 'method_not_allowed' } }
-  const secret = env.ADMIN_SESSION_SECRET
-  let token = ''
-  try {
-    token = parseCookies(input.cookieHeader)[SESSION_COOKIE] ?? ''
-  } catch {
-    // Malformed cookie header (e.g., URIError from decodeURIComponent)
-    // Fall through with empty token
-  }
-  const ok = Boolean(secret) && verifyToken(token, secret as string)
-  return { status: 200, body: { authenticated: ok } }
+  return { status: 200, body: { authenticated: requireSession(input.cookieHeader, env) } }
 }
 
 export function handleLogout(input: { method: string; secure: boolean }): HandlerResult {

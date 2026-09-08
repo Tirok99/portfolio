@@ -54,6 +54,13 @@ describe('parseCookies', () => {
     expect(parseCookies(undefined)).toEqual({})
     expect(parseCookies('')).toEqual({})
   })
+  it('falls back to the raw value on a malformed percent-encoding (does not throw)', () => {
+    expect(() => parseCookies('a=%; b=2')).not.toThrow()
+    expect(parseCookies('a=%; b=2')).toEqual({ a: '%', b: '2' })
+  })
+  it('decodes valid percent-encoding', () => {
+    expect(parseCookies('x=a%20b')).toEqual({ x: 'a b' })
+  })
 })
 
 describe('serializeCookie', () => {

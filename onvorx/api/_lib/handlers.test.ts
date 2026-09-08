@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { handleLogin, handleSession, handleLogout } from './handlers'
+import { handleLogin, handleSession, handleLogout, requireSession } from './handlers'
 import { SESSION_COOKIE, signToken } from './session'
 
 const ENV = {
@@ -68,6 +68,31 @@ describe('handleSession', () => {
     const r = handleSession({ method: 'GET', cookieHeader: 'admin_session=%' }, ENV)
     expect(r.status).toBe(200)
     expect(r.body).toEqual({ authenticated: false })
+  })
+})
+
+describe('requireSession', () => {
+  it('true for a valid session cookie', () => {
+    const tok = signToken(ENV.ADMIN_SESSION_SECRET)
+    expect(requireSession(`${SESSION_COOKIE}=${tok}`, ENV)).toBe(true)
+  })
+  it('false with no cookie', () => {
+    expect(requireSession(undefined, ENV)).toBe(false)
+  })
+  it('false with a garbage cookie', () => {
+    expect(requireSession(`${SESSION_COOKIE}=not.a.token`, ENV)).toBe(false)
+  })
+  it('false with a malformed cookie header (does not throw)', () => {
+    expect(() => requireSession('admin_session=%', ENV)).not.toThrow()
+    expect(requireSession('admin_session=%', ENV)).toBe(false)
+  })
+  it('false for an expired cookie', () => {
+    const tok = signToken(ENV.ADMIN_SESSION_SECRET, 1000)
+    expect(requireSession(`${SESSION_COOKIE}=${tok}`, ENV)).toBe(false)
+  })
+  it('false when the secret is missing', () => {
+    const tok = signToken(ENV.ADMIN_SESSION_SECRET)
+    expect(requireSession(`${SESSION_COOKIE}=${tok}`, {})).toBe(false)
   })
 })
 

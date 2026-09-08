@@ -52,7 +52,14 @@ export function parseCookies(header: string | undefined): Record<string, string>
     if (eq < 0) continue
     const k = part.slice(0, eq).trim()
     const v = part.slice(eq + 1).trim()
-    if (k) out[k] = decodeURIComponent(v)
+    if (!k) continue
+    // decodeURIComponent throws URIError on a stray `%` in ANY cookie on the
+    // domain — never let one malformed cookie break auth. Fall back to the raw value.
+    try {
+      out[k] = decodeURIComponent(v)
+    } catch {
+      out[k] = v
+    }
   }
   return out
 }
