@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from './auth/useAuth'
+import { ToastProvider, ToastRegion } from './components/Toast'
 import './admin.css'
 
 const NAV: { to: string; label: string }[] = [
@@ -23,30 +24,33 @@ export function AdminLayout() {
   }, [logout, navigate])
 
   return (
-    <div className="admin" data-theme="light">
-      <aside className="admin__sidebar">
-        <div className="admin__brand">ONVORX Admin</div>
-        <nav className="admin__nav" aria-label="Admin sections">
-          {NAV.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.to === '/admin'}
-              className={({ isActive }) =>
-                `admin__nav-link${isActive ? ' is-active' : ''}`
-              }
-            >
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-        <button type="button" className="admin__logout" onClick={onLogout}>
-          Log out
-        </button>
-      </aside>
-      <main className="admin__main">
-        <Outlet />
-      </main>
-    </div>
+    <ToastProvider>
+      <div className="admin" data-theme="light">
+        <aside className="admin__sidebar">
+          <div className="admin__brand">ONVORX Admin</div>
+          <nav className="admin__nav" aria-label="Admin sections">
+            {NAV.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.to === '/admin'}
+                className={({ isActive }) =>
+                  `admin__nav-link${isActive ? ' is-active' : ''}`
+                }
+              >
+                {item.label}
+              </NavLink>
+            ))}
+          </nav>
+          <button type="button" className="admin__logout" onClick={onLogout}>
+            Log out
+          </button>
+        </aside>
+        <main className="admin__main">
+          <Outlet />
+        </main>
+        <ToastRegion />
+      </div>
+    </ToastProvider>
   )
 }
