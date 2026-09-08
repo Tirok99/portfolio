@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Outlet, useLocation } from "react-router-dom";
+import { DocumentHead } from "../DocumentHead/DocumentHead";
 import { SiteHeader } from "../SiteHeader/SiteHeader";
 import { SiteFooter } from "../SiteFooter/SiteFooter";
 import { useI18n } from "../../i18n/i18n";
@@ -26,6 +27,7 @@ export function Layout() {
 
   return (
     <>
+      <DocumentHead />
       <a href="#main" className="skip-link">
         {t("nav.skip")}
       </a>
