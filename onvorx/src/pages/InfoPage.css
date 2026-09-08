@@ -1,0 +1,31 @@
+.info-page {
+  display: flex;
+  align-items: center;
+  min-height: 70vh;
+  padding-block: clamp(6rem, 16vw, 12rem);
+}
+
+.info-page__inner {
+  max-width: 44ch;
+  padding-inline: var(--content-px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-5);
+}
+
+.info-page__code {
+  font-size: clamp(3rem, 8vw, 5rem);
+  font-weight: var(--fw-bold);
+  line-height: 1;
+  color: var(--accent);
+}
+
+.info-page__title {
+  color: var(--text);
+}
+
+.info-page__text {
+  color: var(--text-2);
+  font-size: var(--fs-body);
+}

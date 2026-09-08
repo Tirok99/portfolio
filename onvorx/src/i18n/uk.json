@@ -1,0 +1,229 @@
+{
+  "meta": {
+    "title": "ONVORX — Web development & business analysis",
+    "description": "ONVORX helps B2B companies plan, build and grow websites and digital solutions — from requirements to implementation and ongoing development."
+  },
+  "nav": {
+    "services": "Services",
+    "projects": "Projects",
+    "about": "About ONVORX",
+    "home": "Home",
+    "cta": "Request an Estimate",
+    "menu": "Menu",
+    "close": "Close menu",
+    "skip": "Skip to content"
+  },
+  "lang": {
+    "label": "Language",
+    "en": "EN",
+    "uk": "UA"
+  },
+  "hero": {
+    "eyebrow": "Web-development & business-analysis",
+    "title": "Web solutions built around your business requirements",
+    "description": "ONVORX helps B2B companies plan, build and grow websites and digital solutions — from formalizing requirements and implementation through to ongoing support.",
+    "cta": "Request an Estimate",
+    "cards": [
+      {
+        "title": "Business Goals",
+        "text": "Define outcomes"
+      },
+      {
+        "title": "User Needs",
+        "text": "Understand users"
+      },
+      {
+        "title": "Requirements",
+        "text": "Scope & prioritize"
+      },
+      {
+        "title": "Strategy",
+        "text": "Plan & align"
+      }
+    ],
+    "launch": {
+      "title": "Launch",
+      "text": "Test, deploy & evolve"
+    },
+    "visualAlt": "Radar diagram connecting the discovery stages to a central launch point"
+  },
+  "services": {
+    "eyebrow": "Services",
+    "title": "From requirements to implementation and ongoing development",
+    "description": "ONVORX can join a project at different stages — from defining requirements and building a new website to developing an existing solution and supporting further growth.",
+    "linkLabel": "Explore service",
+    "items": [
+      {
+        "id": "web-development",
+        "title": "Web Development",
+        "text": "Build a new website from ready designs and requirements, with structure and UX/UI support when needed.",
+        "featured": true
+      },
+      {
+        "id": "support",
+        "title": "Website Support & Development",
+        "text": "Improve and extend an existing WordPress or Horoshop website with new pages, functionality, integrations and ongoing support."
+      },
+      {
+        "id": "business-analysis",
+        "title": "Business Analysis",
+        "text": "Clarify business processes, scope and requirements before automation or software development begins."
+      },
+      {
+        "id": "google-ads",
+        "title": "Google Ads",
+        "text": "Set up and manage Google Ads campaigns as a separate channel for attracting relevant paid traffic."
+      }
+    ]
+  },
+  "projects": {
+    "eyebrow": "Selected projects",
+    "title": "Selected work in web development",
+    "lede": "We build web solutions that solve real business challenges. Here are some of our recent projects.",
+    "viewAll": "View All Projects",
+    "viewProject": "View Project",
+    "items": [
+      {
+        "id": "relax-ahill",
+        "index": "01",
+        "title": "Relax Ahill",
+        "tags": [
+          "WordPress",
+          "WooCommerce",
+          "Google Ads"
+        ],
+        "text": "Website implementation and ongoing digital growth support.",
+        "image": "/assets/projects/relax-ahill.png",
+        "imageAlt": "Relax Ahill website shown on a laptop"
+      },
+      {
+        "id": "encryptia-cloud",
+        "index": "02",
+        "title": "Encryptia Cloud",
+        "tags": [
+          "WordPress"
+        ],
+        "text": "Website implementation for a cloud-focused business.",
+        "image": "/assets/projects/encryptia-cloud.png",
+        "imageAlt": "Encryptia Cloud website shown on a laptop"
+      }
+    ]
+  },
+  "howWork": {
+    "eyebrow": "How we work",
+    "title": "A clear path from task to implementation",
+    "description": "ONVORX can join a project at the stage where support is needed — from clarifying requirements to implementation and further development.",
+    "steps": [
+      {
+        "index": "01",
+        "title": "Define",
+        "sub": "Understand the task and requirements",
+        "text": "We review the business context, available designs, current solution and requirements to define what needs to be implemented."
+      },
+      {
+        "index": "02",
+        "title": "Estimate",
+        "sub": "Clarify scope and approach",
+        "text": "We define the implementation scope, dependencies and approach needed to prepare a project estimate."
+      },
+      {
+        "index": "03",
+        "title": "Implement",
+        "sub": "Build, integrate and test",
+        "text": "We develop the agreed solution, handle required integrations and test the implementation before launch."
+      },
+      {
+        "index": "04",
+        "title": "Support & Develop",
+        "sub": "Continue after launch when needed",
+        "text": "ONVORX can support the solution after launch, implement improvements and continue its further development."
+      }
+    ]
+  },
+  "about": {
+    "eyebrow": "About ONVORX",
+    "title": "Practical experience behind every project",
+    "description": "ONVORX combines hands-on web development experience with a structured approach to requirements, implementation and ongoing development.",
+    "stats": [
+      {
+        "index": "01",
+        "title": "Since 2023",
+        "text": "Hands-on web development experience."
+      },
+      {
+        "index": "02",
+        "title": "Real project work",
+        "text": "Experience across WordPress, WooCommerce extensions and front-end implementation."
+      },
+      {
+        "index": "03",
+        "title": "Beyond implementation",
+        "text": "Requirements and business processes are the foundation before development begins."
+      }
+    ]
+  },
+  "cta": {
+    "eyebrow": "Start a project",
+    "title": "Let’s turn your requirements into a working solution",
+    "description": "Tell us what you’re planning, what already exists and where support is needed. ONVORX will review the requirements and clarify what’s needed to prepare a project estimate.",
+    "button": "Request a Project Estimate",
+    "note": "Your information is secure and will not be shared."
+  },
+  "footer": {
+    "tagline": "Web solutions built around your business requirements. From idea to implementation and beyond.",
+    "navTitle": "Navigation",
+    "servicesTitle": "Services",
+    "nav": [
+      {
+        "label": "Home",
+        "to": "/"
+      },
+      {
+        "label": "Services",
+        "to": "/services"
+      },
+      {
+        "label": "Projects",
+        "to": "/#projects"
+      },
+      {
+        "label": "About",
+        "to": "/about"
+      }
+    ],
+    "services": [
+      {
+        "label": "Web Development",
+        "to": "/web-development"
+      },
+      {
+        "label": "Website Support & Development",
+        "to": "/support"
+      },
+      {
+        "label": "Business Analysis",
+        "to": "/business-analysis"
+      },
+      {
+        "label": "Google Ads",
+        "to": "/services"
+      }
+    ],
+    "email": "info@onvorx.com",
+    "telegram": "t.me/onvorx",
+    "telegramHref": "https://t.me/onvorx",
+    "copyright": "© 2026 | ONVORX | All Rights Reserved"
+  },
+  "stub": {
+    "eyebrow": "Coming soon",
+    "title": "This page is being prepared",
+    "text": "The dedicated page for this section is on the way. In the meantime, explore the overview on the home page.",
+    "back": "Back to home"
+  },
+  "notFound": {
+    "code": "404",
+    "title": "Page not found",
+    "text": "The page you are looking for doesn’t exist or has been moved.",
+    "back": "Back to home"
+  }
+}

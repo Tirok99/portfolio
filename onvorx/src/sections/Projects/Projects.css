@@ -1,0 +1,170 @@
+.projects {
+  background: var(--bg);
+  color: var(--text);
+  padding-block: clamp(3rem, 5vw, 4.5rem);
+}
+
+.projects__inner {
+  padding-inline: var(--content-px);
+}
+
+/* ---- header ---- */
+.projects__header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr) auto;
+  align-items: center;
+  gap: clamp(1.5rem, 4vw, 2.5rem);
+  margin-bottom: clamp(1.5rem, 3vw, 2.5rem);
+}
+
+.projects__intro {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.projects__title {
+  color: var(--text);
+  max-width: 14ch;
+}
+
+.projects__lede {
+  color: var(--text-2);
+  font-size: var(--fs-body);
+  max-width: 34ch;
+}
+
+.projects__view-all {
+  justify-self: end;
+  padding: 0.85rem 1.5rem;
+  font-size: var(--fs-body-sm);
+}
+
+/* ---- list ---- */
+.projects__list {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1rem, 2vw, 1.5rem);
+}
+
+.projects__row {
+  display: flex;
+}
+
+.projects__item {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: clamp(1.25rem, 3.5vw, 2.5rem);
+  padding: clamp(0.75rem, 1.6vw, 1.15rem);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
+}
+
+.projects__item:hover {
+  transform: translateY(-3px);
+  border-color: var(--border-strong);
+  box-shadow: 0 1px 2px rgba(16, 18, 28, 0.05),
+    0 28px 50px -30px rgba(16, 18, 28, 0.22);
+}
+
+.projects__item--reverse .projects__media {
+  order: 2;
+}
+
+.projects__media {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  height: clamp(180px, 20vw, 248px);
+  /* the device mockup keeps its own breathing room, independent of card padding */
+  padding: clamp(0.75rem, 2vw, 1.5rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.projects__media img {
+  width: 100%;
+  height: 100%;
+  /* contain keeps the device mockup un-cropped; swap-in images can tune this */
+  object-fit: contain;
+  object-position: center;
+}
+
+.projects__content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.projects__index {
+  font-size: var(--fs-title-sm);
+  font-weight: var(--fw-bold);
+  color: var(--accent);
+}
+
+.projects__project-title {
+  font-size: var(--fs-h3);
+  font-weight: var(--fw-bold);
+  color: var(--text);
+}
+
+.projects__tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--fs-body-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--accent);
+}
+
+.projects__tag-sep {
+  margin-inline: var(--space-1);
+  opacity: 0.6;
+}
+
+.projects__text {
+  color: var(--text-2);
+  font-size: var(--fs-body);
+  max-width: 36ch;
+}
+
+/* ================= Responsive ================= */
+
+@media (max-width: 1000px) {
+  .projects__header {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+  .projects__view-all {
+    justify-self: start;
+  }
+}
+
+@media (max-width: 820px) {
+  .projects__item,
+  .projects__item--reverse {
+    grid-template-columns: 1fr;
+    gap: clamp(1.25rem, 4vw, 2rem);
+  }
+  .projects__item--reverse .projects__media {
+    order: 0;
+  }
+  .projects__content {
+    padding-block: 0 var(--space-2);
+  }
+}
+
+@media (max-width: 480px) {
+  .projects__media {
+    height: clamp(170px, 44vw, 220px);
+  }
+}

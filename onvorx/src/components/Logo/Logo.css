@@ -1,0 +1,22 @@
+/*
+  Crop the transparent padding off the official ONVORX wordmark.
+  Source canvas 1024x682, visible bbox: x156-898 (742w), y246-430 (184h).
+  --logo-h drives the rendered mark height; everything else derives from it.
+*/
+.logo {
+  --logo-h: clamp(22px, 1.4rem + 0.6vw, 30px);
+  display: inline-block;
+  overflow: clip;
+  width: calc(var(--logo-h) * (742 / 184));
+  height: var(--logo-h);
+  line-height: 0;
+}
+
+.logo__img {
+  display: block;
+  width: calc(var(--logo-h) * (1024 / 184));
+  height: calc(var(--logo-h) * (682 / 184));
+  max-width: none;
+  margin-left: calc(var(--logo-h) * (-156 / 184));
+  margin-top: calc(var(--logo-h) * (-246 / 184));
+}

@@ -1,0 +1,189 @@
+/* ============================================
+   Base element + shared layout primitives
+   ============================================ */
+
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/inter/700.css";
+
+@import "./reset.css";
+@import "./tokens.css";
+@import "./themes.css";
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--header-h) + 16px);
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-regular);
+  line-height: var(--lh-body);
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* Root inherits dark until a section overrides it */
+:root {
+  color-scheme: dark;
+  --bg: #08090b;
+  --text: #ffffff;
+}
+
+/* ---- Shared container (per BEM naming from the design) ---- */
+.hero__container,
+.services__container,
+.projects__container,
+.how-work__container,
+.about__container,
+.cta__container,
+.site-header__container,
+.site-footer__container,
+.page__container {
+  width: 100%;
+  max-width: var(--container-max);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* ---- Section shell ---- */
+.section {
+  position: relative;
+  background: var(--bg);
+  color: var(--text);
+  overflow: clip;
+}
+
+.section__inner {
+  position: relative;
+  z-index: var(--z-content);
+  padding-inline: var(--content-px);
+}
+
+/* ---- Eyebrow label ---- */
+.eyebrow {
+  display: inline-block;
+  font-size: var(--fs-eyebrow);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-eyebrow);
+  text-transform: uppercase;
+  color: var(--eyebrow-color);
+}
+
+.eyebrow--stacked {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: flex-start;
+}
+
+.eyebrow__line {
+  width: 40px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+/* ---- Headings ---- */
+.h1 {
+  font-size: var(--fs-h1);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-heading);
+  letter-spacing: var(--ls-heading);
+}
+
+.h2 {
+  font-size: var(--fs-h2);
+  font-weight: var(--fw-bold);
+  line-height: var(--lh-heading);
+  letter-spacing: var(--ls-heading);
+}
+
+/* ---- Buttons ---- */
+.btn {
+  --_bg: var(--accent);
+  --_fg: var(--on-accent);
+  --_bd: transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0.9rem 1.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--_bd);
+  background: var(--_bg);
+  color: var(--_fg);
+  font-size: var(--fs-title-sm);
+  font-weight: var(--fw-semibold);
+  line-height: 1;
+  white-space: nowrap;
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease),
+    transform var(--dur) var(--ease), color var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease);
+}
+
+.btn:hover {
+  --_bg: var(--accent-hover);
+  transform: translateY(-2px);
+}
+
+.btn:active {
+  transform: translateY(0);
+  transition-duration: var(--dur-fast);
+}
+
+.btn--outline {
+  --_bg: var(--btn-outline-bg);
+  --_fg: var(--btn-outline-text);
+  --_bd: var(--btn-outline-border);
+}
+
+.btn--outline:hover {
+  --_bg: color-mix(in srgb, var(--accent) 10%, transparent);
+  --_fg: var(--accent);
+}
+
+.btn__arrow {
+  transition: transform var(--dur) var(--ease);
+}
+
+.btn:hover .btn__arrow {
+  transform: translateX(4px);
+}
+
+/* ---- Inline link with arrow ---- */
+.link-arrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--accent);
+  font-size: var(--fs-body-sm);
+  font-weight: var(--fw-semibold);
+  transition: color var(--dur) var(--ease);
+}
+
+.link-arrow svg {
+  transition: transform var(--dur) var(--ease);
+}
+
+.link-arrow:hover svg {
+  transform: translateX(4px);
+}
+
+/* ---- Utility ---- */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.no-scroll {
+  overflow: hidden;
+}

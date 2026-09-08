@@ -1,0 +1,90 @@
+/* ============================================
+   Design tokens
+   Source of truth: Figma "onvorx_v0.5" / layout-en-vscode
+   Desktop reference = 1440 (Figma comp 1600 scaled ~0.9)
+   ============================================ */
+
+:root {
+  /* ---- Brand accent (theme-independent) ---- */
+  --accent: #e4202b;
+  --accent-hover: #c81a24;
+  --accent-glow: #ff1f2d;
+  --on-accent: #ffffff;
+
+  /* ---- Typography ---- */
+  --font-sans: "Inter", "Inter Fallback", system-ui, -apple-system,
+    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  /* Fluid type scale — min at ~360, max at ~1440 */
+  --fs-h1: clamp(2rem, 1.35rem + 2.9vw, 2.75rem);          /* 32 -> 44 */
+  --fs-h2: clamp(1.875rem, 1.35rem + 2.33vw, 2.625rem);    /* 30 -> 42 */
+  --fs-h3: clamp(1.5rem, 1.28rem + 0.98vw, 2rem);          /* 24 -> 32 */
+  --fs-title-lg: clamp(1.375rem, 1.24rem + 0.58vw, 1.75rem); /* 22 -> 28 */
+  --fs-title: clamp(1.0625rem, 1.02rem + 0.2vw, 1.1875rem);  /* 17 -> 19 */
+  --fs-title-sm: clamp(0.9375rem, 0.91rem + 0.13vw, 1rem);   /* 15 -> 16 */
+  --fs-body: clamp(0.9375rem, 0.91rem + 0.13vw, 1rem);       /* 15 -> 16 */
+  --fs-body-sm: clamp(0.8125rem, 0.8rem + 0.09vw, 0.875rem); /* 13 -> 14 */
+  --fs-eyebrow: clamp(0.75rem, 0.73rem + 0.09vw, 0.8125rem); /* 12 -> 13 */
+  --fs-caption: clamp(0.75rem, 0.73rem + 0.09vw, 0.8125rem); /* 12 -> 13 */
+
+  --lh-tight: 1.15;
+  --lh-heading: 1.22;
+  --lh-snug: 1.4;
+  --lh-body: 1.55;
+
+  --ls-eyebrow: 0.14em;
+  --ls-heading: -0.01em;
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  /* ---- Spacing scale (4px base) ---- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-7: 1.75rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-14: 3.5rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+
+  /* ---- Layout ---- */
+  --container-max: 1440px;
+  --gutter: 15px;
+  --content-px: clamp(1rem, 0.5rem + 3.2vw, 3rem);   /* inner section padding: 16 -> 48 */
+  --section-py: clamp(3.5rem, 2rem + 6.5vw, 6rem);   /* 56 -> 96 */
+  --header-h: 72px;
+
+  /* ---- Radii ---- */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 999px;
+
+  /* ---- Motion ---- */
+  --dur-fast: 160ms;
+  --dur: 260ms;
+  --dur-slow: 640ms;
+  --dur-reveal: 820ms;
+  --ease: cubic-bezier(0.33, 1, 0.68, 1); /* easeOutCubic — gentle settle */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1); /* easeOutQuint — smooth arrival */
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* ---- z-index ---- */
+  --z-decor: 0;
+  --z-content: 1;
+  --z-header: 100;
+  --z-overlay: 900;
+  --z-modal: 1000;
+
+  --focus-ring: var(--accent-glow);
+}

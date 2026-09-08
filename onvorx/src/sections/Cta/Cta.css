@@ -1,0 +1,97 @@
+.cta {
+  background: var(--bg);
+  padding-block: clamp(3rem, 7vw, 6rem);
+}
+
+.cta__card {
+  position: relative;
+  overflow: clip;
+  border-radius: var(--radius-xl);
+  background: #010206;
+  padding: clamp(3rem, 9vw, 5.5rem) clamp(1.5rem, 6vw, 4rem);
+  isolation: isolate;
+}
+
+/* ---- decor ---- */
+.cta__decor {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.cta__rings {
+  position: absolute;
+  top: clamp(-110px, -7vw, -56px);
+  right: clamp(-120px, -8vw, -64px);
+  width: clamp(340px, 40vw, 560px);
+  height: auto;
+  aspect-ratio: 1 / 1;
+  max-width: none;
+  opacity: 0.9;
+  mix-blend-mode: screen;
+}
+
+/* wave_red_01 — lower-right of the card */
+.cta__wave-red {
+  position: absolute;
+  right: clamp(-140px, -9vw, -70px);
+  bottom: clamp(-100px, -7vw, -50px);
+  width: clamp(420px, 48vw, 720px);
+  max-width: none;
+  opacity: 0.7;
+}
+
+/* ---- content ---- */
+.cta__content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-5);
+  max-width: 52rem;
+  margin-inline: auto;
+}
+
+.cta__title {
+  color: #fff;
+  max-width: 20ch;
+}
+
+.cta__dash {
+  width: 40px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+.cta__description {
+  color: var(--text-2);
+  font-size: var(--fs-body);
+  max-width: 60ch;
+}
+
+.cta__button {
+  margin-top: var(--space-2);
+  padding: 1.05rem 2rem;
+}
+
+/* ================= Responsive ================= */
+
+@media (max-width: 560px) {
+  .cta__rings {
+    width: 230px;
+    opacity: 0.55;
+    top: -70px;
+    right: -70px;
+  }
+  .cta__wave-red {
+    width: 90vw;
+    opacity: 0.5;
+  }
+  .cta__button {
+    width: 100%;
+    justify-content: center;
+  }
+}

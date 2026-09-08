@@ -1,0 +1,37 @@
+.reveal {
+  opacity: 0;
+  transition: opacity var(--dur-reveal) var(--ease-out),
+    transform var(--dur-reveal) var(--ease-out);
+  will-change: opacity, transform;
+}
+
+.reveal--up {
+  transform: translateY(16px);
+}
+.reveal--fade {
+  transform: none;
+}
+.reveal--left {
+  transform: translateX(-20px);
+}
+.reveal--right {
+  transform: translateX(20px);
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* release the compositor hint after the reveal settles */
+.reveal.is-settled {
+  will-change: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}

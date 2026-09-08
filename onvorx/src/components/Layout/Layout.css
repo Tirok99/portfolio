@@ -1,0 +1,29 @@
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: var(--z-modal);
+  padding: 0.6rem 1rem;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: var(--fs-body-sm);
+  font-weight: var(--fw-semibold);
+  transform: translateY(-160%);
+  transition: transform var(--dur) var(--ease);
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
+
+/* page-level horizontal guard — lets sections use overflow:visible for
+   vertical decor bleed while still catching any sideways overflow */
+#main {
+  overflow-x: clip;
+}
+
+/* pull the hero up under the transparent sticky header */
+#main > .section:first-child {
+  margin-top: calc(var(--header-h) * -1);
+}

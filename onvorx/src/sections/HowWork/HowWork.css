@@ -1,0 +1,179 @@
+.how-work {
+  position: relative;
+  background: var(--bg);
+  color: var(--text);
+  padding-top: var(--section-py);
+  /* gap between the timeline and the wave; wave is flush to the bottom */
+  padding-bottom: clamp(12.5rem, 22vw, 17.5rem);
+  overflow: clip;
+}
+
+.how-work__inner {
+  position: relative;
+  z-index: var(--z-content);
+  padding-inline: var(--content-px);
+}
+
+/* ---- wave (below the timeline) ---- */
+.how-work__wave {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: clamp(160px, 17vw, 230px);
+  z-index: var(--z-decor);
+  pointer-events: none;
+  overflow: clip;
+  opacity: 0.4;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+
+.how-work__wave img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center bottom;
+}
+
+/* ---- header ---- */
+.how-work__header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-4);
+  max-width: 44rem;
+  margin-bottom: clamp(3rem, 7vw, 5rem);
+}
+
+.how-work__title {
+  color: var(--text);
+  max-width: 18ch;
+}
+
+.how-work__description {
+  color: var(--text-2);
+  font-size: var(--fs-body);
+  max-width: 52ch;
+}
+
+/* ---- timeline ---- */
+.how-work__steps {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(1.5rem, 3vw, 3rem);
+  --marker-size: clamp(72px, 7vw, 96px);
+  --rail-y: calc(1.6rem + var(--space-4) + var(--marker-size) / 2);
+}
+
+.how-work__rail {
+  position: absolute;
+  top: var(--rail-y);
+  left: 8%;
+  right: 8%;
+  height: 2px;
+  background: color-mix(in srgb, var(--accent) 45%, transparent);
+  z-index: 0;
+}
+
+.how-work__step {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-4);
+}
+
+.how-work__number {
+  font-size: var(--fs-title);
+  font-weight: var(--fw-bold);
+  color: var(--accent);
+}
+
+.how-work__marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--marker-size);
+  height: var(--marker-size);
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1.5px solid var(--accent);
+  color: var(--text);
+  box-shadow: 0 0 0 6px var(--bg), 0 0 30px -6px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+
+.how-work__step-title {
+  font-size: var(--fs-title);
+  font-weight: var(--fw-semibold);
+  color: var(--text);
+}
+
+.how-work__step-sub {
+  font-size: var(--fs-title-sm);
+  font-weight: var(--fw-medium);
+  line-height: var(--lh-snug);
+  color: color-mix(in srgb, var(--text) 82%, var(--text-2));
+  max-width: 22ch;
+}
+
+.how-work__step-text {
+  font-size: var(--fs-body-sm);
+  line-height: var(--lh-body);
+  color: var(--text-2);
+  max-width: 30ch;
+}
+
+/* ================= Responsive ================= */
+
+/* 2×2 on mid screens */
+@media (max-width: 1080px) {
+  .how-work__steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: clamp(2.5rem, 6vw, 3.5rem);
+  }
+  .how-work__rail {
+    display: none;
+  }
+}
+
+/* vertical timeline on small screens */
+@media (max-width: 680px) {
+  .how-work__steps {
+    grid-template-columns: 1fr;
+    row-gap: 0;
+    padding-left: calc(var(--marker-size) + var(--space-5));
+  }
+  .how-work__step {
+    align-items: flex-start;
+    text-align: left;
+    padding-bottom: clamp(2rem, 7vw, 2.75rem);
+  }
+  .how-work__step:not(:last-child)::before {
+    content: "";
+    position: absolute;
+    left: calc((var(--marker-size) + var(--space-5)) * -1 + var(--marker-size) / 2);
+    top: calc(1.6rem + var(--space-4) + var(--marker-size));
+    bottom: 0;
+    width: 2px;
+    background: color-mix(in srgb, var(--accent) 40%, transparent);
+  }
+  .how-work__number {
+    position: absolute;
+    left: calc((var(--marker-size) + var(--space-5)) * -1);
+    top: 0;
+    width: var(--marker-size);
+    text-align: center;
+  }
+  .how-work__marker {
+    position: absolute;
+    left: calc((var(--marker-size) + var(--space-5)) * -1);
+    top: calc(1.6rem + var(--space-4));
+  }
+  .how-work__step-title {
+    margin-top: 0;
+  }
+}
