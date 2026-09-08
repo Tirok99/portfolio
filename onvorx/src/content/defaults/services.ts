@@ -9,7 +9,11 @@ interface RawService {
   featured?: boolean
 }
 
-/** design icon assets keyed by service slug (mirrors Services.tsx ASSETS) */
+/**
+ * Design icon assets keyed by service slug. These seed `ServiceCard.icon`,
+ * which the store then owns and the admin can edit. Services.tsx keeps its
+ * own `PREVIEWS` map only for the unmanaged secondary preview image.
+ */
 const ICONS: Record<string, string> = {
   'web-development': '/assets/services/icon-web.png',
   support: '/assets/services/icon-support.png',

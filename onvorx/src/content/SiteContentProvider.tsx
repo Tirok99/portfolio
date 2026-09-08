@@ -19,7 +19,12 @@ import type {
   SeoPageKey,
 } from '../admin/types'
 import * as A from '../admin/actions'
-import { STORAGE_KEY, loadAdminData, saveAdminData } from './persistence'
+import {
+  STORAGE_KEY,
+  isAdminData,
+  loadAdminData,
+  saveAdminData,
+} from './persistence'
 
 export interface SiteContentActions {
   updateSection: (
@@ -77,12 +82,15 @@ export function SiteContentProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
       if (e.key !== STORAGE_KEY || !e.newValue) return
+      let parsed: unknown
       try {
-        skipNextPersist.current = true
-        setData(JSON.parse(e.newValue) as AdminData)
+        parsed = JSON.parse(e.newValue)
       } catch {
-        skipNextPersist.current = false
+        return
       }
+      if (!isAdminData(parsed)) return
+      skipNextPersist.current = true
+      setData(parsed)
     }
     window.addEventListener('storage', onStorage)
     return () => window.removeEventListener('storage', onStorage)

@@ -33,6 +33,16 @@ describe('loadAdminData', () => {
     expect(data.sections).toHaveLength(6)
   })
 
+  it('reseeds when a card list array is missing', () => {
+    const partial: Record<string, unknown> = { ...seedAdminData() }
+    delete partial.projectsPage
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(partial))
+    const data = loadAdminData()
+    expect(Array.isArray(data.projectsPage)).toBe(true)
+    expect(data.projectsPage.length).toBe(seedAdminData().projectsPage.length)
+    expect(data.sections).toHaveLength(6)
+  })
+
   it('reseeds on version mismatch', () => {
     localStorage.setItem(
       STORAGE_KEY,

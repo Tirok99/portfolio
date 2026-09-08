@@ -17,14 +17,16 @@ export function saveAdminData(data: AdminData): void {
   }
 }
 
-function isAdminData(v: unknown): v is AdminData {
+export function isAdminData(v: unknown): v is AdminData {
   if (typeof v !== 'object' || v === null) return false
   const d = v as Partial<AdminData>
   return (
     d.version === DATA_VERSION &&
     Array.isArray(d.sections) &&
     Array.isArray(d.projectsHome) &&
+    Array.isArray(d.projectsPage) &&
     Array.isArray(d.servicesHome) &&
+    Array.isArray(d.servicesPage) &&
     Array.isArray(d.seo) &&
     Array.isArray(d.requests)
   )

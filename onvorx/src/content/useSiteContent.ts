@@ -48,7 +48,7 @@ export function useSiteContent() {
           id: c.id,
           indexLabel: pad2(i + 1),
           title: pick(c.title),
-          tags: c.tags,
+          tags: [...c.tags],
           description: pick(c.description),
           imageSrc: c.image.src,
           imageAlt: pick(c.imageAlt),
