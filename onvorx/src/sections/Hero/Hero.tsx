@@ -1,4 +1,7 @@
+import { useLocation } from "react-router-dom";
 import { useI18n } from "../../i18n/i18n";
+import { useSiteContent } from "../../content/useSiteContent";
+import { useEstimateForm } from "../../components/EstimateForm/useEstimateForm";
 import { Icon, type IconName } from "../../components/Icon/Icon";
 import { Reveal } from "../../components/Reveal/Reveal";
 import "./Hero.css";
@@ -12,6 +15,10 @@ const CARD_ICONS: IconName[] = ["target", "users", "document", "sitemap"];
 
 export function Hero() {
   const { t, tx } = useI18n();
+  const { section } = useSiteContent();
+  const { open } = useEstimateForm();
+  const { pathname } = useLocation();
+  const hero = section("hero");
   const cards = tx<HeroCard[]>("hero.cards");
   const launch = tx<HeroCard>("hero.launch");
 
@@ -26,19 +33,23 @@ export function Hero() {
         <div className="hero__inner">
           <div className="hero__body">
             <Reveal className="hero__eyebrow eyebrow eyebrow--stacked" variant="up">
-              <span>{t("hero.eyebrow")}</span>
+              <span>{hero.eyebrow}</span>
               <span className="eyebrow__line" />
             </Reveal>
             <Reveal as="h1" className="hero__title h1" variant="up" delay={60}>
-              {t("hero.title")}
+              {hero.title}
             </Reveal>
             <Reveal as="p" className="hero__description" variant="up" delay={120}>
-              {t("hero.description")}
+              {hero.body}
             </Reveal>
             <Reveal variant="up" delay={180}>
-              <a href="#" className="btn hero__cta">
-                {t("hero.cta")}
-              </a>
+              <button
+                type="button"
+                className="btn hero__cta"
+                onClick={() => open(pathname)}
+              >
+                {hero.ctaLabel}
+              </button>
             </Reveal>
           </div>
 

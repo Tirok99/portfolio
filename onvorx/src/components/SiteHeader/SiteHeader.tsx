@@ -5,11 +5,13 @@ import { MAIN_NAV } from "../../data/nav";
 import { Logo } from "../Logo/Logo";
 import { LangSwitch } from "../LangSwitch/LangSwitch";
 import { Icon } from "../Icon/Icon";
+import { useEstimateForm } from "../EstimateForm/useEstimateForm";
 import "./SiteHeader.css";
 
 export function SiteHeader() {
   const { t } = useI18n();
   const location = useLocation();
+  const { open } = useEstimateForm();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -54,9 +56,13 @@ export function SiteHeader() {
           </nav>
 
           <div className="site-header__actions">
-            <a href="#" className="btn btn--outline site-header__cta">
+            <button
+              type="button"
+              className="btn btn--outline site-header__cta"
+              onClick={() => open(location.pathname)}
+            >
               {t("nav.cta")}
-            </a>
+            </button>
             <LangSwitch className="site-header__lang" />
             <button
               type="button"
@@ -91,9 +97,13 @@ export function SiteHeader() {
                 ))}
               </ul>
             </nav>
-            <a href="#" className="btn site-header__drawer-cta">
+            <button
+              type="button"
+              className="btn site-header__drawer-cta"
+              onClick={() => open(location.pathname)}
+            >
               {t("nav.cta")}
-            </a>
+            </button>
             <LangSwitch className="site-header__drawer-lang" />
           </div>
 

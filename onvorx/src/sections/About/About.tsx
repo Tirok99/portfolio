@@ -1,4 +1,5 @@
 import { useI18n } from "../../i18n/i18n";
+import { useSiteContent } from "../../content/useSiteContent";
 import { Icon, type IconName } from "../../components/Icon/Icon";
 import { Reveal } from "../../components/Reveal/Reveal";
 import "./About.css";
@@ -12,7 +13,9 @@ interface Stat {
 const STAT_ICONS: IconName[] = ["calendar", "folder", "doc-search"];
 
 export function About() {
-  const { t, tx } = useI18n();
+  const { tx } = useI18n();
+  const { section } = useSiteContent();
+  const about = section("about");
   const stats = tx<Stat[]>("about.stats");
 
   return (
@@ -20,10 +23,10 @@ export function About() {
       <div className="about__container">
         <div className="about__inner">
           <Reveal className="about__intro" variant="left">
-            <span className="eyebrow">{t("about.eyebrow")}</span>
-            <h2 className="h2 about__title">{t("about.title")}</h2>
+            <span className="eyebrow">{about.eyebrow}</span>
+            <h2 className="h2 about__title">{about.title}</h2>
             <span className="about__dash" aria-hidden="true" />
-            <p className="about__description">{t("about.description")}</p>
+            <p className="about__description">{about.body}</p>
           </Reveal>
 
           <ul className="about__stats">

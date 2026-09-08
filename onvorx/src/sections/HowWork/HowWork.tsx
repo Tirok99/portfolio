@@ -1,4 +1,5 @@
 import { useI18n } from "../../i18n/i18n";
+import { useSiteContent } from "../../content/useSiteContent";
 import { Icon, type IconName } from "../../components/Icon/Icon";
 import { Reveal } from "../../components/Reveal/Reveal";
 import "./HowWork.css";
@@ -13,7 +14,9 @@ interface Step {
 const STEP_ICONS: IconName[] = ["doc-search", "checklist", "code-window", "headset"];
 
 export function HowWork() {
-  const { t, tx } = useI18n();
+  const { tx } = useI18n();
+  const { section } = useSiteContent();
+  const howWork = section("howWork");
   const steps = tx<Step[]>("howWork.steps");
 
   return (
@@ -21,9 +24,9 @@ export function HowWork() {
       <div className="how-work__container">
         <div className="how-work__inner">
           <Reveal className="how-work__header" variant="up">
-            <span className="eyebrow">{t("howWork.eyebrow")}</span>
-            <h2 className="h2 how-work__title">{t("howWork.title")}</h2>
-            <p className="how-work__description">{t("howWork.description")}</p>
+            <span className="eyebrow">{howWork.eyebrow}</span>
+            <h2 className="h2 how-work__title">{howWork.title}</h2>
+            <p className="how-work__description">{howWork.body}</p>
           </Reveal>
 
           <ol className="how-work__steps">

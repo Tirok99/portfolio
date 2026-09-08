@@ -168,3 +168,17 @@
     height: clamp(170px, 44vw, 220px);
   }
 }
+
+.projects__media-empty {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(0, 0, 0, 0.04),
+    rgba(0, 0, 0, 0.04) 10px,
+    rgba(0, 0, 0, 0.07) 10px,
+    rgba(0, 0, 0, 0.07) 20px
+  );
+  border-radius: 12px;
+}

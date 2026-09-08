@@ -1,10 +1,15 @@
-import { useI18n } from "../../i18n/i18n";
+import { useLocation } from "react-router-dom";
+import { useSiteContent } from "../../content/useSiteContent";
+import { useEstimateForm } from "../../components/EstimateForm/useEstimateForm";
 import { Icon } from "../../components/Icon/Icon";
 import { Reveal } from "../../components/Reveal/Reveal";
 import "./Cta.css";
 
 export function Cta() {
-  const { t } = useI18n();
+  const { section } = useSiteContent();
+  const cta = section("cta");
+  const { open } = useEstimateForm();
+  const { pathname } = useLocation();
 
   return (
     <section className="section cta" data-theme="dark" id="contact">
@@ -29,14 +34,18 @@ export function Cta() {
           </div>
 
           <div className="cta__content">
-            <span className="eyebrow">{t("cta.eyebrow")}</span>
-            <h2 className="h2 cta__title">{t("cta.title")}</h2>
+            <span className="eyebrow">{cta.eyebrow}</span>
+            <h2 className="h2 cta__title">{cta.title}</h2>
             <span className="cta__dash" aria-hidden="true" />
-            <p className="cta__description">{t("cta.description")}</p>
-            <a href="#" className="btn cta__button">
-              {t("cta.button")}
+            <p className="cta__description">{cta.body}</p>
+            <button
+              type="button"
+              className="btn cta__button"
+              onClick={() => open(pathname)}
+            >
+              {cta.ctaLabel}
               <Icon name="arrow-right" size={16} className="btn__arrow" />
-            </a>
+            </button>
           </div>
         </Reveal>
       </div>
