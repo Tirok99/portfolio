@@ -91,4 +91,27 @@ describe('EstimateForm', () => {
     await user.keyboard('{Escape}')
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
+
+  it('returns focus to the trigger after closing via Escape', async () => {
+    const user = userEvent.setup()
+    setup()
+    const trigger = screen.getByText('open form')
+    await user.click(trigger)
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(document.activeElement).toBe(trigger)
+  })
+
+  it('associates a validation error with its input via aria-describedby', async () => {
+    const user = userEvent.setup()
+    setup()
+    await user.click(screen.getByText('open form'))
+    await user.click(screen.getByRole('button', { name: /send request/i }))
+    const nameInput = screen.getByLabelText(/name/i)
+    const describedBy = nameInput.getAttribute('aria-describedby')
+    expect(describedBy).toBeTruthy()
+    const errorEl = document.getElementById(describedBy!)
+    expect(errorEl).toBeInTheDocument()
+    expect(errorEl).toHaveTextContent(/required/i)
+  })
 })

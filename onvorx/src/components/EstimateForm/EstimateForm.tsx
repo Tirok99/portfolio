@@ -23,6 +23,7 @@ export function EstimateForm() {
 
   const baseId = useId()
   const dialogRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<Element | null>(null)
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [company, setCompany] = useState('')
@@ -48,6 +49,9 @@ export function EstimateForm() {
 
   useEffect(() => {
     if (!isOpen) return
+    // remember the element that had focus when we opened, so we can restore
+    // it on any close path (Esc, scrim, ×, auto-close after success)
+    triggerRef.current = document.activeElement
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') close()
     }
@@ -57,6 +61,9 @@ export function EstimateForm() {
     return () => {
       document.removeEventListener('keydown', onKey)
       document.body.classList.remove('no-scroll')
+      const trigger = triggerRef.current
+      triggerRef.current = null
+      if (trigger instanceof HTMLElement) trigger.focus()
     }
   }, [isOpen, close])
 
@@ -137,9 +144,17 @@ export function EstimateForm() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 aria-invalid={Boolean(errors.name)}
+                aria-describedby={
+                  errors.name ? `${baseId}-name-error` : undefined
+                }
               />
               {errors.name && (
-                <span className="estimate-form__error">{errors.name}</span>
+                <span
+                  id={`${baseId}-name-error`}
+                  className="estimate-form__error"
+                >
+                  {errors.name}
+                </span>
               )}
             </label>
 
@@ -151,9 +166,17 @@ export function EstimateForm() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 aria-invalid={Boolean(errors.email)}
+                aria-describedby={
+                  errors.email ? `${baseId}-email-error` : undefined
+                }
               />
               {errors.email && (
-                <span className="estimate-form__error">{errors.email}</span>
+                <span
+                  id={`${baseId}-email-error`}
+                  className="estimate-form__error"
+                >
+                  {errors.email}
+                </span>
               )}
             </label>
 
@@ -206,9 +229,17 @@ export function EstimateForm() {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 aria-invalid={Boolean(errors.message)}
+                aria-describedby={
+                  errors.message ? `${baseId}-message-error` : undefined
+                }
               />
               {errors.message && (
-                <span className="estimate-form__error">{errors.message}</span>
+                <span
+                  id={`${baseId}-message-error`}
+                  className="estimate-form__error"
+                >
+                  {errors.message}
+                </span>
               )}
             </label>
 
