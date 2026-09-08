@@ -14,6 +14,7 @@
     "content:pull": "node scripts/build-content.mjs",
     "content:restore": "node scripts/restore-content.mjs",
     "lint": "oxlint",
+    "typecheck:api": "tsc -p tsconfig.api.json",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest"
@@ -31,6 +32,7 @@
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
+    "@vercel/node": "^5.10.2",
     "@vitejs/plugin-react": "^6.1.0",
     "jsdom": "^25.0.1",
     "oxlint": "^1.79.0",
