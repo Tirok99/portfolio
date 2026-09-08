@@ -14,7 +14,13 @@ export function RequireAuth({ children }: { children: ReactNode }) {
     )
   }
   if (status === 'anon') {
-    return <Navigate to="/admin/login" replace state={{ from: location.pathname }} />
+    return (
+      <Navigate
+        to="/admin/login"
+        replace
+        state={{ from: location.pathname + location.search + location.hash }}
+      />
+    )
   }
   return <>{children}</>
 }

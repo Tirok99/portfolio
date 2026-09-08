@@ -32,11 +32,21 @@ describe('LoginPage', () => {
 
   it('shows an error on failed login and does not navigate', async () => {
     const user = userEvent.setup()
-    const login = vi.fn(async () => ({ ok: false }))
+    const login = vi.fn(async () => ({ ok: false, reason: 'bad_password' }))
     setup(login)
     await user.type(screen.getByLabelText(/password/i), 'wrong')
     await user.click(screen.getByRole('button', { name: /sign in/i }))
     expect(await screen.findByText(/incorrect password/i)).toBeInTheDocument()
+    expect(screen.queryByText('dashboard')).not.toBeInTheDocument()
+  })
+
+  it('shows a configuration message when the server is not configured', async () => {
+    const user = userEvent.setup()
+    const login = vi.fn(async () => ({ ok: false, reason: 'not_configured' }))
+    setup(login)
+    await user.type(screen.getByLabelText(/password/i), 'whatever')
+    await user.click(screen.getByRole('button', { name: /sign in/i }))
+    expect(await screen.findByText(/isn't configured on the server yet/i)).toBeInTheDocument()
     expect(screen.queryByText('dashboard')).not.toBeInTheDocument()
   })
 

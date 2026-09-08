@@ -10,9 +10,13 @@ import {
 
 type Status = 'checking' | 'authed' | 'anon'
 
+export type LoginResult =
+  | { ok: true }
+  | { ok: false; reason: 'bad_password' | 'not_configured' | 'error' }
+
 interface AuthValue {
   status: Status
-  login: (password: string) => Promise<{ ok: boolean }>
+  login: (password: string) => Promise<LoginResult>
   logout: () => Promise<void>
   recheck: () => Promise<void>
 }
@@ -44,18 +48,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void recheck()
   }, [recheck])
 
-  const login = useCallback(async (password: string) => {
-    const res = await fetch('/api/admin/login', {
-      method: 'POST',
-      credentials: 'same-origin',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ password }),
-    })
+  const login = useCallback(async (password: string): Promise<LoginResult> => {
+    let res: Response
+    try {
+      res = await fetch('/api/admin/login', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ password }),
+      })
+    } catch {
+      return { ok: false, reason: 'error' }
+    }
     if (res.status === 200 && (await readAuthenticated(res))) {
       setStatus('authed')
       return { ok: true }
     }
-    return { ok: false }
+    if (res.status === 401) return { ok: false, reason: 'bad_password' }
+    if (res.status === 500) return { ok: false, reason: 'not_configured' }
+    return { ok: false, reason: 'error' }
   }, [])
 
   const logout = useCallback(async () => {

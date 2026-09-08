@@ -1,13 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor, act } from '@testing-library/react'
 import { AuthProvider, useAuth } from './useAuth'
+import { useState } from 'react'
 
 function Probe() {
   const { status, login, logout } = useAuth()
+  const [result, setResult] = useState('')
   return (
     <div>
       <span data-testid="status">{status}</span>
-      <button onClick={() => login('pw')}>login</button>
+      <span data-testid="result">{result}</span>
+      <button onClick={async () => setResult(JSON.stringify(await login('pw')))}>login</button>
       <button onClick={() => logout()}>logout</button>
     </div>
   )
@@ -48,7 +51,7 @@ describe('useAuth', () => {
     await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('authed'))
   })
 
-  it('login failure (401) keeps status anon', async () => {
+  it('login failure (401) keeps status anon and reports reason bad_password', async () => {
     const fetchMock = vi.fn(async (url: string) =>
       url.endsWith('/session')
         ? new Response(JSON.stringify({ authenticated: false }), { status: 200 })
@@ -61,5 +64,26 @@ describe('useAuth', () => {
       screen.getByText('login').click()
     })
     expect(screen.getByTestId('status')).toHaveTextContent('anon')
+    await waitFor(() =>
+      expect(screen.getByTestId('result')).toHaveTextContent('{"ok":false,"reason":"bad_password"}'),
+    )
+  })
+
+  it('login against an unconfigured server (500) reports reason not_configured', async () => {
+    const fetchMock = vi.fn(async (url: string) =>
+      url.endsWith('/session')
+        ? new Response(JSON.stringify({ authenticated: false }), { status: 200 })
+        : new Response(JSON.stringify({ error: 'auth_not_configured' }), { status: 500 }),
+    )
+    vi.stubGlobal('fetch', fetchMock)
+    wrap()
+    await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('anon'))
+    await act(async () => {
+      screen.getByText('login').click()
+    })
+    expect(screen.getByTestId('status')).toHaveTextContent('anon')
+    await waitFor(() =>
+      expect(screen.getByTestId('result')).toHaveTextContent('{"ok":false,"reason":"not_configured"}'),
+    )
   })
 })

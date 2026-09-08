@@ -9,6 +9,7 @@ export function LoginPage() {
   const { status, login } = useAuth()
   const location = useLocation()
   const from = (location.state as FromState | null)?.from ?? '/admin'
+  const target = from.startsWith('/admin') ? from : '/admin'
   const fieldId = useId()
   const errId = `${fieldId}-err`
 
@@ -17,7 +18,7 @@ export function LoginPage() {
   const [busy, setBusy] = useState(false)
   const [done, setDone] = useState(false)
 
-  if (status === 'authed' || done) return <Navigate to={from} replace />
+  if (status === 'authed' || done) return <Navigate to={target} replace />
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
@@ -25,10 +26,17 @@ export function LoginPage() {
     setBusy(true)
     setError('')
     try {
-      const { ok } = await login(password)
+      const result = await login(password)
       setBusy(false)
-      if (ok) setDone(true)
-      else setError('Incorrect password. Try again.')
+      if (result.ok) {
+        setDone(true)
+      } else if (result.reason === 'not_configured') {
+        setError("Admin sign-in isn't configured on the server yet.")
+      } else if (result.reason === 'error') {
+        setError("Couldn't reach the server. Try again.")
+      } else {
+        setError('Incorrect password. Try again.')
+      }
     } catch {
       setBusy(false)
       setError("Couldn't reach the server. Try again.")
