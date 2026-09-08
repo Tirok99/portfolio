@@ -48,6 +48,14 @@ rebuild that bakes the content into the static output. Setup: `docs/CMS-SETUP.md
 Without `SUPABASE_URL` / `SUPABASE_ANON_KEY` the site builds from the committed
 base content in `src/i18n/*.json`.
 
+## Admin panel (in progress)
+
+An owner-facing panel at `/admin` (built in phases — see
+`docs/superpowers/specs/2026-09-08-admin-panel-design.md`). Phase 1 introduces a
+shared content store (`src/content/`) that backs the site's managed content
+(section texts, project & service cards, per-page SEO) plus a public
+"Request an Estimate" form. Data currently persists to `localStorage` only.
+
 ## Deployment
 
 Vercel (framework preset **Vite**). `vercel.json` adds the SPA rewrite so deep
