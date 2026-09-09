@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-var createClient: ReturnType<typeof vi.fn>
-vi.mock('@supabase/supabase-js', () => {
-  createClient = vi.fn(() => ({ mock: true }))
-  return { createClient }
-})
+const { createClient } = vi.hoisted(() => ({
+  createClient: vi.fn(() => ({ mock: true })),
+}))
+
+vi.mock('@supabase/supabase-js', () => ({ createClient }))
 
 import { getSupabaseAdmin } from './supabaseAdmin'
 

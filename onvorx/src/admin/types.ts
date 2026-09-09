@@ -3,7 +3,7 @@ export type L = Record<Locale, string>
 
 export interface ImageRef {
   kind: 'asset' | 'upload'
-  /** asset path ('/assets/...') or a data: URL for uploads */
+  /** asset path ('/assets/...') for kind 'asset', or a Supabase Storage public URL for kind 'upload' */
   src: string
   fileName?: string
 }

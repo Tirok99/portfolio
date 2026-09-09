@@ -1,7 +1,45 @@
 -- ============================================================================
 --  ONVORX — content schema (Supabase). Run in SQL Editor, then run seed.sql.
 --  Translatable fields are jsonb: {"en": "...", "uk": "..."}.
+--
+--  ⚠  THIS FILE IS FOR A FRESH SUPABASE PROJECT.
+--     Every table is created with `create table if not exists`, so if a LEGACY
+--     ONVORX CMS schema is still present — old `public.projects` / `public.services`
+--     keyed by `slug` with `title_en` / `title_uk` columns, plus a
+--     `public.site_content` singleton — the creates silently no-op and RLS,
+--     triggers and seed.sql then attach to the wrong shape. Drop the old CMS
+--     schema first, e.g.:
+--         drop table if exists public.site_content, public.projects,
+--             public.services, public.seo_pages, public.site_sections cascade;
 -- ============================================================================
+
+-- ---- 0. preflight: refuse to run on top of the legacy CMS schema ----------
+drop table if exists public.site_content cascade;
+
+do $$
+begin
+  if exists (
+    select 1 from information_schema.tables
+    where table_schema = 'public' and table_name = 'projects'
+  ) and not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'projects' and column_name = 'list'
+  ) then
+    raise exception
+      'Legacy ONVORX CMS schema detected: public.projects exists without a "list" column. Drop the old CMS schema first (see the header comment at the top of schema.sql), then re-run this file.';
+  end if;
+
+  if exists (
+    select 1 from information_schema.tables
+    where table_schema = 'public' and table_name = 'services'
+  ) and not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'services' and column_name = 'list'
+  ) then
+    raise exception
+      'Legacy ONVORX CMS schema detected: public.services exists without a "list" column. Drop the old CMS schema first (see the header comment at the top of schema.sql), then re-run this file.';
+  end if;
+end $$;
 
 -- ---- 1. section texts ------------------------------------------------------
 create table if not exists public.site_sections (
@@ -16,7 +54,8 @@ create table if not exists public.site_sections (
 
 -- ---- 2. per-page SEO -----------------------------------------------------
 create table if not exists public.seo_pages (
-  page_key    text primary key,
+  page_key    text primary key
+              check (page_key in ('home','services','projects','about','web-development','support','business-analysis','google-ads')),
   path        text not null,
   title       jsonb not null default '{"en":"","uk":""}',
   description jsonb not null default '{"en":"","uk":""}',
@@ -73,7 +112,9 @@ create table if not exists public.estimate_requests (
 );
 
 -- ---- 6. keep updated_at fresh -------------------------------------
-create or replace function public.touch_updated_at() returns trigger as $$
+create or replace function public.touch_updated_at() returns trigger
+  set search_path = ''
+as $$
 begin new.updated_at = now(); return new; end;
 $$ language plpgsql;
 

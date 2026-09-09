@@ -7,7 +7,10 @@ Supabase anon key (RLS: public read on content tables only).
 
 - Schema: `supabase/schema.sql` — run once in the Supabase SQL Editor.
 - Seed: `supabase/seed.sql` — generated from `src/content/defaults/*` by
-  `npm run seed:gen`; run once after the schema.
+  `npm run seed:gen`; run **once**, right after the schema, on a freshly
+  provisioned project. ⚠ It is **destructive**: it `TRUNCATE`s the content
+  tables and reloads the bundled defaults, so re-running it after content has
+  been edited in `/admin` erases every edit.
 - Images: Supabase Storage bucket `public-media` (`projects/`, `services/`).
 - Env vars: see `.env.example`.
 

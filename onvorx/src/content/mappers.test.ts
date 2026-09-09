@@ -10,7 +10,10 @@ const rows: DbContentRows = {
     { key: 'hero', eyebrow: L('E'), title: L('T'), body: L('B'), cta_label: L('Go') },
     { key: 'about', eyebrow: L('AE'), title: L('AT'), body: L('AB'), cta_label: null },
   ],
-  seo: [{ page_key: 'home', path: '/', title: L('HT'), description: L('HD') }],
+  seo: [
+    { page_key: 'home', path: '/', title: L('HT'), description: L('HD') },
+    { page_key: 'services', path: '', title: L('ST'), description: L('SD') },
+  ],
   projects: [
     { list: 'home', id: 'p2', sort: 1, published: true, title: L('P2'), tags: ['x'],
       description: L('d2'), image_url: 'https://cdn/x.webp', image_path: 'projects/x.webp', image_alt: L('a2') },
@@ -38,6 +41,24 @@ describe('rowsToSiteContent', () => {
   it('maps seo entries with path from defaults', () => {
     const c = rowsToSiteContent(rows)
     expect(c.seo[0]).toMatchObject({ pageKey: 'home', path: '/', title: L('HT') })
+  })
+
+  it('falls back to the default path when the seo row path is empty', () => {
+    const c = rowsToSiteContent(rows)
+    const services = c.seo.find((s) => s.pageKey === 'services')!
+    expect(services.path).toBe('/services')
+  })
+
+  it('maps image_alt → imageAlt on project cards', () => {
+    const c = rowsToSiteContent(rows)
+    const p2 = c.projectsHome.find((p) => p.id === 'p2')!
+    expect(p2.imageAlt).toEqual(L('a2'))
+  })
+
+  it('does not mutate the input rows', () => {
+    const clone = structuredClone(rows)
+    rowsToSiteContent(rows)
+    expect(rows).toEqual(clone)
   })
 
   it('splits project cards by list and sorts by sort → order', () => {
