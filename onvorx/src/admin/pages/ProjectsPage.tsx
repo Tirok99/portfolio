@@ -68,16 +68,20 @@ export function ProjectsPage() {
 
   const save = () => {
     if (!selected || !draft) return
+    const normalizedTags = draft.tags
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean)
     actions.updateCard(list, selected.id, {
       title: draft.title,
-      tags: draft.tags
-        .split(',')
-        .map((t) => t.trim())
-        .filter(Boolean),
+      tags: normalizedTags,
       description: draft.description,
       imageAlt: draft.imageAlt,
       published: draft.published,
     })
+    // Re-seed the draft with the canonical tag string so a non-canonical input
+    // (`"a,b"`, trailing comma, double space) does not leave `dirty` stuck true.
+    setDraft((d) => d && { ...d, tags: normalizedTags.join(', ') })
     toast('Saved')
   }
 

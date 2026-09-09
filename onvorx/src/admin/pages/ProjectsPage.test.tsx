@@ -64,6 +64,20 @@ describe('ProjectsPage', () => {
     expect(screen.getByText('Relax Ahill v2')).toBeInTheDocument()
   })
 
+  it('clears the SaveBar after a successful save (not stuck dirty)', async () => {
+    const user = userEvent.setup()
+    wrap()
+    await user.click(screen.getByText('Relax Ahill'))
+    // non-canonical tag input: no space after the comma
+    const tags = screen.getByLabelText('Tags')
+    await user.clear(tags)
+    await user.type(tags, 'Alpha,Beta')
+    await user.click(screen.getByRole('button', { name: /^save$/i }))
+    expect(screen.getByText('All changes saved')).toBeInTheDocument()
+    expect(screen.queryByText(/unsaved changes/i)).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^save$/i })).toBeDisabled()
+  })
+
   it('deletes a card after confirmation', async () => {
     const user = userEvent.setup()
     wrap()

@@ -68,9 +68,13 @@ export function ServicesPage() {
     actions.updateCard(list, selected.id, {
       title: draft.title,
       text: draft.text,
-      featured: isHome ? draft.featured : false,
       published: draft.published,
+      ...(isHome ? { featured: draft.featured } : {}),
     })
+    // Re-seed the local draft from what was just written, in canonical form, so
+    // `dirty` reads false immediately (the hidden Featured field on the page tab
+    // is not part of the patch, so mirror the stored value).
+    setDraft((d) => d && { ...d, featured: isHome ? d.featured : selected.featured })
     toast('Saved')
   }
 
