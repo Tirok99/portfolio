@@ -23,8 +23,12 @@ export function SettingsPage() {
       danger: true,
     })
     if (!ok) return
-    actions.resetAll()
-    toast('Content reset to defaults')
+    try {
+      await actions.resetAll()
+      toast('Content reset to defaults')
+    } catch {
+      toast('Reset failed', 'error')
+    }
   }, [confirm, actions, toast])
 
   const onLogout = useCallback(async () => {

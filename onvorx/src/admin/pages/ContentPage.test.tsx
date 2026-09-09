@@ -3,8 +3,9 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { I18nProvider } from '../../i18n/i18n'
 import { SiteContentProvider, useSiteContentRaw } from '../../content/SiteContentProvider'
-import { ToastProvider } from '../components/Toast'
+import { ToastProvider, ToastRegion } from '../components/Toast'
 import { ContentPage } from './ContentPage'
+import { adminApi } from '../../admin/api'
 
 vi.mock('../../admin/api', () => ({
   adminApi: {
@@ -33,6 +34,7 @@ const wrap = () =>
         <ToastProvider>
           <ContentPage />
           <StoreProbe />
+          <ToastRegion />
         </ToastProvider>
       </SiteContentProvider>
     </I18nProvider>,
@@ -69,5 +71,17 @@ describe('ContentPage', () => {
     const saveButtons = screen.getAllByRole('button', { name: /^save$/i })
     await user.click(saveButtons[0])
     expect(screen.getByTestId('hero-title-en')).toHaveTextContent('Brand new hero title')
+    expect(await screen.findByText(/^saved$/i)).toBeInTheDocument()
+  })
+
+  it('shows a "Save failed" toast when the api rejects', async () => {
+    vi.mocked(adminApi.saveSection).mockRejectedValueOnce(new Error('x'))
+    const user = userEvent.setup()
+    wrap()
+    const heroTitle = screen.getAllByLabelText('Title')[0]
+    await user.clear(heroTitle)
+    await user.type(heroTitle, 'Will not stick')
+    await user.click(screen.getAllByRole('button', { name: /^save$/i })[0])
+    expect(await screen.findByText(/save failed/i)).toBeInTheDocument()
   })
 })
