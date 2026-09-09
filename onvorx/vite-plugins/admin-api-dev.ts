@@ -5,6 +5,7 @@ import type { AuthEnv, HandlerResult, SupabaseAdminEnv } from '../api/_lib/types
 import { handleLogin, handleLogout, handleSession } from '../api/_lib/handlers'
 import { handleEstimate } from '../api/_lib/estimateHandler'
 import { handleAdminContent } from '../api/_lib/adminContentHandler'
+import { handleAdminCards } from '../api/_lib/adminCardsHandler'
 
 /**
  * Pure route dispatcher. Returns `null` for any URL that is not one of the
@@ -41,6 +42,18 @@ export async function dispatchApi(
         { method: input.method, cookieHeader: input.cookieHeader, body: input.jsonBody ?? {} },
         env,
       )
+    case '/api/admin/cards': {
+      const params = new URLSearchParams(input.url.split('?')[1] ?? '')
+      return handleAdminCards(
+        {
+          method: input.method,
+          cookieHeader: input.cookieHeader,
+          query: { type: params.get('type') ?? undefined },
+          body: input.jsonBody ?? {},
+        },
+        env,
+      )
+    }
     default:
       return null
   }

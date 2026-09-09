@@ -77,4 +77,32 @@ describe('dispatchApi', () => {
     )
     expect(r?.status).toBe(400)
   })
+
+  it('routes POST /api/admin/cards through handleAdminCards (401 without a cookie)', async () => {
+    const r = await dispatchApi(
+      {
+        url: '/api/admin/cards?type=project',
+        method: 'POST',
+        jsonBody: { list: 'home', card: { id: 'p1', title: { en: 'x', uk: 'x' } } },
+        secure: false,
+      },
+      { ...ENV, SUPABASE_URL: 'u', SUPABASE_SERVICE_ROLE_KEY: 'k' },
+    )
+    expect(r?.status).toBe(401)
+  })
+
+  it('POST /api/admin/cards with a valid cookie dispatches past auth (create body has no id → 400)', async () => {
+    const tok = signToken(ENV.ADMIN_SESSION_SECRET)
+    const r = await dispatchApi(
+      {
+        url: '/api/admin/cards?type=project',
+        method: 'POST',
+        cookieHeader: `${SESSION_COOKIE}=${tok}`,
+        jsonBody: { list: 'home', card: { title: { en: 'x', uk: 'x' } } },
+        secure: false,
+      },
+      { ...ENV, SUPABASE_URL: 'u', SUPABASE_SERVICE_ROLE_KEY: 'k' },
+    )
+    expect(r?.status).toBe(400)
+  })
 })
