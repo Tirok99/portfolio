@@ -177,6 +177,7 @@
 .admin-stat { padding: 0.85rem; border: 1px solid var(--border, #e8e8ec); border-radius: var(--radius-sm, 8px); background: var(--surface, #fff); }
 .admin-stat__n { font-size: 1.4rem; font-weight: 600; }
 .admin-stat__label { font-size: 0.78rem; color: var(--text-2, #5b5d66); }
+.admin-recent { list-style: none; padding: 0; margin: 0.5rem 0 0; display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.88rem; }
 
 .admin-empty { padding: 2rem; text-align: center; color: var(--text-2, #5b5d66); border: 1px dashed var(--border-strong, #dcdce2); border-radius: var(--radius-sm, 8px); }
 .admin-empty__title { font-weight: 600; margin: 0 0 0.35rem; }
