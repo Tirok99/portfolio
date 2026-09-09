@@ -23,6 +23,11 @@ npm run content:pull      # pull CMS content from Supabase into src/i18n/*.json
 npm run content:restore   # revert those files to the committed base
 ```
 
+A production install that omits devDependencies (`npm ci --omit=dev`) will fail
+the build: `tsc -b` typechecks `playwright.config.ts`, which needs
+`@playwright/test` present — use a full install. Vercel installs devDependencies
+by default, so real deploys are unaffected.
+
 ## Structure
 
 ```

@@ -19,10 +19,13 @@ test('owner edits a section title and it shows on the home page', async ({ page 
   await page.goto('/admin/content')
   await expect(page.getByRole('heading', { level: 1, name: 'Content' })).toBeVisible()
 
-  const firstTitle = page.getByRole('textbox', { name: 'Title' }).first()
-  await firstTitle.fill('E2E hero headline')
-  await page.getByRole('button', { name: 'Save' }).first().click()
-  await expect(page.getByText('All changes saved').first()).toBeVisible()
+  const heroFieldset = page.locator('fieldset').filter({ hasText: /^Hero/ })
+  await heroFieldset.getByRole('textbox', { name: 'Title' }).first().fill('E2E hero headline')
+  await heroFieldset.getByRole('button', { name: 'Save' }).click()
+  // Scope the wait to the Hero block — a page-wide "All changes saved" match
+  // would resolve instantly against an untouched sibling SaveBar.
+  await expect(heroFieldset.getByText('All changes saved')).toBeVisible()
+  await expect(heroFieldset.getByRole('button', { name: 'Save' })).toBeDisabled()
 
   await page.goto('/')
   await expect(page.getByRole('heading', { level: 1, name: 'E2E hero headline' })).toBeVisible()
