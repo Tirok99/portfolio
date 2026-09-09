@@ -154,16 +154,10 @@ export function ProjectsPage() {
           label="Image"
           folder="projects"
           value={selected.image}
-          onChange={(ref) => {
-            void actions
-              .setCardImage(list, selected.id, ref)
-              .catch(() => toast('Save failed', 'error'))
-          }}
-          onClear={() => {
-            void actions
-              .setCardImage(list, selected.id, { kind: 'asset', src: '' })
-              .catch(() => toast('Save failed', 'error'))
-          }}
+          onChange={(ref) => actions.setCardImage(list, selected.id, ref)}
+          onClear={() =>
+            actions.setCardImage(list, selected.id, { kind: 'asset', src: '' })
+          }
         />
         <LocalizedField
           label="Image alt text"

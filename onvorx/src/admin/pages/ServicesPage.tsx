@@ -126,16 +126,10 @@ export function ServicesPage() {
           label="Icon"
           folder="services"
           value={selected.icon}
-          onChange={(ref) => {
-            void actions
-              .setCardImage(list, selected.id, ref)
-              .catch(() => toast('Save failed', 'error'))
-          }}
-          onClear={() => {
-            void actions
-              .setCardImage(list, selected.id, { kind: 'asset', src: '' })
-              .catch(() => toast('Save failed', 'error'))
-          }}
+          onChange={(ref) => actions.setCardImage(list, selected.id, ref)}
+          onClear={() =>
+            actions.setCardImage(list, selected.id, { kind: 'asset', src: '' })
+          }
         />
         <LocalizedField
           label="Title"

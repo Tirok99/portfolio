@@ -1676,7 +1676,7 @@ git commit -m "feat(admin): optimistic async saves through /api/admin/* + refetc
 | §8.2 optimistic reducer + endpoint call | Task 9 (`write` helper) |
 | §8.3 function: `requireSession` → validate → service-role write → return row | Tasks 2–5 |
 | §8.4 error → toast + refetch to revert | Task 9 (`write` re-throws; pages `.catch(toast)`) + Task 8 (`useRequests`) |
-| §8.5 images: client downscale → upload endpoint → Storage → URL+path on the row; delete old on replace/clear | Tasks 5, 10; delete-on-card-delete in Task 3 |
+| §8.5 images: client downscale → upload endpoint → Storage → URL+path on the row; delete old on replace/clear | Tasks 5, 10; delete-on-card-delete in Task 3 (replace-cleanup + confirmed-write ordering added in the final fix wave) |
 | §8.6 reorder = batch `sort` update | Task 3 `reorder` + Task 9 `moveCard` |
 | §8.7 delete card also deletes its Storage object | Task 3 `remove` |
 | §8.8 requests triage via `/api/admin/requests` | Tasks 4, 8 |

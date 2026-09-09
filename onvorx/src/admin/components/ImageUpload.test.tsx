@@ -77,8 +77,8 @@ describe('ImageUpload', () => {
 
   it('uploads the picked file and calls onChange with the returned url + path', async () => {
     const user = userEvent.setup()
-    const onChange = vi.fn()
-    render(<ImageUpload label="Image" folder="projects" value={EMPTY} onChange={onChange} onClear={vi.fn()} />)
+    const onChange = vi.fn().mockResolvedValue(undefined)
+    render(<ImageUpload label="Image" folder="projects" value={EMPTY} onChange={onChange} onClear={vi.fn().mockResolvedValue(undefined)} />)
     const png = new File([Uint8Array.from([137, 80, 78, 71])], 'x.png', { type: 'image/png' })
     await user.upload(screen.getByLabelText(/choose file/i), png)
     await waitFor(() => expect(onChange).toHaveBeenCalled())
@@ -88,45 +88,103 @@ describe('ImageUpload', () => {
       'x.png',
     )
     expect(onChange).toHaveBeenCalledWith({ kind: 'upload', src: 'U', path: 'P' })
+    // fresh value had no stored path → nothing to clean up
+    expect(adminApi.deleteImage).not.toHaveBeenCalled()
+  })
+
+  it('on replace: awaits onChange, then deletes the superseded object', async () => {
+    vi.mocked(adminApi.uploadImage).mockResolvedValueOnce({ url: 'U2', path: 'projects/new-x.png' })
+    const user = userEvent.setup()
+    const onChange = vi.fn().mockResolvedValue(undefined)
+    render(
+      <ImageUpload
+        label="Image"
+        folder="projects"
+        value={{ kind: 'upload', src: 'U', path: 'projects/old-x.png' }}
+        onChange={onChange}
+        onClear={vi.fn().mockResolvedValue(undefined)}
+      />,
+    )
+    const png = new File([Uint8Array.from([137, 80, 78, 71])], 'x.png', { type: 'image/png' })
+    await user.upload(screen.getByLabelText(/choose file/i), png)
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith({ kind: 'upload', src: 'U2', path: 'projects/new-x.png' }))
+    await waitFor(() => expect(adminApi.deleteImage).toHaveBeenCalledWith('projects/old-x.png'))
   })
 
   it('shows the error slot and does not call onChange when the upload fails', async () => {
     vi.mocked(adminApi.uploadImage).mockRejectedValueOnce(new Error('boom'))
     const user = userEvent.setup()
-    const onChange = vi.fn()
-    render(<ImageUpload label="Image" folder="services" value={EMPTY} onChange={onChange} onClear={vi.fn()} />)
+    const onChange = vi.fn().mockResolvedValue(undefined)
+    render(<ImageUpload label="Image" folder="services" value={EMPTY} onChange={onChange} onClear={vi.fn().mockResolvedValue(undefined)} />)
     const png = new File([Uint8Array.from([137, 80, 78, 71])], 'x.png', { type: 'image/png' })
     await user.upload(screen.getByLabelText(/choose file/i), png)
     expect(await screen.findByText(/upload failed/i)).toBeInTheDocument()
     expect(onChange).not.toHaveBeenCalled()
   })
 
-  it('on Remove with a stored path: calls onClear and deletes the old object', async () => {
+  it('when the row write (onChange) rejects: shows the error and keeps the old object', async () => {
+    vi.mocked(adminApi.uploadImage).mockResolvedValueOnce({ url: 'U2', path: 'projects/new-x.png' })
     const user = userEvent.setup()
-    const onClear = vi.fn()
+    const onChange = vi.fn().mockRejectedValue(new Error('save boom'))
+    render(
+      <ImageUpload
+        label="Image"
+        folder="projects"
+        value={{ kind: 'upload', src: 'U', path: 'projects/old-x.png' }}
+        onChange={onChange}
+        onClear={vi.fn().mockResolvedValue(undefined)}
+      />,
+    )
+    const png = new File([Uint8Array.from([137, 80, 78, 71])], 'x.png', { type: 'image/png' })
+    await user.upload(screen.getByLabelText(/choose file/i), png)
+    expect(await screen.findByText(/could not save the image/i)).toBeInTheDocument()
+    // the row write didn't take → the old object must NOT be deleted
+    expect(adminApi.deleteImage).not.toHaveBeenCalledWith('projects/old-x.png')
+  })
+
+  it('on Remove with a stored path: awaits onClear, THEN deletes the old object', async () => {
+    const user = userEvent.setup()
+    const onClear = vi.fn().mockResolvedValue(undefined)
     render(
       <ImageUpload
         label="Image"
         folder="projects"
         value={{ kind: 'upload', src: 'U', path: 'P' }}
-        onChange={vi.fn()}
+        onChange={vi.fn().mockResolvedValue(undefined)}
         onClear={onClear}
       />,
     )
     await user.click(screen.getByRole('button', { name: /remove/i }))
-    expect(onClear).toHaveBeenCalled()
-    expect(adminApi.deleteImage).toHaveBeenCalledWith('P')
+    await waitFor(() => expect(onClear).toHaveBeenCalled())
+    await waitFor(() => expect(adminApi.deleteImage).toHaveBeenCalledWith('P'))
+  })
+
+  it('when onClear rejects: shows the error and does not delete the object', async () => {
+    const user = userEvent.setup()
+    const onClear = vi.fn().mockRejectedValue(new Error('clear boom'))
+    render(
+      <ImageUpload
+        label="Image"
+        folder="projects"
+        value={{ kind: 'upload', src: 'U', path: 'P' }}
+        onChange={vi.fn().mockResolvedValue(undefined)}
+        onClear={onClear}
+      />,
+    )
+    await user.click(screen.getByRole('button', { name: /remove/i }))
+    expect(await screen.findByText(/could not clear the image/i)).toBeInTheDocument()
+    expect(adminApi.deleteImage).not.toHaveBeenCalled()
   })
 
   it('on Remove without a stored path: calls onClear only', async () => {
     const user = userEvent.setup()
-    const onClear = vi.fn()
+    const onClear = vi.fn().mockResolvedValue(undefined)
     render(
       <ImageUpload
         label="Image"
         folder="projects"
         value={{ kind: 'asset', src: '/assets/x.png' }}
-        onChange={vi.fn()}
+        onChange={vi.fn().mockResolvedValue(undefined)}
         onClear={onClear}
       />,
     )

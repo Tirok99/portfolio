@@ -52,6 +52,23 @@ test('estimate form submits and shows the thank-you panel', async ({ page }) => 
   await page.route('**/api/estimate', (r) =>
     r.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' }),
   )
+  // Preview does not run the Vercel functions, so GET /api/admin/requests would
+  // 404. Serve one row so the inbox render is exercised end to end.
+  await page.route('**/api/admin/requests**', (r) =>
+    r.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        requests: [
+          {
+            id: 'req_e2e', createdAt: '2026-09-09T10:00:00.000Z', status: 'new',
+            name: 'E2E Tester', email: 'e2e@example.com', interestedIn: [],
+            message: 'Please quote a rebuild.', locale: 'en',
+          },
+        ],
+      }),
+    }),
+  )
   await page.goto('/')
   await page.getByRole('button', { name: /request an estimate/i }).first().click()
   await page.getByLabel('Name').fill('E2E Tester')
@@ -60,5 +77,8 @@ test('estimate form submits and shows the thank-you panel', async ({ page }) => 
   await page.getByRole('button', { name: /send request/i }).click()
   await expect(page.getByText(/thank you/i)).toBeVisible()
 
-  // Plan 3: the submitted request will be verifiable on /admin/requests once useRequests() + /api/admin/requests land.
+  // Plan 3: the submitted request is visible on the admin inbox (useRequests →
+  // GET /api/admin/requests, route-mocked above).
+  await page.goto('/admin/requests')
+  await expect(page.getByRole('button', { name: 'E2E Tester' })).toBeVisible()
 })

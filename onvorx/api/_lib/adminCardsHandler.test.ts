@@ -21,13 +21,17 @@ describe('handleAdminCards', () => {
   it('400 on a bad ?type', async () => {
     expect((await handleAdminCards({ method: 'POST', cookieHeader: cookie, query: { type: 'x' }, body: {} }, ENV, deps())).status).toBe(400)
   })
-  it('POST create → deps.create(type,list,row)', async () => {
+  it('POST create → deps.create(type,list,row) without a client sort', async () => {
     const d = deps()
     const body = { list: 'home', card: { id: 'proj_1', order: 2, published: false, title: { en: 'N', uk: 'N' } } }
     const r = await handleAdminCards({ method: 'POST', cookieHeader: cookie, query: q('project'), body }, ENV, d)
     expect(r.status).toBe(200)
     expect(d.create).toHaveBeenCalledWith('project', 'home',
-      expect.objectContaining({ list: 'home', id: 'proj_1', sort: 2, published: false, title: { en: 'N', uk: 'N' } }), ENV)
+      expect.objectContaining({ list: 'home', id: 'proj_1', published: false, title: { en: 'N', uk: 'N' } }), ENV)
+    // `sort` is server-derived (defaultDeps.create) — the handler must not
+    // forward the client-supplied index.
+    const row = d.create.mock.calls[0][2] as Record<string, unknown>
+    expect(row).not.toHaveProperty('sort')
   })
   it('PUT update → deps.update(type,list,id,row)', async () => {
     const d = deps()

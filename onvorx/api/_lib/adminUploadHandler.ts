@@ -76,15 +76,10 @@ export async function handleAdminUpload(
     const mime = m[1]
     const ext = MIME_EXT[mime]
     if (!ext) return bad()
-    let bytes: Buffer
-    try {
-      bytes = Buffer.from(m[2], 'base64')
-    } catch {
-      return bad()
-    }
+    const bytes = Buffer.from(m[2], 'base64')
     if (bytes.length === 0 || bytes.length > MAX_BYTES) return bad()
     const key = `${folder as string}/${slugify(fileName)}-${randomBytes(4).toString('hex')}.${ext}`
-    const { url, path: _path, error } = await deps.put(folder as string, key, bytes, mime, env)
+    const { url, error } = await deps.put(folder as string, key, bytes, mime, env)
     if (error) return { status: 500, body: { error: 'upload_failed' } }
     return { status: 200, body: { url, path: key } }
   }

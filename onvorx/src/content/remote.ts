@@ -19,8 +19,8 @@ export async function fetchRemoteContent(): Promise<SiteContent | null> {
     const [sections, seo, projects, services] = await Promise.all([
       client.from('site_sections').select('*'),
       client.from('seo_pages').select('*'),
-      client.from('projects').select('*'),
-      client.from('services').select('*'),
+      client.from('projects').select('*').order('sort', { ascending: true }),
+      client.from('services').select('*').order('sort', { ascending: true }),
     ])
     if (sections.error || seo.error || projects.error || services.error) return null
     // `site_sections` and `seo_pages` are fixed code-owned enum tables that must

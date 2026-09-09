@@ -22,11 +22,20 @@ const rowsByTable: Record<string, unknown[]> = {
   ],
 }
 
+// `select('*')` is awaited directly for the enum tables and chained with
+// `.order('sort', …)` for projects/services — so the fake must be both thenable
+// and carry an `.order` that resolves the same result.
+type Result = { data: unknown[] | null; error: { message: string } | null }
+const select = (result: Result) => () => ({
+  order: vi.fn().mockResolvedValue(result),
+  then: (resolve: (r: Result) => unknown) => Promise.resolve(result).then(resolve),
+})
+
 beforeEach(() => {
   clientOrNull = client
   from.mockReset()
   from.mockImplementation((table: string) => ({
-    select: vi.fn().mockResolvedValue({ data: rowsByTable[table] ?? [], error: null }),
+    select: vi.fn(select({ data: rowsByTable[table] ?? [], error: null })),
   }))
 })
 
@@ -49,20 +58,20 @@ describe('fetchRemoteContent', () => {
 
   it('returns null when a code-owned enum table reads empty', async () => {
     from.mockImplementation((table: string) => ({
-      select: vi.fn().mockResolvedValue(
+      select: vi.fn(select(
         table === 'site_sections'
           ? { data: [], error: null }
           : { data: rowsByTable[table] ?? [], error: null },
-      ),
+      )),
     }))
     expect(await fetchRemoteContent()).toBeNull()
   })
 
   it('returns null if any table query errors', async () => {
     from.mockImplementation((table: string) => ({
-      select: vi.fn().mockResolvedValue(
+      select: vi.fn(select(
         table === 'services' ? { data: null, error: { message: 'boom' } } : { data: [], error: null },
-      ),
+      )),
     }))
     expect(await fetchRemoteContent()).toBeNull()
   })

@@ -21,7 +21,16 @@ const defaultDeps: AdminCardsDeps = {
   create: async (type, list, row, env) => {
     const c = getSupabaseAdmin(env)
     if (!c) return { error: 'not_configured' }
-    const { error } = await c.from(table(type)).insert({ ...row, list })
+    // Derive `sort` from the server so concurrent creates can't collide on a
+    // client-supplied index (the handler strips any client `sort` from `row`).
+    const { data } = await c
+      .from(table(type))
+      .select('sort')
+      .eq('list', list)
+      .order('sort', { ascending: false })
+      .limit(1)
+    const nextSort = ((data?.[0]?.sort ?? -1) as number) + 1
+    const { error } = await c.from(table(type)).insert({ ...row, list, sort: nextSort })
     return { error: error ? error.message : null }
   },
   update: async (type, list, id, row, env) => {
@@ -80,7 +89,10 @@ export async function handleAdminCards(
   if (input.method === 'POST') {
     const card = (body.card ?? {}) as Record<string, unknown>
     if (typeof card.id !== 'string' || !card.id) return bad()
-    const row = { ...rowFor(type, card), id: card.id, list }
+    // `sort` is server-derived on create (see defaultDeps.create) — never trust
+    // the client-supplied index, so strip it from the mapped row here.
+    const { sort: _sort, ...mapped } = rowFor(type, card)
+    const row = { ...mapped, id: card.id, list }
     const { error } = await deps.create(type, list, row, env)
     return error ? fail() : ok()
   }
