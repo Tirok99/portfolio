@@ -1,0 +1,4 @@
+# Repo-root and CI files use LF. Sub-projects carry their own .gitattributes
+# (see onvorx/.gitattributes); Mikamed/ is left as-is.
+/.github/** text eol=lf
+/*.md       text eol=lf

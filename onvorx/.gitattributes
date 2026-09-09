@@ -1,0 +1,16 @@
+# Store all text with LF and do not convert on checkout. Stops the recurring
+# LF/CRLF churn on Windows (core.autocrlf) — most visibly src/i18n/*.json being
+# rewritten with LF by the prebuild content scripts.
+* text=auto eol=lf
+
+# Binary assets — never touch.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
