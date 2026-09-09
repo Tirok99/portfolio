@@ -144,9 +144,18 @@ export function RequestsPage() {
           </thead>
           <tbody>
             {rows.map((r) => (
-              <tr key={r.id} onClick={() => setOpenId(r.id)} aria-selected={r.id === openId}>
+              <tr key={r.id} className={r.id === openId ? 'is-selected' : undefined}>
                 <td>{fmtDate(r.createdAt)}</td>
-                <td>{r.name}</td>
+                <td>
+                  <button
+                    type="button"
+                    className="admin-rowbtn"
+                    aria-current={r.id === openId ? 'true' : undefined}
+                    onClick={() => setOpenId(r.id)}
+                  >
+                    {r.name}
+                  </button>
+                </td>
                 <td>{r.email}</td>
                 <td>{r.budget ?? '—'}</td>
                 <td><StatusBadge status={r.status} /></td>

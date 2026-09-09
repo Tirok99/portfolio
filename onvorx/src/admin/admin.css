@@ -158,8 +158,10 @@
 /* --- table (requests) --- */
 .admin-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
 .admin-table th, .admin-table td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border, #e8e8ec); }
-.admin-table tbody tr { cursor: pointer; }
 .admin-table tbody tr:hover { background: var(--surface-hover, #f0f0f3); }
+.admin-table tbody tr.is-selected { background: var(--surface-hover, #f0f0f3); }
+.admin-rowbtn { background: none; border: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; padding: 0; width: 100%; }
+.admin-rowbtn[aria-current="true"] { font-weight: 600; }
 .admin-badge { display: inline-block; padding: 0.1rem 0.5rem; border-radius: var(--radius-pill, 999px); font-size: 0.72rem; text-transform: capitalize; }
 .admin-badge--new { background: #e6f0ff; color: #1552b7; }
 .admin-badge--in_progress { background: #fff4e0; color: #a15c00; }

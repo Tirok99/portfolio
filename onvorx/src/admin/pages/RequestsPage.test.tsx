@@ -46,7 +46,7 @@ describe('RequestsPage', () => {
   it('opens a row, changes status, and it persists', async () => {
     const user = userEvent.setup()
     wrap()
-    await user.click(screen.getByText('Olena Kravets'))
+    await user.click(screen.getByRole('button', { name: /Olena Kravets/i }))
     const detail = screen.getByRole('region', { name: /request detail/i })
     await user.selectOptions(within(detail).getByLabelText(/status/i), 'done')
     expect(
@@ -54,11 +54,21 @@ describe('RequestsPage', () => {
     ).toBeGreaterThan(0)
   })
 
+  it('opens a row via the keyboard-focusable row button', async () => {
+    const user = userEvent.setup()
+    wrap()
+    screen.getByRole('button', { name: /Olena Kravets/i }).focus()
+    await user.keyboard('{Enter}')
+    expect(
+      screen.getByRole('region', { name: /request detail/i }),
+    ).toBeInTheDocument()
+  })
+
   it('deletes a request after confirmation', async () => {
     const user = userEvent.setup()
     wrap()
     const before = Number(screen.getByTestId('count').textContent)
-    await user.click(screen.getByText('Olena Kravets'))
+    await user.click(screen.getByRole('button', { name: /Olena Kravets/i }))
     const detail = screen.getByRole('region', { name: /request detail/i })
     await user.click(within(detail).getByRole('button', { name: /^delete$/i }))
     await user.click(
