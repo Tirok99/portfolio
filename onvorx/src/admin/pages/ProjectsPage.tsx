@@ -152,6 +152,7 @@ export function ProjectsPage() {
         />
         <ImageUpload
           label="Image"
+          folder="projects"
           value={selected.image}
           onChange={(ref) => {
             void actions

@@ -1,19 +1,23 @@
 import { useId, useState } from 'react'
 import type { ImageRef } from '../types'
 import { fileToImageRef } from '../lib/image'
+import { adminApi } from '../api'
 
 const MESSAGES: Record<string, string> = {
   'unsupported-type': "That file isn't an image. Choose a JPG, PNG, or WebP.",
   'too-large': 'That image is too large (max ~1.5 MB) — try a smaller one.',
+  'upload-failed': 'Upload failed — check your connection and try again.',
 }
 
 export function ImageUpload({
   label,
+  folder,
   value,
   onChange,
   onClear,
 }: {
   label: string
+  folder: 'projects' | 'services'
   value: ImageRef
   onChange: (ref: ImageRef) => void
   onClear: () => void
@@ -28,13 +32,25 @@ export function ImageUpload({
     setBusy(true)
     try {
       const ref = await fileToImageRef(file)
-      onChange(ref)
+      let uploaded: { url: string; path: string }
+      try {
+        uploaded = await adminApi.uploadImage(folder, ref.src, file.name)
+      } catch {
+        setError(MESSAGES['upload-failed'])
+        return
+      }
+      onChange({ kind: 'upload', src: uploaded.url, path: uploaded.path })
     } catch (e) {
       const key = e instanceof Error ? e.message : ''
       setError(MESSAGES[key] ?? 'Could not read that file.')
     } finally {
       setBusy(false)
     }
+  }
+
+  const handleClear = () => {
+    onClear()
+    if (value.path) void adminApi.deleteImage(value.path).catch(() => {})
   }
 
   return (
@@ -62,7 +78,7 @@ export function ImageUpload({
           <button
             type="button"
             className="admin-btn admin-btn--danger"
-            onClick={onClear}
+            onClick={handleClear}
           >
             Remove
           </button>

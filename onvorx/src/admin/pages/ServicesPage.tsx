@@ -124,6 +124,7 @@ export function ServicesPage() {
       <div>
         <ImageUpload
           label="Icon"
+          folder="services"
           value={selected.icon}
           onChange={(ref) => {
             void actions
