@@ -4,6 +4,7 @@ import { loadEnv } from 'vite'
 import type { AuthEnv, HandlerResult, SupabaseAdminEnv } from '../api/_lib/types'
 import { handleLogin, handleLogout, handleSession } from '../api/_lib/handlers'
 import { handleEstimate } from '../api/_lib/estimateHandler'
+import { handleAdminContent } from '../api/_lib/adminContentHandler'
 
 /**
  * Pure route dispatcher. Returns `null` for any URL that is not one of the
@@ -35,6 +36,11 @@ export async function dispatchApi(
       return handleLogout({ method: input.method, secure: input.secure })
     case '/api/estimate':
       return handleEstimate({ method: input.method, body: input.jsonBody ?? {} }, env)
+    case '/api/admin/content':
+      return handleAdminContent(
+        { method: input.method, cookieHeader: input.cookieHeader, body: input.jsonBody ?? {} },
+        env,
+      )
     default:
       return null
   }

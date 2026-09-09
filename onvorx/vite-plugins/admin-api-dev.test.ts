@@ -54,4 +54,12 @@ describe('dispatchApi', () => {
     )
     expect(r?.status).toBe(405)
   })
+
+  it('routes PUT /api/admin/content through handleAdminContent (401 without a cookie)', async () => {
+    const r = await dispatchApi(
+      { url: '/api/admin/content', method: 'PUT', jsonBody: { kind: 'section', key: 'hero', patch: {} }, secure: false },
+      { ...ENV, SUPABASE_URL: 'u', SUPABASE_SERVICE_ROLE_KEY: 'k' },
+    )
+    expect(r?.status).toBe(401)
+  })
 })
