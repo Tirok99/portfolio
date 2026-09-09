@@ -48,19 +48,21 @@ rebuild that bakes the content into the static output. Setup: `docs/CMS-SETUP.md
 Without `SUPABASE_URL` / `SUPABASE_ANON_KEY` the site builds from the committed
 base content in `src/i18n/*.json`.
 
-## Admin panel (in progress)
+## Admin panel
 
-An owner-facing panel at `/admin` (built in phases — see
-`docs/superpowers/specs/2026-09-08-admin-panel-design.md`). Phase 1 introduces a
-shared content store (`src/content/`) that backs the site's managed content
-(section texts, project & service cards, per-page SEO) plus a public
-"Request an Estimate" form. This store is separate from the Supabase CMS above —
-it is the Phase-1 prototype and persists to `localStorage` only; a real backend
-later replaces `src/content/persistence.ts` (see `src/content/README.md`).
+An owner-facing panel at `/admin`, gated by a single shared password
+(`ADMIN_PASSWORD`) — verified by a Vercel function with a signed session cookie;
+`npm run dev` serves the same `/api/admin/*` routes via a Vite plugin. See
+`src/admin/auth/README.md`.
 
-`/admin` is gated by a single shared password (`ADMIN_PASSWORD`), verified by a
-Vercel function with a signed session cookie; `npm run dev` serves the same
-`/api/admin/*` routes via a Vite plugin. See `src/admin/auth/README.md`.
+Once in, the panel edits the site's curated content: the six section header
+blocks (eyebrow / title / body), the Project and Service cards for both Home and
+their listing pages, and the per-page SEO title & meta description — and it reads
+the estimate requests submitted through the public form. Every screen writes
+through the shared content store (`src/content/`), which persists to
+`localStorage` only, so edits show on the public site immediately; a real backend
+later replaces `src/content/persistence.ts` (see `src/content/README.md`). Full
+tour: `src/admin/README.md`.
 
 ## Deployment
 
