@@ -78,6 +78,29 @@ describe('dispatchApi', () => {
     expect(r?.status).toBe(400)
   })
 
+  it('routes GET /api/admin/requests through handleAdminRequests (401 without a cookie)', async () => {
+    const r = await dispatchApi(
+      { url: '/api/admin/requests', method: 'GET', secure: false },
+      { ...ENV, SUPABASE_URL: 'u', SUPABASE_SERVICE_ROLE_KEY: 'k' },
+    )
+    expect(r?.status).toBe(401)
+  })
+
+  it('PATCH /api/admin/requests with a valid cookie dispatches past auth (bad status → 400)', async () => {
+    const tok = signToken(ENV.ADMIN_SESSION_SECRET)
+    const r = await dispatchApi(
+      {
+        url: '/api/admin/requests',
+        method: 'PATCH',
+        cookieHeader: `${SESSION_COOKIE}=${tok}`,
+        jsonBody: { id: 'r1', status: 'nope' },
+        secure: false,
+      },
+      { ...ENV, SUPABASE_URL: 'u', SUPABASE_SERVICE_ROLE_KEY: 'k' },
+    )
+    expect(r?.status).toBe(400)
+  })
+
   it('routes POST /api/admin/cards through handleAdminCards (401 without a cookie)', async () => {
     const r = await dispatchApi(
       {

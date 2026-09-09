@@ -6,6 +6,7 @@ import { handleLogin, handleLogout, handleSession } from '../api/_lib/handlers'
 import { handleEstimate } from '../api/_lib/estimateHandler'
 import { handleAdminContent } from '../api/_lib/adminContentHandler'
 import { handleAdminCards } from '../api/_lib/adminCardsHandler'
+import { handleAdminRequests } from '../api/_lib/adminRequestsHandler'
 
 /**
  * Pure route dispatcher. Returns `null` for any URL that is not one of the
@@ -39,6 +40,11 @@ export async function dispatchApi(
       return handleEstimate({ method: input.method, body: input.jsonBody ?? {} }, env)
     case '/api/admin/content':
       return handleAdminContent(
+        { method: input.method, cookieHeader: input.cookieHeader, body: input.jsonBody ?? {} },
+        env,
+      )
+    case '/api/admin/requests':
+      return handleAdminRequests(
         { method: input.method, cookieHeader: input.cookieHeader, body: input.jsonBody ?? {} },
         env,
       )
