@@ -11,8 +11,6 @@ import type {
   AdminData,
   CardListKey,
   ImageRef,
-  NewRequestInput,
-  RequestStatus,
   SectionKey,
   SectionText,
   SeoEntry,
@@ -45,10 +43,6 @@ export interface SiteContentActions {
     pageKey: SeoPageKey,
     patch: Partial<Pick<SeoEntry, 'title' | 'description'>>,
   ) => void
-  addRequest: (input: NewRequestInput) => void
-  setRequestStatus: (id: string, status: RequestStatus) => void
-  setRequestNote: (id: string, note: string) => void
-  removeRequest: (id: string) => void
   resetAll: () => void
 }
 
@@ -125,12 +119,6 @@ export function SiteContentProvider({ children }: { children: ReactNode }) {
         setData((d) => A.setCardImage(d, list, id, image)),
       updateSeo: (pageKey, patch) =>
         setData((d) => A.updateSeo(d, pageKey, patch)),
-      addRequest: (input) => setData((d) => A.addRequest(d, input)),
-      setRequestStatus: (id, status) =>
-        setData((d) => A.setRequestStatus(d, id, status)),
-      setRequestNote: (id, note) =>
-        setData((d) => A.setRequestNote(d, id, note)),
-      removeRequest: (id) => setData((d) => A.removeRequest(d, id)),
       resetAll: () => setData(A.resetAll()),
     }),
     [],

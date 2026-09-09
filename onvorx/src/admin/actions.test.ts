@@ -8,13 +8,8 @@ import {
   moveCard,
   setCardImage,
   updateSeo,
-  addRequest,
-  setRequestStatus,
-  setRequestNote,
-  removeRequest,
   resetAll,
 } from './actions'
-import type { NewRequestInput } from './types'
 
 const base = () => seedAdminData()
 
@@ -98,42 +93,9 @@ describe('updateSeo', () => {
   })
 })
 
-describe('requests', () => {
-  const input: NewRequestInput = {
-    name: 'Test User',
-    email: 'test@example.com',
-    interestedIn: ['web-development'],
-    message: 'Hello',
-    locale: 'en',
-    sourcePage: '/',
-  }
-
-  it('prepends a new request with status new', () => {
-    const d = base()
-    const before = d.requests.length
-    const next = addRequest(d, input)
-    expect(next.requests).toHaveLength(before + 1)
-    expect(next.requests[0].name).toBe('Test User')
-    expect(next.requests[0].status).toBe('new')
-    expect(next.requests[0].id).toBeTruthy()
-    expect(new Date(next.requests[0].createdAt).toISOString()).toBe(
-      next.requests[0].createdAt,
-    )
-  })
-
-  it('sets status, note, and removes by id', () => {
-    const d = addRequest(base(), input)
-    const id = d.requests[0].id
-    expect(setRequestStatus(d, id, 'done').requests[0].status).toBe('done')
-    expect(setRequestNote(d, id, 'called').requests[0].note).toBe('called')
-    expect(removeRequest(d, id).requests.find((r) => r.id === id)).toBeUndefined()
-  })
-})
-
 describe('resetAll', () => {
   it('returns a fresh seeded dataset', () => {
     const fresh = resetAll()
     expect(fresh.sections).toHaveLength(6)
-    expect(fresh.requests.length).toBeGreaterThan(0)
   })
 })

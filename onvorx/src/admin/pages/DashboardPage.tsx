@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useSiteContentRaw } from '../../content/SiteContentProvider'
+import { useRequests } from '../hooks/useRequests'
 import { StatusBadge } from '../components/StatusBadge'
 import { useAdminTitle } from '../useAdminTitle'
 
@@ -8,8 +9,10 @@ const EPOCH = '1970-01-01T00:00:00.000Z'
 export function DashboardPage() {
   useAdminTitle('Dashboard')
   const { data } = useSiteContentRaw()
-  const newCount = data.requests.filter((r) => r.status === 'new').length
-  const recent = [...data.requests]
+  const { requests } = useRequests()
+  const list = requests ?? []
+  const newCount = list.filter((r) => r.status === 'new').length
+  const recent = [...list]
     .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
     .slice(0, 5)
 

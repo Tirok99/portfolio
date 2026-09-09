@@ -2,9 +2,7 @@ import type {
   AdminData,
   CardListKey,
   ImageRef,
-  NewRequestInput,
   ProjectCard,
-  RequestStatus,
   SectionKey,
   SectionText,
   SeoEntry,
@@ -130,47 +128,6 @@ export function updateSeo(
     ...d,
     seo: d.seo.map((e) => (e.pageKey === pageKey ? { ...e, ...patch } : e)),
   })
-}
-
-export function addRequest(d: AdminData, input: NewRequestInput): AdminData {
-  return stamp({
-    ...d,
-    requests: [
-      {
-        ...input,
-        id: newId('req'),
-        createdAt: new Date().toISOString(),
-        status: 'new',
-      },
-      ...d.requests,
-    ],
-  })
-}
-
-export function setRequestStatus(
-  d: AdminData,
-  id: string,
-  status: RequestStatus,
-): AdminData {
-  return stamp({
-    ...d,
-    requests: d.requests.map((r) => (r.id === id ? { ...r, status } : r)),
-  })
-}
-
-export function setRequestNote(
-  d: AdminData,
-  id: string,
-  note: string,
-): AdminData {
-  return stamp({
-    ...d,
-    requests: d.requests.map((r) => (r.id === id ? { ...r, note } : r)),
-  })
-}
-
-export function removeRequest(d: AdminData, id: string): AdminData {
-  return stamp({ ...d, requests: d.requests.filter((r) => r.id !== id) })
 }
 
 export function resetAll(): AdminData {

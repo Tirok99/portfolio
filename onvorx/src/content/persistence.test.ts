@@ -15,7 +15,6 @@ describe('loadAdminData', () => {
     expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
     const data = loadAdminData()
     expect(data.sections).toHaveLength(6)
-    expect(data.requests.length).toBeGreaterThan(0)
     expect(localStorage.getItem(STORAGE_KEY)).not.toBeNull()
   })
 
