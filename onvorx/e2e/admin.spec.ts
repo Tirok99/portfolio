@@ -11,6 +11,17 @@ test.beforeEach(async ({ page }) => {
   await page.route('**/api/admin/logout', (r) =>
     r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ authenticated: false }) }),
   )
+  // Preview does not run the Vercel functions, so the admin write endpoints
+  // (`PUT /api/admin/content`, `/api/admin/cards`) would 404. The provider's
+  // optimistic `setData` still updates the UI, but a 404 leaves a rejected
+  // promise and triggers an immediate revert `refetch`. Stub them 200 so the
+  // write path is exercised cleanly.
+  await page.route('**/api/admin/content', (r) =>
+    r.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' }),
+  )
+  await page.route('**/api/admin/cards**', (r) =>
+    r.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' }),
+  )
   // E2E covers the admin/localStorage path, not the Supabase runtime read. A
   // local `vite build` embeds VITE_SUPABASE_* from .env.local, so the preview
   // bundle would otherwise fetch live content and the mount overlay could race

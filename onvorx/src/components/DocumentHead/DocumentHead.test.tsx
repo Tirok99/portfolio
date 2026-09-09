@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, act } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { I18nProvider } from '../../i18n/i18n'
@@ -7,6 +7,18 @@ import {
   useSiteContentRaw,
 } from '../../content/SiteContentProvider'
 import { DocumentHead } from './DocumentHead'
+
+vi.mock('../../admin/api', () => ({
+  adminApi: {
+    saveSection: vi.fn().mockResolvedValue(undefined),
+    saveSeo: vi.fn().mockResolvedValue(undefined),
+    resetContent: vi.fn().mockResolvedValue(undefined),
+    createCard: vi.fn().mockResolvedValue(undefined),
+    updateCard: vi.fn().mockResolvedValue(undefined),
+    deleteCard: vi.fn().mockResolvedValue(undefined),
+    reorderCards: vi.fn().mockResolvedValue(undefined),
+  },
+}))
 
 beforeEach(() => localStorage.clear())
 

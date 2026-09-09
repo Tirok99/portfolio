@@ -61,12 +61,39 @@ export function updateSection(
   })
 }
 
+/** Append a pre-built card (lets a caller send the SAME object to the server). */
+export function appendCard(
+  d: AdminData,
+  list: CardListKey,
+  card: ProjectCard | ServiceCard,
+): AdminData {
+  return stamp({ ...d, [list]: [...d[list], card] })
+}
+
 export function addCard(d: AdminData, list: CardListKey): AdminData {
-  const current = d[list]
   const card = isProjectList(list)
-    ? blankProjectCard(current.length)
-    : blankServiceCard(current.length)
-  return stamp({ ...d, [list]: [...current, card] })
+    ? blankProjectCard(d[list].length)
+    : blankServiceCard(d[list].length)
+  return appendCard(d, list, card)
+}
+
+/**
+ * The id order after moving `id` one slot in `dir`. Sorts by `order`, swaps the
+ * target with its neighbour; edge moves are a no-op. Pure — used to derive the
+ * `orderedIds` payload for `adminApi.reorderCards`.
+ */
+export function orderedIdsAfterMove(
+  cards: { id: string; order: number }[],
+  id: string,
+  dir: 'up' | 'down',
+): string[] {
+  const sorted = [...cards].sort((a, b) => a.order - b.order)
+  const i = sorted.findIndex((c) => c.id === id)
+  if (i < 0) return sorted.map((c) => c.id)
+  const j = dir === 'up' ? i - 1 : i + 1
+  if (j < 0 || j >= sorted.length) return sorted.map((c) => c.id)
+  ;[sorted[i], sorted[j]] = [sorted[j], sorted[i]]
+  return sorted.map((c) => c.id)
 }
 
 export function updateCard(

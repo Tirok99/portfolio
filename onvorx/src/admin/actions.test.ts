@@ -3,6 +3,9 @@ import { seedAdminData } from '../content/persistence'
 import {
   updateSection,
   addCard,
+  appendCard,
+  orderedIdsAfterMove,
+  blankProjectCard,
   updateCard,
   removeCard,
   moveCard,
@@ -34,6 +37,16 @@ describe('card CRUD', () => {
     expect(added.published).toBe(false)
     expect(added.order).toBe(before)
     expect(added.id).toBeTruthy()
+  })
+
+  it('appendCard adds the exact card object passed in', () => {
+    const d = base()
+    const before = d.projectsHome.length
+    const card = blankProjectCard(before)
+    const next = appendCard(d, 'projectsHome', card)
+    expect(next.projectsHome).toHaveLength(before + 1)
+    expect(next.projectsHome[before]).toBe(card)
+    expect(next).not.toBe(d)
   })
 
   it('updates a card by id', () => {
@@ -78,6 +91,43 @@ describe('card CRUD', () => {
       src: 'data:image/png;base64,BBBB',
     })
     expect(s.servicesHome[0].icon.src).toBe('data:image/png;base64,BBBB')
+  })
+})
+
+describe('orderedIdsAfterMove', () => {
+  const cards = [
+    { id: 'a', order: 0 },
+    { id: 'b', order: 1 },
+    { id: 'c', order: 2 },
+  ]
+
+  it('moves the middle card up', () => {
+    expect(orderedIdsAfterMove(cards, 'b', 'up')).toEqual(['b', 'a', 'c'])
+  })
+
+  it('moves the middle card down', () => {
+    expect(orderedIdsAfterMove(cards, 'b', 'down')).toEqual(['a', 'c', 'b'])
+  })
+
+  it('is a no-op at the top edge', () => {
+    expect(orderedIdsAfterMove(cards, 'a', 'up')).toEqual(['a', 'b', 'c'])
+  })
+
+  it('is a no-op at the bottom edge', () => {
+    expect(orderedIdsAfterMove(cards, 'c', 'down')).toEqual(['a', 'b', 'c'])
+  })
+
+  it('sorts by order before moving (unsorted input)', () => {
+    const unsorted = [
+      { id: 'c', order: 2 },
+      { id: 'a', order: 0 },
+      { id: 'b', order: 1 },
+    ]
+    expect(orderedIdsAfterMove(unsorted, 'a', 'down')).toEqual(['b', 'a', 'c'])
+  })
+
+  it('returns the sorted order for an unknown id', () => {
+    expect(orderedIdsAfterMove(cards, 'zzz', 'up')).toEqual(['a', 'b', 'c'])
   })
 })
 
