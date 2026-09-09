@@ -1,0 +1,4 @@
+{
+  "//": "The repo root is an ESM package (\"type\": \"module\") for Vite. Vercel's @vercel/node compiles these serverless functions to CommonJS, so scope this directory back to CJS or the compiled output fails to load at runtime (FUNCTION_INVOCATION_FAILED).",
+  "type": "commonjs"
+}
