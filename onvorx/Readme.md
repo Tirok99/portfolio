@@ -17,10 +17,9 @@ built from the Figma design `onvorx_v0.5`.
 ```bash
 npm install
 npm run dev        # local dev server
-npm run build      # prebuild (content) -> tsc -> vite build -> postbuild (restore)
+npm run build      # tsc -b -> tsc api -> vite build
 npm run preview    # serve the production build
-npm run content:pull      # pull CMS content from Supabase into src/i18n/*.json
-npm run content:restore   # revert those files to the committed base
+npm run seed:gen   # regenerate supabase/seed.sql from src/content/defaults
 ```
 
 A production install that omits devDependencies (`npm ci --omit=dev`) will fail
@@ -39,19 +38,18 @@ src/
   pages/        HomePage, StubPage, NotFoundPage
   data/         nav
 public/assets/  images (radar, hub, previews, laptops, decor waves)
-scripts/        build-content / restore-content (Supabase -> static JSON)
+scripts/        gen-seed.ts (regenerates supabase/seed.sql)
 supabase/       schema.sql + seed.sql
 docs/CMS-SETUP.md
 ```
 
 ## Content / CMS
 
-Content (projects, services, hero & CTA copy, section headings, contacts) is
-editable in **Supabase Table Editor**; a Supabase webhook triggers a Vercel
-rebuild that bakes the content into the static output. Setup: `docs/CMS-SETUP.md`.
-
-Without `SUPABASE_URL` / `SUPABASE_ANON_KEY` the site builds from the committed
-base content in `src/i18n/*.json`.
+Editable site content (section texts, project & service cards, per-page SEO) and
+"Request an Estimate" submissions live in **Supabase**, edited through the
+password-gated **`/admin`** panel. Schema: `supabase/schema.sql`; seed:
+`supabase/seed.sql`, generated from `src/content/defaults/*` by `npm run seed:gen`.
+There is **no** build-time content step. Setup: `docs/CMS-SETUP.md`.
 
 ## Admin panel
 
