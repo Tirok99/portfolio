@@ -158,6 +158,7 @@ export function EstimateForm() {
               Name
               <input
                 id={`${baseId}-name`}
+                maxLength={200}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 aria-invalid={Boolean(errors.name)}
@@ -180,6 +181,7 @@ export function EstimateForm() {
               <input
                 id={`${baseId}-email`}
                 type="email"
+                maxLength={200}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 aria-invalid={Boolean(errors.email)}
@@ -201,6 +203,7 @@ export function EstimateForm() {
               Company (optional)
               <input
                 id={`${baseId}-company`}
+                maxLength={200}
                 value={company}
                 onChange={(e) => setCompany(e.target.value)}
               />
@@ -243,6 +246,7 @@ export function EstimateForm() {
               <textarea
                 id={`${baseId}-message`}
                 rows={4}
+                maxLength={5000}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 aria-invalid={Boolean(errors.message)}

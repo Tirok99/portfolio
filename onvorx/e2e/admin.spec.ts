@@ -11,6 +11,11 @@ test.beforeEach(async ({ page }) => {
   await page.route('**/api/admin/logout', (r) =>
     r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ authenticated: false }) }),
   )
+  // E2E covers the admin/localStorage path, not the Supabase runtime read. A
+  // local `vite build` embeds VITE_SUPABASE_* from .env.local, so the preview
+  // bundle would otherwise fetch live content and the mount overlay could race
+  // the E2E edits. Abort every Supabase REST call.
+  await page.route('**/rest/v1/**', (r) => r.abort())
   await page.goto('/')
   await page.evaluate(() => window.localStorage.clear())
 })
@@ -31,7 +36,11 @@ test('owner edits a section title and it shows on the home page', async ({ page 
   await expect(page.getByRole('heading', { level: 1, name: 'E2E hero headline' })).toBeVisible()
 })
 
-test('estimate form submission appears in the admin requests inbox', async ({ page }) => {
+test('estimate form submits and shows the thank-you panel', async ({ page }) => {
+  // Preview does not run the Vercel functions, so POST /api/estimate would 404.
+  await page.route('**/api/estimate', (r) =>
+    r.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' }),
+  )
   await page.goto('/')
   await page.getByRole('button', { name: /request an estimate/i }).first().click()
   await page.getByLabel('Name').fill('E2E Tester')
@@ -40,6 +49,5 @@ test('estimate form submission appears in the admin requests inbox', async ({ pa
   await page.getByRole('button', { name: /send request/i }).click()
   await expect(page.getByText(/thank you/i)).toBeVisible()
 
-  await page.goto('/admin/requests')
-  await expect(page.getByText('E2E Tester')).toBeVisible()
+  // Plan 3: the submitted request will be verifiable on /admin/requests once useRequests() + /api/admin/requests land.
 })

@@ -49,6 +49,16 @@ describe('EstimateForm', () => {
     expect(screen.getByLabelText(/message/i)).toBeInTheDocument()
   })
 
+  it('caps field lengths so the server limits are unreachable via the UI', async () => {
+    const user = userEvent.setup()
+    setup()
+    await user.click(screen.getByText('open form'))
+    expect(screen.getByLabelText(/message/i)).toHaveAttribute('maxlength', '5000')
+    expect(screen.getByLabelText(/name/i)).toHaveAttribute('maxlength', '200')
+    expect(screen.getByLabelText(/email/i)).toHaveAttribute('maxlength', '200')
+    expect(screen.getByLabelText(/company/i)).toHaveAttribute('maxlength', '200')
+  })
+
   it('blocks submit and shows errors when required fields are empty', async () => {
     const user = userEvent.setup()
     setup()

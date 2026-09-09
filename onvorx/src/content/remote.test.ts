@@ -47,6 +47,17 @@ describe('fetchRemoteContent', () => {
     expect(c!.servicesHome[0].id).toBe('s1')
   })
 
+  it('returns null when a code-owned enum table reads empty', async () => {
+    from.mockImplementation((table: string) => ({
+      select: vi.fn().mockResolvedValue(
+        table === 'site_sections'
+          ? { data: [], error: null }
+          : { data: rowsByTable[table] ?? [], error: null },
+      ),
+    }))
+    expect(await fetchRemoteContent()).toBeNull()
+  })
+
   it('returns null if any table query errors', async () => {
     from.mockImplementation((table: string) => ({
       select: vi.fn().mockResolvedValue(

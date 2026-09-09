@@ -23,6 +23,11 @@ export async function fetchRemoteContent(): Promise<SiteContent | null> {
       client.from('services').select('*'),
     ])
     if (sections.error || seo.error || projects.error || services.error) return null
+    // `site_sections` and `seo_pages` are fixed code-owned enum tables that must
+    // always have rows. PostgREST returns `200 []` (not an error) when RLS
+    // denies the select or the table is truncated — an empty read means
+    // something is wrong, so keep the bundled defaults.
+    if (!sections.data?.length || !seo.data?.length) return null
     return rowsToSiteContent({
       sections: (sections.data ?? []) as DbSectionRow[],
       seo: (seo.data ?? []) as DbSeoRow[],

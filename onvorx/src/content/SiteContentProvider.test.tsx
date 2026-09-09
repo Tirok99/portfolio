@@ -85,6 +85,9 @@ describe('SiteContentProvider', () => {
     })
     wrap()
     expect(await screen.findByText('From Supabase')).toBeInTheDocument()
+    // the mount overlay must not be written back to localStorage — the single
+    // `skipNextPersist.current = true` in the effect is load-bearing
+    expect(localStorage.getItem(STORAGE_KEY)).not.toContain('From Supabase')
   })
 
   it('keeps the seeded content when the remote fetch returns null', async () => {
@@ -101,8 +104,16 @@ describe('SiteContentProvider', () => {
     fetchRemoteContent.mockReturnValue(new Promise((r) => { resolve = r }))
     const { unmount } = wrap()
     unmount()
-    resolve({ sections: [], seo: [], projectsHome: [], projectsPage: [], servicesHome: [], servicesPage: [] })
+    resolve({
+      sections: [
+        { key: 'hero', label: 'Hero', eyebrow: { en: '', uk: '' },
+          title: { en: 'AFTER UNMOUNT', uk: 'AFTER UNMOUNT' }, body: { en: '', uk: '' } },
+      ],
+      seo: [], projectsHome: [], projectsPage: [], servicesHome: [], servicesPage: [],
+    })
     await act(async () => {})
-    // no throw / no "state update on unmounted component" warning
+    // the resolved overlay must not reach a remounted tree or storage
+    expect(screen.queryByText('AFTER UNMOUNT')).not.toBeInTheDocument()
+    expect(localStorage.getItem(STORAGE_KEY)).not.toContain('AFTER UNMOUNT')
   })
 })

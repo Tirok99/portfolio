@@ -5,7 +5,7 @@ import { SESSION_COOKIE, signToken } from '../api/_lib/session'
 const ENV = { ADMIN_PASSWORD: 'devpassword123', ADMIN_SESSION_SECRET: 'x'.repeat(40) }
 
 describe('dispatchApi', () => {
-  it('returns null for non-admin routes', async () => {
+  it('returns null for unknown api routes', async () => {
     expect(await dispatchApi({ url: '/api/other', method: 'GET', secure: false }, ENV)).toBeNull()
     expect(await dispatchApi({ url: '/', method: 'GET', secure: false }, ENV)).toBeNull()
   })
