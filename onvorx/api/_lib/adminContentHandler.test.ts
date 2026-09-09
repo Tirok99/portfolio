@@ -38,6 +38,24 @@ describe('handleAdminContent', () => {
     )
     expect(r.status).toBe(400)
   })
+  it('PUT a section whose patch maps to no columns → 400', async () => {
+    const deps = okDeps()
+    const r = await handleAdminContent(
+      { method: 'PUT', cookieHeader: cookie, body: { kind: 'section', key: 'hero', patch: {} } },
+      ENV, deps,
+    )
+    expect(r.status).toBe(400)
+    expect(deps.updateSection).not.toHaveBeenCalled()
+  })
+  it('POST reset with a non-object / array content → 400', async () => {
+    const deps = okDeps()
+    const r = await handleAdminContent(
+      { method: 'POST', cookieHeader: cookie, body: { op: 'reset', content: [] } },
+      ENV, deps,
+    )
+    expect(r.status).toBe(400)
+    expect(deps.resetAll).not.toHaveBeenCalled()
+  })
   it('PUT a seo entry → updateSeo', async () => {
     const deps = okDeps()
     await handleAdminContent(

@@ -94,7 +94,8 @@ export function adminApiDev(): Plugin {
         if (!url.startsWith('/api/')) return next()
         const run = async () => {
           const method = req.method ?? 'GET'
-          const jsonBody = method === 'POST' ? await readJsonBody(req) : undefined
+          const jsonBody =
+            method !== 'GET' && method !== 'HEAD' ? await readJsonBody(req) : undefined
           const result = await dispatchApi(
             { url, method, cookieHeader: req.headers.cookie, jsonBody, secure: false },
             env,

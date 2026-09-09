@@ -61,7 +61,7 @@ export async function handleAdminContent(
     return error ? fail() : ok()
   }
   if (input.method === 'POST' && body.op === 'reset') {
-    if (typeof body.content !== 'object' || body.content === null) return bad()
+    if (Array.isArray(body.content) || typeof body.content !== 'object' || body.content === null) return bad()
     const { error } = await deps.resetAll(body.content, env)
     return error ? fail() : ok()
   }

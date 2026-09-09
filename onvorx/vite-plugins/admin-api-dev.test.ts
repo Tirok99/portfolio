@@ -62,4 +62,19 @@ describe('dispatchApi', () => {
     )
     expect(r?.status).toBe(401)
   })
+
+  it('PUT /api/admin/content with a valid cookie dispatches past auth (bad key → 400)', async () => {
+    const tok = signToken(ENV.ADMIN_SESSION_SECRET)
+    const r = await dispatchApi(
+      {
+        url: '/api/admin/content',
+        method: 'PUT',
+        cookieHeader: `${SESSION_COOKIE}=${tok}`,
+        jsonBody: { kind: 'section', key: 'bogus', patch: { title: { en: 'x', uk: 'x' } } },
+        secure: false,
+      },
+      { ...ENV, SUPABASE_URL: 'u', SUPABASE_SERVICE_ROLE_KEY: 'k' },
+    )
+    expect(r?.status).toBe(400)
+  })
 })
