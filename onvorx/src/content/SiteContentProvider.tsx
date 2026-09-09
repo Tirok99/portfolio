@@ -141,6 +141,10 @@ export function SiteContentProvider({ children }: { children: ReactNode }) {
         await call()
         scheduleReconcile()
       } catch (e) {
+        // Revert to server truth. NOTE: if `refetch()` also can't reach Supabase
+        // (returns null) the optimistic edit is NOT rolled back — it sticks
+        // until a later successful refetch / reload. Acceptable in the mock
+        // phase; Task 9b surfaces the error to the user.
         await refetch()
         throw e
       }
@@ -187,9 +191,14 @@ export function SiteContentProvider({ children }: { children: ReactNode }) {
         write(
           (d) => A.setCardImage(d, list, id, image),
           () =>
-            adminApi.updateCard(cardKindOf(list), cardListOf(list), id, {
-              image,
-            }),
+            adminApi.updateCard(
+              cardKindOf(list),
+              cardListOf(list),
+              id,
+              // the server maps `image` for projects and `icon` for services
+              // (`api/_lib/adminRows.ts`); `A.setCardImage` picks the same field
+              cardKindOf(list) === 'project' ? { image } : { icon: image },
+            ),
         ),
       addCard: (list) => {
         const card =

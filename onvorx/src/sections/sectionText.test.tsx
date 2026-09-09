@@ -7,6 +7,9 @@ import {
   useSiteContentRaw,
 } from '../content/SiteContentProvider'
 import { EstimateFormProvider } from '../components/EstimateForm/useEstimateForm'
+import { Hero } from './Hero/Hero'
+import { Cta } from './Cta/Cta'
+import { About } from './About/About'
 
 vi.mock('../admin/api', () => ({
   adminApi: {
@@ -19,9 +22,6 @@ vi.mock('../admin/api', () => ({
     reorderCards: vi.fn().mockResolvedValue(undefined),
   },
 }))
-import { Hero } from './Hero/Hero'
-import { Cta } from './Cta/Cta'
-import { About } from './About/About'
 
 beforeEach(() => localStorage.clear())
 

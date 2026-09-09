@@ -9,6 +9,7 @@ import {
 import { useSiteContent } from './useSiteContent'
 import { STORAGE_KEY } from './persistence'
 import { adminApi } from '../admin/api'
+import type { AdminData } from '../admin/types'
 
 const fetchRemoteContent = vi.fn()
 vi.mock('./remote', () => ({ fetchRemoteContent: () => fetchRemoteContent() }))
@@ -55,8 +56,11 @@ afterEach(() => {
 })
 
 let ctxActions: SiteContentActions
+let ctxData: AdminData
 function Capture() {
-  ctxActions = useSiteContentRaw().actions
+  const ctx = useSiteContentRaw()
+  ctxActions = ctx.actions
+  ctxData = ctx.data
   return null
 }
 
@@ -174,6 +178,100 @@ describe('SiteContentProvider', () => {
       await vi.advanceTimersByTimeAsync(800)
     })
     expect(fetchRemoteContent).toHaveBeenCalled()
+  })
+
+  describe('provider → adminApi wiring', () => {
+    beforeEach(() => {
+      vi.mocked(adminApi.updateCard).mockClear()
+      vi.mocked(adminApi.deleteCard).mockClear()
+      vi.mocked(adminApi.createCard).mockClear()
+      vi.mocked(adminApi.reorderCards).mockClear()
+      vi.mocked(adminApi.saveSeo).mockClear()
+      vi.mocked(adminApi.resetContent).mockClear()
+    })
+
+    it('updateSeo → adminApi.saveSeo(pageKey, patch)', async () => {
+      wrap()
+      const patch = { title: { en: 'Home SEO', uk: 'Home SEO' } }
+      await act(async () => {
+        await ctxActions.updateSeo('home', patch)
+      })
+      expect(adminApi.saveSeo).toHaveBeenCalledWith('home', patch)
+    })
+
+    it('updateCard → adminApi.updateCard(kind, list, id, patch)', async () => {
+      wrap()
+      const id = ctxData.projectsHome[0].id
+      const patch = { published: false }
+      await act(async () => {
+        await ctxActions.updateCard('projectsHome', id, patch)
+      })
+      expect(adminApi.updateCard).toHaveBeenCalledWith('project', 'home', id, patch)
+    })
+
+    it('removeCard → adminApi.deleteCard(kind, list, id)', async () => {
+      wrap()
+      const id = ctxData.servicesPage[0].id
+      await act(async () => {
+        await ctxActions.removeCard('servicesPage', id)
+      })
+      expect(adminApi.deleteCard).toHaveBeenCalledWith('service', 'page', id)
+    })
+
+    it('setCardImage on a project card → adminApi.updateCard(..., { image })', async () => {
+      wrap()
+      const id = ctxData.projectsHome[0].id
+      const image = { kind: 'upload' as const, src: 'https://x/p.png', path: 'projects/p.png' }
+      await act(async () => {
+        await ctxActions.setCardImage('projectsHome', id, image)
+      })
+      expect(adminApi.updateCard).toHaveBeenCalledWith('project', 'home', id, { image })
+    })
+
+    it('setCardImage on a service card → adminApi.updateCard(..., { icon }) (regression)', async () => {
+      wrap()
+      const id = ctxData.servicesHome[0].id
+      const image = { kind: 'upload' as const, src: 'https://x/s.png', path: 'services/s.png' }
+      await act(async () => {
+        await ctxActions.setCardImage('servicesHome', id, image)
+      })
+      expect(adminApi.updateCard).toHaveBeenCalledWith('service', 'home', id, { icon: image })
+    })
+
+    it('addCard → adminApi.createCard(kind, list, <the appended card>)', async () => {
+      wrap()
+      await act(async () => {
+        await ctxActions.addCard('projectsHome')
+      })
+      const appended = ctxData.projectsHome[ctxData.projectsHome.length - 1]
+      expect(adminApi.createCard).toHaveBeenCalledWith('project', 'home', appended)
+    })
+
+    it('moveCard → adminApi.reorderCards(kind, list, <orderedIds>)', async () => {
+      wrap()
+      const ids = ctxData.servicesHome.map((c) => c.id)
+      const target = ids[1]
+      await act(async () => {
+        await ctxActions.moveCard('servicesHome', target, 'up')
+      })
+      expect(adminApi.reorderCards).toHaveBeenCalledWith('service', 'home', [
+        ids[1],
+        ids[0],
+        ...ids.slice(2),
+      ])
+    })
+
+    it('resetAll → adminApi.resetContent(<6-key SiteContent>)', async () => {
+      wrap()
+      await act(async () => {
+        await ctxActions.resetAll()
+      })
+      expect(adminApi.resetContent).toHaveBeenCalledTimes(1)
+      const arg = vi.mocked(adminApi.resetContent).mock.calls[0][0]
+      expect(Object.keys(arg).sort()).toEqual(
+        ['projectsHome', 'projectsPage', 'sections', 'seo', 'servicesHome', 'servicesPage'].sort(),
+      )
+    })
   })
 
   it('overlays remote content over the seeded defaults once it resolves', async () => {
