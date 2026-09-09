@@ -7,6 +7,7 @@ import { handleEstimate } from '../api/_lib/estimateHandler'
 import { handleAdminContent } from '../api/_lib/adminContentHandler'
 import { handleAdminCards } from '../api/_lib/adminCardsHandler'
 import { handleAdminRequests } from '../api/_lib/adminRequestsHandler'
+import { handleAdminUpload } from '../api/_lib/adminUploadHandler'
 
 /**
  * Pure route dispatcher. Returns `null` for any URL that is not one of the
@@ -45,6 +46,11 @@ export async function dispatchApi(
       )
     case '/api/admin/requests':
       return handleAdminRequests(
+        { method: input.method, cookieHeader: input.cookieHeader, body: input.jsonBody ?? {} },
+        env,
+      )
+    case '/api/admin/upload':
+      return handleAdminUpload(
         { method: input.method, cookieHeader: input.cookieHeader, body: input.jsonBody ?? {} },
         env,
       )
@@ -105,6 +111,7 @@ export function adminApiDev(): Plugin {
         SUPABASE_URL: process.env.SUPABASE_URL ?? fileEnv.SUPABASE_URL,
         SUPABASE_SERVICE_ROLE_KEY:
           process.env.SUPABASE_SERVICE_ROLE_KEY ?? fileEnv.SUPABASE_SERVICE_ROLE_KEY,
+        SUPABASE_MEDIA_BUCKET: process.env.SUPABASE_MEDIA_BUCKET ?? fileEnv.SUPABASE_MEDIA_BUCKET,
       }
     },
     configureServer(server) {

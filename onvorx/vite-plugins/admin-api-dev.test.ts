@@ -128,4 +128,27 @@ describe('dispatchApi', () => {
     )
     expect(r?.status).toBe(400)
   })
+
+  it('routes POST /api/admin/upload through handleAdminUpload (401 without a cookie)', async () => {
+    const r = await dispatchApi(
+      { url: '/api/admin/upload', method: 'POST', secure: false },
+      { ...ENV, SUPABASE_URL: 'u', SUPABASE_SERVICE_ROLE_KEY: 'k' },
+    )
+    expect(r?.status).toBe(401)
+  })
+
+  it('DELETE /api/admin/upload with a valid cookie but bad path dispatches past auth (400)', async () => {
+    const tok = signToken(ENV.ADMIN_SESSION_SECRET)
+    const r = await dispatchApi(
+      {
+        url: '/api/admin/upload',
+        method: 'DELETE',
+        cookieHeader: `${SESSION_COOKIE}=${tok}`,
+        jsonBody: { path: '../secrets' },
+        secure: false,
+      },
+      { ...ENV, SUPABASE_URL: 'u', SUPABASE_SERVICE_ROLE_KEY: 'k' },
+    )
+    expect(r?.status).toBe(400)
+  })
 })
