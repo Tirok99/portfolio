@@ -1,11 +1,18 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, act } from '@testing-library/react'
 import { I18nProvider, useI18n } from '../i18n/i18n'
 import { SiteContentProvider } from './SiteContentProvider'
 import { useSiteContent } from './useSiteContent'
 import { STORAGE_KEY } from './persistence'
 
-beforeEach(() => localStorage.clear())
+const fetchRemoteContent = vi.fn()
+vi.mock('./remote', () => ({ fetchRemoteContent: () => fetchRemoteContent() }))
+
+beforeEach(() => {
+  localStorage.clear()
+  fetchRemoteContent.mockReset()
+  fetchRemoteContent.mockResolvedValue(null)
+})
 
 function Probe() {
   const { section, servicesHome, actions } = useSiteContent()
@@ -66,5 +73,36 @@ describe('SiteContentProvider', () => {
       screen.getByText('hide first service').click()
     })
     expect(Number(screen.getByTestId('svc-count').textContent)).toBe(before - 1)
+  })
+
+  it('overlays remote content over the seeded defaults once it resolves', async () => {
+    fetchRemoteContent.mockResolvedValue({
+      sections: [
+        { key: 'hero', label: 'Hero', eyebrow: { en: '', uk: '' },
+          title: { en: 'From Supabase', uk: 'From Supabase' }, body: { en: '', uk: '' } },
+      ],
+      seo: [], projectsHome: [], projectsPage: [], servicesHome: [], servicesPage: [],
+    })
+    wrap()
+    expect(await screen.findByText('From Supabase')).toBeInTheDocument()
+  })
+
+  it('keeps the seeded content when the remote fetch returns null', async () => {
+    fetchRemoteContent.mockResolvedValue(null)
+    wrap()
+    // let the effect settle
+    await act(async () => {})
+    expect(screen.getByTestId('hero-title').textContent).toBeTruthy()
+    expect(screen.queryByText('From Supabase')).not.toBeInTheDocument()
+  })
+
+  it('does not overlay after unmount', async () => {
+    let resolve!: (v: unknown) => void
+    fetchRemoteContent.mockReturnValue(new Promise((r) => { resolve = r }))
+    const { unmount } = wrap()
+    unmount()
+    resolve({ sections: [], seo: [], projectsHome: [], projectsPage: [], servicesHome: [], servicesPage: [] })
+    await act(async () => {})
+    // no throw / no "state update on unmounted component" warning
   })
 })

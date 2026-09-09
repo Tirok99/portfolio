@@ -25,6 +25,7 @@ import {
   loadAdminData,
   saveAdminData,
 } from './persistence'
+import { fetchRemoteContent } from './remote'
 
 export interface SiteContentActions {
   updateSection: (
@@ -94,6 +95,21 @@ export function SiteContentProvider({ children }: { children: ReactNode }) {
     }
     window.addEventListener('storage', onStorage)
     return () => window.removeEventListener('storage', onStorage)
+  }, [])
+
+  // On mount, pull the managed content from Supabase and overlay it on top of
+  // the seeded/persisted defaults. Failure (no env, offline, query error) is a
+  // no-op — the bundled content stays. Admin write-through is Plan 3.
+  useEffect(() => {
+    let cancelled = false
+    void fetchRemoteContent().then((remote) => {
+      if (cancelled || !remote) return
+      skipNextPersist.current = true
+      setData((d) => ({ ...d, ...remote }))
+    })
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const actions = useMemo<SiteContentActions>(
