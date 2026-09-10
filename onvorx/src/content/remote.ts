@@ -1,4 +1,3 @@
-import { getSupabase } from './supabaseClient'
 import { rowsToSiteContent, type SiteContent } from './mappers'
 import type {
   DbProjectRow,
@@ -13,6 +12,12 @@ import type {
  * query error, a thrown client) so the caller keeps the bundled defaults.
  */
 export async function fetchRemoteContent(): Promise<SiteContent | null> {
+  let getSupabase: typeof import('./supabaseClient')['getSupabase']
+  try {
+    ;({ getSupabase } = await import('./supabaseClient'))
+  } catch {
+    return null
+  }
   const client = getSupabase()
   if (!client) return null
   try {
