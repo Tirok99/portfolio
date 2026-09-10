@@ -51,3 +51,55 @@ begin
     alter table public.services add constraint services_list_sort_key unique (list, sort);
   end if;
 end $$;
+
+-- ---- 3. atomic content reset -----------------------------------------
+-- payload = { sections: [{key,eyebrow,title,body,cta_label}...],
+--             seo: [{page_key,title,description}...],
+--             cards: [{table:'projects'|'services', list, id, ...row}...] }
+-- All snake_case, already row-shaped by the caller. Runs in one transaction.
+create or replace function public.reset_content(payload jsonb) returns void
+  language plpgsql
+  set search_path = ''
+as $$
+declare
+  s jsonb;
+  e jsonb;
+  card jsonb;
+begin
+  for s in select * from jsonb_array_elements(payload -> 'sections') loop
+    update public.site_sections set
+      eyebrow   = coalesce(s -> 'eyebrow',   eyebrow),
+      title     = coalesce(s -> 'title',     title),
+      body      = coalesce(s -> 'body',      body),
+      cta_label = s -> 'cta_label'
+    where key = s ->> 'key';
+  end loop;
+
+  for e in select * from jsonb_array_elements(payload -> 'seo') loop
+    update public.seo_pages set
+      title       = coalesce(e -> 'title',       title),
+      description  = coalesce(e -> 'description', description)
+    where page_key = e ->> 'page_key';
+  end loop;
+
+  delete from public.projects;
+  delete from public.services;
+
+  for card in select * from jsonb_array_elements(payload -> 'cards') loop
+    if card ->> 'table' = 'projects' then
+      insert into public.projects (list, id, sort, published, title, tags, description, image_url, image_path, image_alt)
+      values (
+        card ->> 'list', card ->> 'id', (card ->> 'sort')::int, (card ->> 'published')::boolean,
+        card -> 'title', coalesce((select array_agg(x) from jsonb_array_elements_text(card -> 'tags') x), '{}'),
+        card -> 'description', card ->> 'image_url', card ->> 'image_path', card -> 'image_alt'
+      );
+    else
+      insert into public.services (list, id, sort, published, featured, title, text, icon_url, icon_path)
+      values (
+        card ->> 'list', card ->> 'id', (card ->> 'sort')::int, (card ->> 'published')::boolean,
+        (card ->> 'featured')::boolean, card -> 'title', card -> 'text',
+        card ->> 'icon_url', card ->> 'icon_path'
+      );
+    end if;
+  end loop;
+end $$;
