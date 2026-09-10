@@ -20,6 +20,15 @@ export const KNOWN_API_PATHS = new Set([
   '/api/admin/cards',
 ])
 
+export type ApiMiddlewareDecision = 'skip' | 'dispatch-no-body' | 'dispatch-with-body'
+
+export function apiMiddlewareDecision(url: string, method: string): ApiMiddlewareDecision {
+  if (!url.startsWith('/api/')) return 'skip'
+  const path = url.split('?')[0]
+  if (!KNOWN_API_PATHS.has(path)) return 'skip'
+  return method === 'GET' || method === 'HEAD' ? 'dispatch-no-body' : 'dispatch-with-body'
+}
+
 /**
  * Pure route dispatcher. Returns `null` for any URL that is not one of the
  * known api routes (query string stripped first) so callers can fall
@@ -138,13 +147,12 @@ export function adminApiDev(): Plugin {
     configureServer(server) {
       server.middlewares.use((req: IncomingMessage, res: ServerResponse, next) => {
         const url = req.url ?? ''
-        if (!url.startsWith('/api/')) return next()
         const method = req.method ?? 'GET'
-        const path = url.split('?')[0]
-        const shouldBuffer = KNOWN_API_PATHS.has(path) && method !== 'GET' && method !== 'HEAD'
-        if (!shouldBuffer) return next()
+        const decision = apiMiddlewareDecision(url, method)
+        if (decision === 'skip') return next()
         const run = async () => {
-          const jsonBody = await readJsonBody(req)
+          const jsonBody =
+            decision === 'dispatch-with-body' ? await readJsonBody(req) : undefined
           const result = await dispatchApi(
             { url, method, cookieHeader: req.headers.cookie, jsonBody, secure: false },
             env,
