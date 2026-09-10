@@ -4,8 +4,6 @@ import { useRequests } from '../hooks/useRequests'
 import { StatusBadge } from '../components/StatusBadge'
 import { useAdminTitle } from '../useAdminTitle'
 
-const EPOCH = '1970-01-01T00:00:00.000Z'
-
 export function DashboardPage() {
   useAdminTitle('Dashboard')
   const { data } = useSiteContentRaw()
@@ -41,13 +39,6 @@ export function DashboardPage() {
           <div className="admin-stat__label">New requests</div>
         </div>
       </div>
-
-      <p className="admin-field__hint">
-        Last change:{' '}
-        {data.updatedAt === EPOCH
-          ? '—'
-          : new Date(data.updatedAt).toLocaleString()}
-      </p>
 
       <h2 style={{ fontSize: '1rem' }}>Recent requests</h2>
       {recent.length === 0 ? (

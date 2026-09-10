@@ -62,10 +62,10 @@ Once in, the panel edits the site's curated content: the six section header
 blocks (eyebrow / title / body), the Project and Service cards for both Home and
 their listing pages, and the per-page SEO title & meta description — and it reads
 the estimate requests submitted through the public form. Every screen writes
-through the shared content store (`src/content/`), which persists to
-`localStorage` only, so edits show on the public site immediately; a real backend
-later replaces `src/content/persistence.ts` (see `src/content/README.md`). Full
-tour: `src/admin/README.md`.
+through the shared content store (`src/content/`): edits apply optimistically in
+memory, persist to Supabase through `/api/admin/*`, and show on the public site
+immediately, which overlays that content on mount (see `src/content/README.md`).
+Full tour: `src/admin/README.md`.
 
 ## Deployment
 

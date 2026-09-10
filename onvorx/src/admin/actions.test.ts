@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { seedAdminData } from '../content/persistence'
+import { buildDefaults } from '../content/defaults'
 import {
   updateSection,
   addCard,
@@ -14,7 +14,7 @@ import {
   resetAll,
 } from './actions'
 
-const base = () => seedAdminData()
+const base = () => buildDefaults()
 
 describe('updateSection', () => {
   it('patches one section and does not mutate input', () => {
