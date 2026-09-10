@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { dispatchApi } from './admin-api-dev'
+import { dispatchApi, KNOWN_API_PATHS } from './admin-api-dev'
 import { SESSION_COOKIE, signToken } from '../api/_lib/session'
 
 const ENV = { ADMIN_PASSWORD: 'devpassword123', ADMIN_SESSION_SECRET: 'x'.repeat(40) }
@@ -8,6 +8,14 @@ describe('dispatchApi', () => {
   it('returns null for unknown api routes', async () => {
     expect(await dispatchApi({ url: '/api/other', method: 'GET', secure: false }, ENV)).toBeNull()
     expect(await dispatchApi({ url: '/', method: 'GET', secure: false }, ENV)).toBeNull()
+  })
+
+  it('KNOWN_API_PATHS lists exactly the served routes', () => {
+    expect([...KNOWN_API_PATHS].sort()).toEqual([
+      '/api/admin/cards', '/api/admin/content', '/api/admin/login',
+      '/api/admin/logout', '/api/admin/requests', '/api/admin/session',
+      '/api/admin/upload', '/api/estimate',
+    ])
   })
 
   it('handles login with a JSON body', async () => {

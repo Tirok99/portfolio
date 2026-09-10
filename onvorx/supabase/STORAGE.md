@@ -9,7 +9,8 @@ public-media/
   services/   service card icons    services/<id>-<8hex>.<ext>
 ```
 
-- Size limit 2 MB; MIME `image/png,image/jpeg,image/webp,image/svg+xml`.
+- Size limit 2 MB; MIME `image/png, image/jpeg, image/webp`.
+- SVG is intentionally excluded from uploads (inline-script risk on the Storage origin). The operator should also remove `image/svg+xml` from the bucket's Allowed MIME types.
 - Repo assets under `public/assets/**` are NOT stored here; seeded rows point at
   `/assets/...` paths and are served by the app itself.
 - Object names carry a random 8-hex suffix so replacing an image busts caches.

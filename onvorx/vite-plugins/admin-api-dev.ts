@@ -9,6 +9,17 @@ import { handleAdminCards } from '../api/_lib/adminCardsHandler'
 import { handleAdminRequests } from '../api/_lib/adminRequestsHandler'
 import { handleAdminUpload } from '../api/_lib/adminUploadHandler'
 
+export const KNOWN_API_PATHS = new Set([
+  '/api/admin/login',
+  '/api/admin/session',
+  '/api/admin/logout',
+  '/api/estimate',
+  '/api/admin/content',
+  '/api/admin/requests',
+  '/api/admin/upload',
+  '/api/admin/cards',
+])
+
 /**
  * Pure route dispatcher. Returns `null` for any URL that is not one of the
  * known api routes (query string stripped first) so callers can fall
@@ -74,7 +85,17 @@ export async function dispatchApi(
 function readJsonBody(req: IncomingMessage): Promise<unknown> {
   return new Promise((resolve) => {
     const chunks: Buffer[] = []
-    req.on('data', (c: Buffer) => chunks.push(c))
+    let totalBytes = 0
+    const maxBytes = 2_000_000
+    req.on('data', (c: Buffer) => {
+      totalBytes += c.length
+      if (totalBytes > maxBytes) {
+        resolve(undefined)
+        req.destroy()
+        return
+      }
+      chunks.push(c)
+    })
     req.on('end', () => {
       const raw = Buffer.concat(chunks).toString('utf8')
       if (!raw) return resolve(undefined)
@@ -118,10 +139,12 @@ export function adminApiDev(): Plugin {
       server.middlewares.use((req: IncomingMessage, res: ServerResponse, next) => {
         const url = req.url ?? ''
         if (!url.startsWith('/api/')) return next()
+        const method = req.method ?? 'GET'
+        const path = url.split('?')[0]
+        const shouldBuffer = KNOWN_API_PATHS.has(path) && method !== 'GET' && method !== 'HEAD'
+        if (!shouldBuffer) return next()
         const run = async () => {
-          const method = req.method ?? 'GET'
-          const jsonBody =
-            method !== 'GET' && method !== 'HEAD' ? await readJsonBody(req) : undefined
+          const jsonBody = await readJsonBody(req)
           const result = await dispatchApi(
             { url, method, cookieHeader: req.headers.cookie, jsonBody, secure: false },
             env,
