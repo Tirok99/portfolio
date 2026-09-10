@@ -109,7 +109,7 @@ describe('EstimateForm', () => {
     const user = userEvent.setup()
     setup()
     await user.click(screen.getByText('open form'))
-    const hp = document.querySelector('input[name="company_url"]') as HTMLInputElement | null
+    const hp = document.querySelector('input[name="ref_token"]') as HTMLInputElement | null
     expect(hp).not.toBeNull()
     expect(hp).not.toBeVisible() // jest-dom: off-screen / aria-hidden
     await user.type(screen.getByLabelText(/name/i), 'Jane')
@@ -117,7 +117,7 @@ describe('EstimateForm', () => {
     await user.type(screen.getByLabelText(/message/i), 'hi there')
     await user.click(screen.getByRole('button', { name: /send request/i }))
     const sent = JSON.parse(fetchMock.mock.calls[0][1].body)
-    expect(sent.company_url).toBe('')
+    expect(sent.ref_token).toBe('')
   })
 
   it('shows an error and keeps the form when the request fails', async () => {

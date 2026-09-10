@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from 'vitest'
 const { createClientMock } = vi.hoisted(() => ({ createClientMock: vi.fn() }))
 vi.mock('@supabase/supabase-js', () => ({ createClient: createClientMock }))
 
-import { handleAdminCards, createCardDefault } from './adminCardsHandler'
+import { handleAdminCards, createCardDefault, reorderCardsDefault } from './adminCardsHandler'
 import { signToken, SESSION_COOKIE } from './session'
 
 const SECRET = 'secret-secret-secret-secret-secret-secret'
@@ -99,5 +99,49 @@ describe('createCardDefault — DB-assigned sort + retry on unique violation', (
     const res = await createCardDefault('project', 'home', { id: 'p2' }, ENV)
     expect(res).toEqual({ error: 'null value' })
     expect(insert).toHaveBeenCalledTimes(1)
+  })
+})
+
+// A fake client that tracks (list, sort) pairs the way `unique (list, sort)`
+// does, and rejects any `.update()` that would create a duplicate.
+function makeSortTrackingClient(initial: { id: string; list: string; sort: number }[]) {
+  const rows = new Map(initial.map((r) => [r.id, { ...r }]))
+  return {
+    rows,
+    from: () => ({
+      update: (patch: { sort: number }) => ({
+        eq: (_col: string, listVal: string) => ({
+          eq: (_col2: string, idVal: string) => {
+            const row = rows.get(idVal)!
+            const nextSort = patch.sort
+            for (const [oid, orow] of rows) {
+              if (oid !== idVal && orow.list === listVal && orow.sort === nextSort) {
+                return Promise.resolve({ error: { code: '23505' } })
+              }
+            }
+            row.sort = nextSort
+            return Promise.resolve({ error: null })
+          },
+        }),
+      }),
+    }),
+  }
+}
+
+describe('reorderCardsDefault — two-pass avoids the unique(list,sort) collision', () => {
+  it('reorders a,b,c -> b,a,c with no transient 23505', async () => {
+    const fake = makeSortTrackingClient([
+      { id: 'a', list: 'home', sort: 0 },
+      { id: 'b', list: 'home', sort: 1 },
+      { id: 'c', list: 'home', sort: 2 },
+    ])
+    createClientMock.mockReturnValue({ from: fake.from })
+
+    const res = await reorderCardsDefault('project', 'home', ['b', 'a', 'c'], ENV)
+
+    expect(res).toEqual({ error: null })
+    expect(fake.rows.get('a')!.sort).toBe(1)
+    expect(fake.rows.get('b')!.sort).toBe(0)
+    expect(fake.rows.get('c')!.sort).toBe(2)
   })
 })

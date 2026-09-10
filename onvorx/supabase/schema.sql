@@ -1,5 +1,6 @@
 -- ============================================================================
 --  ONVORX — content schema (Supabase). Run in SQL Editor, then run seed.sql.
+--  Then run supabase/migration-2026-09-10-plan4.sql (Plan 4: sort trigger, unique(list,sort), reset_content).
 --  Translatable fields are jsonb: {"en": "...", "uk": "..."}.
 --
 --  ⚠  THIS FILE IS FOR A FRESH SUPABASE PROJECT.

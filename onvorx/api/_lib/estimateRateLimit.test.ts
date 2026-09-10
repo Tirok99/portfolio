@@ -24,4 +24,13 @@ describe('checkRateLimit', () => {
   it('an empty / unknown ip is allowed (never blocks on a missing IP)', () => {
     expect(checkRateLimit('', 1)).toBe(true)
   })
+  it('bounds the hits map: a flood of distinct IPs clears earlier limits', () => {
+    const t = 1_000_000
+    // limit one IP, then flood past the 5000-entry cap
+    for (let i = 0; i < 5; i++) checkRateLimit('7.7.7.7', t)
+    expect(checkRateLimit('7.7.7.7', t)).toBe(false)
+    for (let i = 0; i < 5100; i++) checkRateLimit(`10.${(i >> 8) & 255}.${i & 255}.1`, t)
+    // the map was cleared along the way, so the previously-limited IP is allowed again
+    expect(checkRateLimit('7.7.7.7', t)).toBe(true)
+  })
 })

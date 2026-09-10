@@ -97,6 +97,15 @@ describe('SiteContentProvider', () => {
     expect(screen.getByTestId('hero-title').textContent).toBeTruthy()
   })
 
+  it('clears the retired admin working store (onvorx.admin.v1) on mount', () => {
+    localStorage.setItem('onvorx.admin.v1', '{"stale":true}')
+    const spy = vi.spyOn(Storage.prototype, 'removeItem')
+    wrap()
+    expect(spy).toHaveBeenCalledWith('onvorx.admin.v1')
+    expect(localStorage.getItem('onvorx.admin.v1')).toBeNull()
+    spy.mockRestore()
+  })
+
   it('applies an edit optimistically and calls adminApi.updateSection through the button', async () => {
     wrap()
     await act(async () => {

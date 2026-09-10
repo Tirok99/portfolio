@@ -55,12 +55,22 @@ describe('handleEstimate', () => {
   it('a filled honeypot → 200 { ok: true } WITHOUT calling insert', async () => {
     const insert = vi.fn()
     const r = await handleEstimate(
-      { method: 'POST', body: { ...goodBody, company_url: 'x' }, ip: '1.2.3.4' },
+      { method: 'POST', body: { ...goodBody, ref_token: 'x' }, ip: '1.2.3.4' },
       ENV, { insert },
     )
     expect(r.status).toBe(200)
     expect(r.body).toEqual({ ok: true })
     expect(insert).not.toHaveBeenCalled()
+  })
+
+  it('invalid-body requests do not consume the rate-limit slot', async () => {
+    const insert = vi.fn().mockResolvedValue({ error: null })
+    for (let i = 0; i < 5; i++) {
+      const bad = await handleEstimate({ method: 'POST', body: { name: '' }, ip: '6.6.6.6' }, ENV, { insert })
+      expect(bad.status).toBe(400)
+    }
+    const r = await handleEstimate({ method: 'POST', body: goodBody, ip: '6.6.6.6' }, ENV, { insert })
+    expect(r.status).toBe(200)
   })
 
   it('over the rate limit → 429', async () => {

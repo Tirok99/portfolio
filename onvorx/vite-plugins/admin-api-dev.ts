@@ -91,15 +91,21 @@ export async function dispatchApi(
   }
 }
 
+/** Sentinel returned by readJsonBody when the request body exceeds the cap. */
+export const BODY_TOO_LARGE = { __tooLarge: true } as const
+
 function readJsonBody(req: IncomingMessage): Promise<unknown> {
   return new Promise((resolve) => {
     const chunks: Buffer[] = []
     let totalBytes = 0
     const maxBytes = 2_000_000
+    let tooLarge = false
     req.on('data', (c: Buffer) => {
+      if (tooLarge) return
       totalBytes += c.length
       if (totalBytes > maxBytes) {
-        resolve(undefined)
+        tooLarge = true
+        resolve(BODY_TOO_LARGE)
         req.destroy()
         return
       }
@@ -153,6 +159,13 @@ export function adminApiDev(): Plugin {
         const run = async () => {
           const jsonBody =
             decision === 'dispatch-with-body' ? await readJsonBody(req) : undefined
+          if (jsonBody === BODY_TOO_LARGE) {
+            res.setHeader('Cache-Control', 'no-store')
+            res.statusCode = 413
+            res.setHeader('Content-Type', 'application/json')
+            res.end('{"error":"payload_too_large"}')
+            return
+          }
           const result = await dispatchApi(
             { url, method, cookieHeader: req.headers.cookie, jsonBody, secure: false },
             env,

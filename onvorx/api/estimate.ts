@@ -3,8 +3,14 @@ import { handleEstimate } from './_lib/estimateHandler'
 import { send } from './_lib/vercel-adapter'
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
-  const fwd = req.headers['x-forwarded-for']
-  const ip = (Array.isArray(fwd) ? fwd[0] : fwd ?? '').split(',')[0].trim()
+  // Prefer x-real-ip (Vercel sets it to the true client IP). Fall back to the
+  // LAST element of x-forwarded-for — the first element is client-spoofable if
+  // Vercel appends rather than replaces the header.
+  const realIp = req.headers['x-real-ip']
+  const xff = req.headers['x-forwarded-for']
+  const xffStr = Array.isArray(xff) ? xff[xff.length - 1] : (xff ?? '')
+  const xffLast = xffStr.split(',').pop() ?? ''
+  const ip = ((Array.isArray(realIp) ? realIp[0] : realIp) ?? xffLast).trim()
   const result = await handleEstimate(
     { method: req.method ?? 'GET', body: req.body ?? {}, ip },
     {

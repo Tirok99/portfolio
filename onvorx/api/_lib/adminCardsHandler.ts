@@ -37,8 +37,29 @@ export const createCardDefault: AdminCardsDeps['create'] = async (type, list, ro
   return { error: 'sort_conflict' }
 }
 
+// `unique (list, sort)` (see the migration) means the naive one-`update`-per-row
+// reorder collides mid-flight: moving B up in [A0,B1,C2] would set B.sort=0 while
+// A.sort is still 0 -> 23505. Two passes avoid any transient collision: first
+// park every row well above any real sort, then assign the final 0..n-1.
+export const reorderCardsDefault: AdminCardsDeps['reorder'] = async (type, list, orderedIds, env) => {
+  const c = getSupabaseAdmin(env)
+  if (!c) return { error: 'not_configured' }
+  // pass 1: park each row at a non-colliding offset (well above any real sort)
+  for (let i = 0; i < orderedIds.length; i++) {
+    const { error } = await c.from(table(type)).update({ sort: 100000 + i }).eq('list', list).eq('id', orderedIds[i])
+    if (error) return { error: error.message }
+  }
+  // pass 2: assign the final contiguous 0..n-1
+  for (let i = 0; i < orderedIds.length; i++) {
+    const { error } = await c.from(table(type)).update({ sort: i }).eq('list', list).eq('id', orderedIds[i])
+    if (error) return { error: error.message }
+  }
+  return { error: null }
+}
+
 const defaultDeps: AdminCardsDeps = {
   create: createCardDefault,
+  reorder: reorderCardsDefault,
   update: async (type, list, id, row, env) => {
     const c = getSupabaseAdmin(env)
     if (!c) return { error: 'not_configured' }
@@ -56,15 +77,6 @@ const defaultDeps: AdminCardsDeps = {
     if (error) return { error: error.message }
     if (typeof objectPath === 'string' && objectPath) {
       await c.storage.from(env.SUPABASE_MEDIA_BUCKET ?? 'public-media').remove([objectPath])
-    }
-    return { error: null }
-  },
-  reorder: async (type, list, orderedIds, env) => {
-    const c = getSupabaseAdmin(env)
-    if (!c) return { error: 'not_configured' }
-    for (let i = 0; i < orderedIds.length; i++) {
-      const { error } = await c.from(table(type)).update({ sort: i }).eq('list', list).eq('id', orderedIds[i])
-      if (error) return { error: error.message }
     }
     return { error: null }
   },

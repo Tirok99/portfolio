@@ -8,6 +8,9 @@ const hits = new Map<string, number[]>()
 
 export function checkRateLimit(ip: string, now: number = Date.now()): boolean {
   if (!ip) return true
+  // Cheap unbounded-growth guard: a flood of distinct IPs must not grow `hits`
+  // without limit. Dropping the whole map just resets everyone's window.
+  if (hits.size > 5000) hits.clear()
   const fresh = (hits.get(ip) ?? []).filter((t) => now - t < WINDOW_MS)
   if (fresh.length >= MAX_PER_WINDOW) {
     hits.set(ip, fresh)

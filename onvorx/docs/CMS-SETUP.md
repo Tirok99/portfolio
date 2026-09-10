@@ -11,6 +11,10 @@ Supabase anon key (RLS: public read on content tables only).
   provisioned project. ⚠ It is **destructive**: it `TRUNCATE`s the content
   tables and reloads the bundled defaults, so re-running it after content has
   been edited in `/admin` erases every edit.
+- Plan 4 migration: after `schema.sql` + `seed.sql`, also run
+  `supabase/migration-2026-09-10-plan4.sql` once (server-assigned card `sort`,
+  `unique(list,sort)`, and the atomic `reset_content` function). Card creation
+  and Settings → Reset content depend on it.
 - Images: Supabase Storage bucket `public-media` (`projects/`, `services/`).
 - Env vars: see `.env.example`.
 

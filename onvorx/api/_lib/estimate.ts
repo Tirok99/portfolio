@@ -27,7 +27,9 @@ export function validateEstimate(body: unknown): Result {
   if (typeof body !== 'object' || body === null) return { ok: false, error: 'body' }
   const b = body as Record<string, unknown>
 
-  if (typeof b.company_url === 'string' && b.company_url.trim() !== '') {
+  // Honeypot. Named `ref_token` (not `company_url`) so browser org-autofill
+  // does not fill it for a real visitor and silently drop their submission.
+  if (typeof b.ref_token === 'string' && b.ref_token.trim() !== '') {
     return { ok: false, error: 'honeypot' }
   }
 

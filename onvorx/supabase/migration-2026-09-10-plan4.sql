@@ -66,6 +66,15 @@ declare
   e jsonb;
   card jsonb;
 begin
+  -- Guard: the two `delete from` below run before the insert loop, so a null or
+  -- malformed payload would wipe the card tables and re-insert nothing.
+  if payload is null
+     or jsonb_typeof(payload -> 'cards') <> 'array'
+     or jsonb_typeof(payload -> 'sections') <> 'array'
+     or jsonb_typeof(payload -> 'seo') <> 'array' then
+    raise exception 'reset_content: payload must have array keys sections, seo, cards';
+  end if;
+
   for s in select * from jsonb_array_elements(payload -> 'sections') loop
     update public.site_sections set
       eyebrow   = coalesce(s -> 'eyebrow',   eyebrow),
@@ -110,3 +119,8 @@ begin
     end if;
   end loop;
 end $$;
+
+-- CREATE FUNCTION grants EXECUTE to PUBLIC by default, which would make
+-- POST /rest/v1/rpc/reset_content callable with the anon key (browser bundle).
+-- service_role — which getSupabaseAdmin uses — keeps its grant via Supabase defaults.
+revoke execute on function public.reset_content(jsonb) from anon, authenticated;

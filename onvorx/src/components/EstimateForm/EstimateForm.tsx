@@ -30,7 +30,7 @@ export function EstimateForm() {
   const [budget, setBudget] = useState<BudgetRange | ''>('')
   const [interested, setInterested] = useState<string[]>([])
   const [message, setMessage] = useState('')
-  const [companyUrl, setCompanyUrl] = useState('')
+  const [refToken, setRefToken] = useState('')
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [sent, setSent] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -45,7 +45,7 @@ export function EstimateForm() {
       setBudget('')
       setInterested([])
       setMessage('')
-      setCompanyUrl('')
+      setRefToken('')
       setErrors({})
       setSent(false)
       setSubmitting(false)
@@ -112,7 +112,7 @@ export function EstimateForm() {
           message: message.trim(),
           locale: lang,
           sourcePage,
-          company_url: companyUrl,
+          ref_token: refToken,
         }),
       })
       if (!res.ok) throw new Error('request_failed')
@@ -157,15 +157,19 @@ export function EstimateForm() {
           <form className="estimate-form__body" onSubmit={submit} noValidate>
             <h2 id={titleId}>Request a Project Estimate</h2>
 
-            {/* Anti-spam honeypot: hidden from real users, bots fill it in. */}
+            {/* Anti-spam honeypot: hidden from real users, bots fill it in.
+                Named `ref_token` (not `company_url`) so Chrome org-autofill and
+                password managers leave it alone for a real visitor. */}
             <input
               type="text"
-              name="company_url"
+              name="ref_token"
               tabIndex={-1}
               autoComplete="off"
               aria-hidden="true"
-              value={companyUrl}
-              onChange={(e) => setCompanyUrl(e.target.value)}
+              data-lpignore="true"
+              data-1p-ignore=""
+              value={refToken}
+              onChange={(e) => setRefToken(e.target.value)}
               style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, opacity: 0 }}
             />
 

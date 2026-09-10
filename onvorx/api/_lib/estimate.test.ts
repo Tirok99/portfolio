@@ -79,11 +79,11 @@ describe('validateEstimate', () => {
   })
 
   it('rejects a filled honeypot field with error "honeypot"', () => {
-    const r = validateEstimate({ ...base, company_url: 'http://spam.example' })
+    const r = validateEstimate({ ...base, ref_token: 'http://spam.example' })
     expect(r).toEqual({ ok: false, error: 'honeypot' })
   })
 
   it('ignores an empty-string honeypot', () => {
-    expect(validateEstimate({ ...base, company_url: '' }).ok).toBe(true)
+    expect(validateEstimate({ ...base, ref_token: '' }).ok).toBe(true)
   })
 })
