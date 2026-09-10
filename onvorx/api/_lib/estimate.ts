@@ -27,6 +27,10 @@ export function validateEstimate(body: unknown): Result {
   if (typeof body !== 'object' || body === null) return { ok: false, error: 'body' }
   const b = body as Record<string, unknown>
 
+  if (typeof b.company_url === 'string' && b.company_url.trim() !== '') {
+    return { ok: false, error: 'honeypot' }
+  }
+
   const name = str(b.name)
   const email = str(b.email)
   const message = str(b.message)

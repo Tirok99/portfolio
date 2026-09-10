@@ -14,6 +14,11 @@ Supabase anon key (RLS: public read on content tables only).
 - Images: Supabase Storage bucket `public-media` (`projects/`, `services/`).
 - Env vars: see `.env.example`.
 
+**Estimate form spam:** the `/api/estimate` function checks a hidden honeypot
+field and applies a best-effort per-instance rate limit (5 / 10 min / IP). For
+authoritative rate limiting, add a Vercel Firewall rate-limit rule on
+`/api/estimate` in the Vercel dashboard.
+
 Design docs: `docs/superpowers/specs/2026-09-09-supabase-integration-design.md`.
 
 There is **no** build-time content step — the old `scripts/build-content.mjs`

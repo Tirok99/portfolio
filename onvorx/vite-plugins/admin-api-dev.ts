@@ -38,7 +38,7 @@ export async function dispatchApi(
     case '/api/admin/logout':
       return handleLogout({ method: input.method, secure: input.secure })
     case '/api/estimate':
-      return handleEstimate({ method: input.method, body: input.jsonBody ?? {} }, env)
+      return handleEstimate({ method: input.method, body: input.jsonBody ?? {}, ip: '' }, env)
     case '/api/admin/content':
       return handleAdminContent(
         { method: input.method, cookieHeader: input.cookieHeader, body: input.jsonBody ?? {} },
