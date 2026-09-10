@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { EstimateRequest, RequestStatus } from '../types'
-import { useSiteContentRaw } from '../../content/SiteContentProvider'
+import { useRequests } from '../hooks/useRequests'
 import { StatusBadge } from '../components/StatusBadge'
 import { EmptyState } from '../components/EmptyState'
 import { useToast } from '../components/Toast'
@@ -11,11 +11,17 @@ const STATUSES: RequestStatus[] = ['new', 'in_progress', 'done', 'archived']
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
 
-function Detail({ req }: { req: EstimateRequest }) {
-  const { actions } = useSiteContentRaw()
+interface DetailProps {
+  req: EstimateRequest
+  setStatus: (id: string, status: RequestStatus) => Promise<void>
+  setNote: (id: string, note: string) => Promise<void>
+  remove: (id: string) => Promise<void>
+}
+
+function Detail({ req, setStatus, setNote, remove }: DetailProps) {
   const { confirm, dialog } = useConfirm()
   const toast = useToast()
-  const [note, setNote] = useState(req.note ?? '')
+  const [note, setNoteText] = useState(req.note ?? '')
 
   const del = async () => {
     const ok = await confirm({
@@ -25,8 +31,9 @@ function Detail({ req }: { req: EstimateRequest }) {
       danger: true,
     })
     if (ok) {
-      actions.removeRequest(req.id)
-      toast('Request deleted')
+      remove(req.id)
+        .then(() => toast('Request deleted'))
+        .catch(() => toast('Save failed', 'error'))
     }
   }
 
@@ -49,7 +56,11 @@ function Detail({ req }: { req: EstimateRequest }) {
         <select
           className="admin-input"
           value={req.status}
-          onChange={(e) => actions.setRequestStatus(req.id, e.target.value as RequestStatus)}
+          onChange={(e) =>
+            setStatus(req.id, e.target.value as RequestStatus).catch(() =>
+              toast('Save failed', 'error'),
+            )
+          }
         >
           {STATUSES.map((s) => (
             <option key={s} value={s}>{s.replace('_', ' ')}</option>
@@ -62,7 +73,7 @@ function Detail({ req }: { req: EstimateRequest }) {
         <textarea
           className="admin-textarea"
           value={note}
-          onChange={(e) => setNote(e.target.value)}
+          onChange={(e) => setNoteText(e.target.value)}
         />
       </label>
       <div className="admin-detail__actions">
@@ -70,8 +81,9 @@ function Detail({ req }: { req: EstimateRequest }) {
           type="button"
           className="admin-btn admin-btn--primary"
           onClick={() => {
-            actions.setRequestNote(req.id, note)
-            toast('Note saved')
+            setNote(req.id, note)
+              .then(() => toast('Note saved'))
+              .catch(() => toast('Save failed', 'error'))
           }}
         >
           Save note
@@ -87,15 +99,16 @@ function Detail({ req }: { req: EstimateRequest }) {
 
 export function RequestsPage() {
   useAdminTitle('Requests')
-  const { data } = useSiteContentRaw()
-  const [status, setStatus] = useState<'all' | RequestStatus>('all')
+  const { requests, error, setStatus, setNote, remove } = useRequests()
+  const [status, setStatusFilter] = useState<'all' | RequestStatus>('all')
   const [lang, setLang] = useState<'all' | 'en' | 'uk'>('all')
   const [q, setQ] = useState('')
   const [openId, setOpenId] = useState<string | null>(null)
 
   const rows = useMemo(() => {
+    if (!requests) return []
     const needle = q.trim().toLowerCase()
-    return [...data.requests]
+    return [...requests]
       .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
       .filter((r) => (status === 'all' ? true : r.status === status))
       .filter((r) => (lang === 'all' ? true : r.locale === lang))
@@ -104,9 +117,9 @@ export function RequestsPage() {
           ? true
           : `${r.name} ${r.email} ${r.message}`.toLowerCase().includes(needle),
       )
-  }, [data.requests, status, lang, q])
+  }, [requests, status, lang, q])
 
-  const open = openId ? data.requests.find((r) => r.id === openId) ?? null : null
+  const open = openId && requests ? requests.find((r) => r.id === openId) ?? null : null
 
   return (
     <section className="admin-page admin-page--wide">
@@ -116,7 +129,7 @@ export function RequestsPage() {
       <div className="admin-filters">
         <label>
           Status
-          <select className="admin-input" value={status} onChange={(e) => setStatus(e.target.value as never)}>
+          <select className="admin-input" value={status} onChange={(e) => setStatusFilter(e.target.value as never)}>
             <option value="all">All</option>
             {STATUSES.map((s) => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
           </select>
@@ -135,7 +148,11 @@ export function RequestsPage() {
         </label>
       </div>
 
-      {rows.length === 0 ? (
+      {error ? (
+        <EmptyState title="Couldn’t load requests" hint="Try reloading the page." />
+      ) : requests === null ? (
+        <EmptyState title="Loading…" hint="Fetching requests." />
+      ) : rows.length === 0 ? (
         <EmptyState title="No requests match" hint="Try a different filter." />
       ) : (
         <table className="admin-table">
@@ -165,7 +182,15 @@ export function RequestsPage() {
         </table>
       )}
 
-      {open && <Detail key={open.id} req={open} />}
+      {open && (
+        <Detail
+          key={open.id}
+          req={open}
+          setStatus={setStatus}
+          setNote={setNote}
+          remove={remove}
+        />
+      )}
     </section>
   )
 }

@@ -23,9 +23,16 @@ function SeoEntryEditor({ entry }: { entry: SeoEntry }) {
   }))
   const dirty = !eqL(draft.title, stored.title) || !eqL(draft.description, stored.description)
 
-  const save = () => {
-    actions.updateSeo(entry.pageKey, { title: draft.title, description: draft.description })
-    toast('Saved')
+  const save = async () => {
+    try {
+      await actions.updateSeo(entry.pageKey, {
+        title: draft.title,
+        description: draft.description,
+      })
+      toast('Saved')
+    } catch {
+      toast('Save failed', 'error')
+    }
   }
 
   return (

@@ -2,9 +2,7 @@ import type {
   AdminData,
   CardListKey,
   ImageRef,
-  NewRequestInput,
   ProjectCard,
-  RequestStatus,
   SectionKey,
   SectionText,
   SeoEntry,
@@ -63,12 +61,39 @@ export function updateSection(
   })
 }
 
+/** Append a pre-built card (lets a caller send the SAME object to the server). */
+export function appendCard(
+  d: AdminData,
+  list: CardListKey,
+  card: ProjectCard | ServiceCard,
+): AdminData {
+  return stamp({ ...d, [list]: [...d[list], card] })
+}
+
 export function addCard(d: AdminData, list: CardListKey): AdminData {
-  const current = d[list]
   const card = isProjectList(list)
-    ? blankProjectCard(current.length)
-    : blankServiceCard(current.length)
-  return stamp({ ...d, [list]: [...current, card] })
+    ? blankProjectCard(d[list].length)
+    : blankServiceCard(d[list].length)
+  return appendCard(d, list, card)
+}
+
+/**
+ * The id order after moving `id` one slot in `dir`. Sorts by `order`, swaps the
+ * target with its neighbour; edge moves are a no-op. Pure — used to derive the
+ * `orderedIds` payload for `adminApi.reorderCards`.
+ */
+export function orderedIdsAfterMove(
+  cards: { id: string; order: number }[],
+  id: string,
+  dir: 'up' | 'down',
+): string[] {
+  const sorted = [...cards].sort((a, b) => a.order - b.order)
+  const i = sorted.findIndex((c) => c.id === id)
+  if (i < 0) return sorted.map((c) => c.id)
+  const j = dir === 'up' ? i - 1 : i + 1
+  if (j < 0 || j >= sorted.length) return sorted.map((c) => c.id)
+  ;[sorted[i], sorted[j]] = [sorted[j], sorted[i]]
+  return sorted.map((c) => c.id)
 }
 
 export function updateCard(
@@ -130,47 +155,6 @@ export function updateSeo(
     ...d,
     seo: d.seo.map((e) => (e.pageKey === pageKey ? { ...e, ...patch } : e)),
   })
-}
-
-export function addRequest(d: AdminData, input: NewRequestInput): AdminData {
-  return stamp({
-    ...d,
-    requests: [
-      {
-        ...input,
-        id: newId('req'),
-        createdAt: new Date().toISOString(),
-        status: 'new',
-      },
-      ...d.requests,
-    ],
-  })
-}
-
-export function setRequestStatus(
-  d: AdminData,
-  id: string,
-  status: RequestStatus,
-): AdminData {
-  return stamp({
-    ...d,
-    requests: d.requests.map((r) => (r.id === id ? { ...r, status } : r)),
-  })
-}
-
-export function setRequestNote(
-  d: AdminData,
-  id: string,
-  note: string,
-): AdminData {
-  return stamp({
-    ...d,
-    requests: d.requests.map((r) => (r.id === id ? { ...r, note } : r)),
-  })
-}
-
-export function removeRequest(d: AdminData, id: string): AdminData {
-  return stamp({ ...d, requests: d.requests.filter((r) => r.id !== id) })
 }
 
 export function resetAll(): AdminData {

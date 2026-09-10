@@ -1,17 +1,17 @@
 import { describe, it, expect } from 'vitest'
-import { dispatchAdminApi } from './admin-api-dev'
+import { dispatchApi } from './admin-api-dev'
 import { SESSION_COOKIE, signToken } from '../api/_lib/session'
 
 const ENV = { ADMIN_PASSWORD: 'devpassword123', ADMIN_SESSION_SECRET: 'x'.repeat(40) }
 
-describe('dispatchAdminApi', () => {
-  it('returns null for non-admin routes', () => {
-    expect(dispatchAdminApi({ url: '/api/other', method: 'GET', secure: false }, ENV)).toBeNull()
-    expect(dispatchAdminApi({ url: '/', method: 'GET', secure: false }, ENV)).toBeNull()
+describe('dispatchApi', () => {
+  it('returns null for unknown api routes', async () => {
+    expect(await dispatchApi({ url: '/api/other', method: 'GET', secure: false }, ENV)).toBeNull()
+    expect(await dispatchApi({ url: '/', method: 'GET', secure: false }, ENV)).toBeNull()
   })
 
-  it('handles login with a JSON body', () => {
-    const r = dispatchAdminApi(
+  it('handles login with a JSON body', async () => {
+    const r = await dispatchApi(
       { url: '/api/admin/login', method: 'POST', jsonBody: { password: 'devpassword123' }, secure: false },
       ENV,
     )
@@ -20,22 +20,135 @@ describe('dispatchAdminApi', () => {
     expect(r?.setCookie).not.toContain('Secure')
   })
 
-  it('handles session with a cookie header', () => {
+  it('handles session with a cookie header', async () => {
     const tok = signToken(ENV.ADMIN_SESSION_SECRET)
-    const r = dispatchAdminApi(
+    const r = await dispatchApi(
       { url: '/api/admin/session', method: 'GET', cookieHeader: `${SESSION_COOKIE}=${tok}`, secure: false },
       ENV,
     )
     expect(r?.body).toEqual({ authenticated: true })
   })
 
-  it('handles logout', () => {
-    const r = dispatchAdminApi({ url: '/api/admin/logout', method: 'POST', secure: false }, ENV)
+  it('handles logout', async () => {
+    const r = await dispatchApi({ url: '/api/admin/logout', method: 'POST', secure: false }, ENV)
     expect(r?.setCookie).toContain('Max-Age=0')
   })
 
-  it('ignores query strings on the path match', () => {
-    const r = dispatchAdminApi({ url: '/api/admin/session?ts=1', method: 'GET', secure: false }, ENV)
+  it('ignores query strings on the path match', async () => {
+    const r = await dispatchApi({ url: '/api/admin/session?ts=1', method: 'GET', secure: false }, ENV)
     expect(r?.body).toEqual({ authenticated: false })
+  })
+
+  it('routes POST /api/estimate through handleEstimate', async () => {
+    const r = await dispatchApi(
+      { url: '/api/estimate', method: 'POST', jsonBody: { name: '' }, secure: false },
+      { ...ENV, SUPABASE_URL: 'u', SUPABASE_SERVICE_ROLE_KEY: 'k' },
+    )
+    expect(r?.status).toBe(400) // invalid body, but it was routed
+  })
+
+  it('405s a GET /api/estimate', async () => {
+    const r = await dispatchApi(
+      { url: '/api/estimate', method: 'GET', secure: false },
+      { ...ENV, SUPABASE_URL: 'u', SUPABASE_SERVICE_ROLE_KEY: 'k' },
+    )
+    expect(r?.status).toBe(405)
+  })
+
+  it('routes PUT /api/admin/content through handleAdminContent (401 without a cookie)', async () => {
+    const r = await dispatchApi(
+      { url: '/api/admin/content', method: 'PUT', jsonBody: { kind: 'section', key: 'hero', patch: {} }, secure: false },
+      { ...ENV, SUPABASE_URL: 'u', SUPABASE_SERVICE_ROLE_KEY: 'k' },
+    )
+    expect(r?.status).toBe(401)
+  })
+
+  it('PUT /api/admin/content with a valid cookie dispatches past auth (bad key → 400)', async () => {
+    const tok = signToken(ENV.ADMIN_SESSION_SECRET)
+    const r = await dispatchApi(
+      {
+        url: '/api/admin/content',
+        method: 'PUT',
+        cookieHeader: `${SESSION_COOKIE}=${tok}`,
+        jsonBody: { kind: 'section', key: 'bogus', patch: { title: { en: 'x', uk: 'x' } } },
+        secure: false,
+      },
+      { ...ENV, SUPABASE_URL: 'u', SUPABASE_SERVICE_ROLE_KEY: 'k' },
+    )
+    expect(r?.status).toBe(400)
+  })
+
+  it('routes GET /api/admin/requests through handleAdminRequests (401 without a cookie)', async () => {
+    const r = await dispatchApi(
+      { url: '/api/admin/requests', method: 'GET', secure: false },
+      { ...ENV, SUPABASE_URL: 'u', SUPABASE_SERVICE_ROLE_KEY: 'k' },
+    )
+    expect(r?.status).toBe(401)
+  })
+
+  it('PATCH /api/admin/requests with a valid cookie dispatches past auth (bad status → 400)', async () => {
+    const tok = signToken(ENV.ADMIN_SESSION_SECRET)
+    const r = await dispatchApi(
+      {
+        url: '/api/admin/requests',
+        method: 'PATCH',
+        cookieHeader: `${SESSION_COOKIE}=${tok}`,
+        jsonBody: { id: 'r1', status: 'nope' },
+        secure: false,
+      },
+      { ...ENV, SUPABASE_URL: 'u', SUPABASE_SERVICE_ROLE_KEY: 'k' },
+    )
+    expect(r?.status).toBe(400)
+  })
+
+  it('routes POST /api/admin/cards through handleAdminCards (401 without a cookie)', async () => {
+    const r = await dispatchApi(
+      {
+        url: '/api/admin/cards?type=project',
+        method: 'POST',
+        jsonBody: { list: 'home', card: { id: 'p1', title: { en: 'x', uk: 'x' } } },
+        secure: false,
+      },
+      { ...ENV, SUPABASE_URL: 'u', SUPABASE_SERVICE_ROLE_KEY: 'k' },
+    )
+    expect(r?.status).toBe(401)
+  })
+
+  it('POST /api/admin/cards with a valid cookie dispatches past auth (create body has no id → 400)', async () => {
+    const tok = signToken(ENV.ADMIN_SESSION_SECRET)
+    const r = await dispatchApi(
+      {
+        url: '/api/admin/cards?type=project',
+        method: 'POST',
+        cookieHeader: `${SESSION_COOKIE}=${tok}`,
+        jsonBody: { list: 'home', card: { title: { en: 'x', uk: 'x' } } },
+        secure: false,
+      },
+      { ...ENV, SUPABASE_URL: 'u', SUPABASE_SERVICE_ROLE_KEY: 'k' },
+    )
+    expect(r?.status).toBe(400)
+  })
+
+  it('routes POST /api/admin/upload through handleAdminUpload (401 without a cookie)', async () => {
+    const r = await dispatchApi(
+      { url: '/api/admin/upload', method: 'POST', secure: false },
+      { ...ENV, SUPABASE_URL: 'u', SUPABASE_SERVICE_ROLE_KEY: 'k' },
+    )
+    expect(r?.status).toBe(401)
+  })
+
+  it('DELETE /api/admin/upload with a valid cookie but bad path dispatches past auth (400)', async () => {
+    const tok = signToken(ENV.ADMIN_SESSION_SECRET)
+    const r = await dispatchApi(
+      {
+        url: '/api/admin/upload',
+        method: 'DELETE',
+        cookieHeader: `${SESSION_COOKIE}=${tok}`,
+        jsonBody: { path: '../secrets' },
+        secure: false,
+      },
+      { ...ENV, SUPABASE_URL: 'u', SUPABASE_SERVICE_ROLE_KEY: 'k' },
+    )
+    expect(r?.status).toBe(400)
   })
 })

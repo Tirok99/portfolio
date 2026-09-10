@@ -63,19 +63,23 @@ export function ServicesPage() {
       draft!.featured !== stored!.featured ||
       draft!.published !== stored!.published)
 
-  const save = () => {
+  const save = async () => {
     if (!selected || !draft) return
-    actions.updateCard(list, selected.id, {
-      title: draft.title,
-      text: draft.text,
-      published: draft.published,
-      ...(isHome ? { featured: draft.featured } : {}),
-    })
-    // Re-seed the local draft from what was just written, in canonical form, so
-    // `dirty` reads false immediately (the hidden Featured field on the page tab
-    // is not part of the patch, so mirror the stored value).
-    setDraft((d) => d && { ...d, featured: isHome ? d.featured : selected.featured })
-    toast('Saved')
+    try {
+      await actions.updateCard(list, selected.id, {
+        title: draft.title,
+        text: draft.text,
+        published: draft.published,
+        ...(isHome ? { featured: draft.featured } : {}),
+      })
+      // Re-seed the local draft from what was just written, in canonical form, so
+      // `dirty` reads false immediately (the hidden Featured field on the page tab
+      // is not part of the patch, so mirror the stored value).
+      setDraft((d) => d && { ...d, featured: isHome ? d.featured : selected.featured })
+      toast('Saved')
+    } catch {
+      toast('Save failed', 'error')
+    }
   }
 
   const del = async () => {
@@ -87,9 +91,13 @@ export function ServicesPage() {
       danger: true,
     })
     if (!ok) return
-    actions.removeCard(list, selected.id)
-    setSelectedId(null)
-    toast('Card deleted')
+    try {
+      await actions.removeCard(list, selected.id)
+      setSelectedId(null)
+      toast('Card deleted')
+    } catch {
+      toast('Delete failed', 'error')
+    }
   }
 
   const listNode = (
@@ -101,8 +109,12 @@ export function ServicesPage() {
       }))}
       selectedId={selectedId}
       onSelect={setSelectedId}
-      onMove={(id, dir) => actions.moveCard(list, id, dir)}
-      onAdd={() => actions.addCard(list)}
+      onMove={(id, dir) => {
+        void actions.moveCard(list, id, dir).catch(() => toast('Save failed', 'error'))
+      }}
+      onAdd={() => {
+        void actions.addCard(list).catch(() => toast('Save failed', 'error'))
+      }}
       addLabel="Add service"
     />
   )
@@ -112,6 +124,7 @@ export function ServicesPage() {
       <div>
         <ImageUpload
           label="Icon"
+          folder="services"
           value={selected.icon}
           onChange={(ref) => actions.setCardImage(list, selected.id, ref)}
           onClear={() =>

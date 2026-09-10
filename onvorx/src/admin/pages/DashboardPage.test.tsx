@@ -1,11 +1,28 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { I18nProvider } from '../../i18n/i18n'
 import { SiteContentProvider } from '../../content/SiteContentProvider'
+import { mockRequests } from '../mock/requests'
 import { DashboardPage } from './DashboardPage'
 
-beforeEach(() => localStorage.clear())
+vi.mock('../api', () => ({
+  adminApi: {
+    listRequests: vi.fn(),
+    setRequestStatus: vi.fn().mockResolvedValue(undefined),
+    setRequestNote: vi.fn().mockResolvedValue(undefined),
+    deleteRequest: vi.fn().mockResolvedValue(undefined),
+  },
+}))
+import { adminApi } from '../api'
+
+beforeEach(() => {
+  localStorage.clear()
+  vi.clearAllMocks()
+  vi.mocked(adminApi.listRequests).mockResolvedValue(
+    mockRequests.map((r) => ({ ...r })),
+  )
+})
 
 const wrap = () =>
   render(
@@ -19,13 +36,15 @@ const wrap = () =>
   )
 
 describe('DashboardPage', () => {
-  it('shows counts and the newest requests', () => {
+  it('shows counts and the newest requests', async () => {
     wrap()
     expect(screen.getByText(/new requests?/i)).toBeInTheDocument()
-    // seed has 3 'new' requests
-    expect(screen.getByText('3')).toBeInTheDocument()
+    // mock has 3 'new' requests
+    expect(await screen.findByText('3')).toBeInTheDocument()
     // one of the 5 newest by createdAt
-    expect(screen.getByRole('link', { name: 'Tomasz Nowak' })).toBeInTheDocument()
+    expect(
+      await screen.findByRole('link', { name: 'Tomasz Nowak' }),
+    ).toBeInTheDocument()
   })
 
   it('shows an em dash for "Last change" until the first edit', () => {

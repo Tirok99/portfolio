@@ -1,12 +1,10 @@
 import type { AdminData } from '../admin/types'
 import { buildDefaults, DATA_VERSION } from './defaults'
-import { mockRequests } from '../admin/mock/requests'
 
 export const STORAGE_KEY = 'onvorx.admin.v1'
 
 export function seedAdminData(): AdminData {
-  const base = buildDefaults()
-  return { ...base, requests: mockRequests.map((r) => ({ ...r })) }
+  return buildDefaults()
 }
 
 export function saveAdminData(data: AdminData): void {
@@ -27,8 +25,7 @@ export function isAdminData(v: unknown): v is AdminData {
     Array.isArray(d.projectsPage) &&
     Array.isArray(d.servicesHome) &&
     Array.isArray(d.servicesPage) &&
-    Array.isArray(d.seo) &&
-    Array.isArray(d.requests)
+    Array.isArray(d.seo)
   )
 }
 

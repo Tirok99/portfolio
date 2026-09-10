@@ -8,3 +8,9 @@ export interface HandlerResult {
   body: unknown
   setCookie?: string
 }
+
+export interface SupabaseAdminEnv {
+  SUPABASE_URL?: string
+  SUPABASE_SERVICE_ROLE_KEY?: string
+  SUPABASE_MEDIA_BUCKET?: string
+}

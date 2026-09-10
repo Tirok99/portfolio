@@ -18,7 +18,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 export function EstimateForm() {
   const { isOpen, sourcePage, close } = useEstimateForm()
   const { lang } = useI18n()
-  const { servicesHome, actions } = useSiteContent()
+  const { servicesHome } = useSiteContent()
   const services = servicesHome()
 
   const baseId = useId()
@@ -32,6 +32,8 @@ export function EstimateForm() {
   const [message, setMessage] = useState('')
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [sent, setSent] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState(false)
 
   // reset each time it opens
   useEffect(() => {
@@ -44,6 +46,8 @@ export function EstimateForm() {
       setMessage('')
       setErrors({})
       setSent(false)
+      setSubmitting(false)
+      setSubmitError(false)
     }
   }, [isOpen])
 
@@ -80,7 +84,7 @@ export function EstimateForm() {
       cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id],
     )
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     const next: Record<string, string> = {}
     if (!name.trim()) next.name = 'Name is required.'
@@ -91,17 +95,30 @@ export function EstimateForm() {
     setErrors(next)
     if (Object.keys(next).length > 0) return
 
-    actions.addRequest({
-      name: name.trim(),
-      email: email.trim(),
-      company: company.trim() || undefined,
-      budget: budget || undefined,
-      interestedIn: interested,
-      message: message.trim(),
-      locale: lang,
-      sourcePage,
-    })
-    setSent(true)
+    setSubmitError(false)
+    setSubmitting(true)
+    try {
+      const res = await fetch('/api/estimate', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          name: name.trim(),
+          email: email.trim(),
+          company: company.trim() || undefined,
+          budget: budget || undefined,
+          interestedIn: interested,
+          message: message.trim(),
+          locale: lang,
+          sourcePage,
+        }),
+      })
+      if (!res.ok) throw new Error('request_failed')
+      setSent(true)
+    } catch {
+      setSubmitError(true)
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const titleId = `${baseId}-title`
@@ -141,6 +158,7 @@ export function EstimateForm() {
               Name
               <input
                 id={`${baseId}-name`}
+                maxLength={200}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 aria-invalid={Boolean(errors.name)}
@@ -163,6 +181,7 @@ export function EstimateForm() {
               <input
                 id={`${baseId}-email`}
                 type="email"
+                maxLength={200}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 aria-invalid={Boolean(errors.email)}
@@ -184,6 +203,7 @@ export function EstimateForm() {
               Company (optional)
               <input
                 id={`${baseId}-company`}
+                maxLength={200}
                 value={company}
                 onChange={(e) => setCompany(e.target.value)}
               />
@@ -226,6 +246,7 @@ export function EstimateForm() {
               <textarea
                 id={`${baseId}-message`}
                 rows={4}
+                maxLength={5000}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 aria-invalid={Boolean(errors.message)}
@@ -243,8 +264,18 @@ export function EstimateForm() {
               )}
             </label>
 
-            <button type="submit" className="btn estimate-form__submit">
-              Send request
+            {submitError && (
+              <p className="estimate-form__error" role="alert">
+                Something went wrong — please try again.
+              </p>
+            )}
+
+            <button
+              type="submit"
+              className="btn estimate-form__submit"
+              disabled={submitting}
+            >
+              {submitting ? 'Sending…' : 'Send request'}
             </button>
             <p className="estimate-form__note">
               Your information is secure and will not be shared.

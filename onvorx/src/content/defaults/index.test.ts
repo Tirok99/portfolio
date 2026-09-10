@@ -15,7 +15,6 @@ describe('buildDefaults', () => {
       'cta',
     ])
     expect(d.seo).toHaveLength(8)
-    expect(d.requests).toEqual([])
   })
 
   it('seeds project and service cards from i18n content', () => {

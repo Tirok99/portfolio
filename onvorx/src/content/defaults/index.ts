@@ -20,6 +20,5 @@ export function buildDefaults(): AdminData {
     servicesHome: deepCopy(defaultServicesHome),
     servicesPage: deepCopy(defaultServicesPage),
     seo: deepCopy(defaultSeo),
-    requests: [],
   }
 }

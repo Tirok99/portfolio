@@ -66,23 +66,27 @@ export function ProjectsPage() {
       !eqL(draft!.imageAlt, stored!.imageAlt) ||
       draft!.published !== stored!.published)
 
-  const save = () => {
+  const save = async () => {
     if (!selected || !draft) return
     const normalizedTags = draft.tags
       .split(',')
       .map((t) => t.trim())
       .filter(Boolean)
-    actions.updateCard(list, selected.id, {
-      title: draft.title,
-      tags: normalizedTags,
-      description: draft.description,
-      imageAlt: draft.imageAlt,
-      published: draft.published,
-    })
-    // Re-seed the draft with the canonical tag string so a non-canonical input
-    // (`"a,b"`, trailing comma, double space) does not leave `dirty` stuck true.
-    setDraft((d) => d && { ...d, tags: normalizedTags.join(', ') })
-    toast('Saved')
+    try {
+      await actions.updateCard(list, selected.id, {
+        title: draft.title,
+        tags: normalizedTags,
+        description: draft.description,
+        imageAlt: draft.imageAlt,
+        published: draft.published,
+      })
+      // Re-seed the draft with the canonical tag string so a non-canonical input
+      // (`"a,b"`, trailing comma, double space) does not leave `dirty` stuck true.
+      setDraft((d) => d && { ...d, tags: normalizedTags.join(', ') })
+      toast('Saved')
+    } catch {
+      toast('Save failed', 'error')
+    }
   }
 
   const del = async () => {
@@ -94,9 +98,13 @@ export function ProjectsPage() {
       danger: true,
     })
     if (!ok) return
-    actions.removeCard(list, selected.id)
-    setSelectedId(null)
-    toast('Card deleted')
+    try {
+      await actions.removeCard(list, selected.id)
+      setSelectedId(null)
+      toast('Card deleted')
+    } catch {
+      toast('Delete failed', 'error')
+    }
   }
 
   const listNode = (
@@ -108,8 +116,12 @@ export function ProjectsPage() {
       }))}
       selectedId={selectedId}
       onSelect={setSelectedId}
-      onMove={(id, dir) => actions.moveCard(list, id, dir)}
-      onAdd={() => actions.addCard(list)}
+      onMove={(id, dir) => {
+        void actions.moveCard(list, id, dir).catch(() => toast('Save failed', 'error'))
+      }}
+      onAdd={() => {
+        void actions.addCard(list).catch(() => toast('Save failed', 'error'))
+      }}
       addLabel="Add project"
     />
   )
@@ -140,6 +152,7 @@ export function ProjectsPage() {
         />
         <ImageUpload
           label="Image"
+          folder="projects"
           value={selected.image}
           onChange={(ref) => actions.setCardImage(list, selected.id, ref)}
           onClear={() =>

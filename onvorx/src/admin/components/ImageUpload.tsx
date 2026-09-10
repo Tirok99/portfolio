@@ -1,22 +1,28 @@
 import { useId, useState } from 'react'
 import type { ImageRef } from '../types'
 import { fileToImageRef } from '../lib/image'
+import { adminApi } from '../api'
 
 const MESSAGES: Record<string, string> = {
   'unsupported-type': "That file isn't an image. Choose a JPG, PNG, or WebP.",
   'too-large': 'That image is too large (max ~1.5 MB) — try a smaller one.',
+  'upload-failed': 'Upload failed — check your connection and try again.',
+  'save-failed': 'Could not save the image. Please try again.',
+  'clear-failed': 'Could not clear the image. Please try again.',
 }
 
 export function ImageUpload({
   label,
+  folder,
   value,
   onChange,
   onClear,
 }: {
   label: string
+  folder: 'projects' | 'services'
   value: ImageRef
-  onChange: (ref: ImageRef) => void
-  onClear: () => void
+  onChange: (ref: ImageRef) => Promise<void>
+  onClear: () => Promise<void>
 }) {
   const id = useId()
   const [error, setError] = useState('')
@@ -27,11 +33,42 @@ export function ImageUpload({
     setError('')
     setBusy(true)
     try {
+      const old = value.kind === 'upload' && value.path ? value.path : undefined
       const ref = await fileToImageRef(file)
-      onChange(ref)
+      let uploaded: { url: string; path: string }
+      try {
+        uploaded = await adminApi.uploadImage(folder, ref.src, file.name)
+      } catch {
+        setError(MESSAGES['upload-failed'])
+        return
+      }
+      try {
+        await onChange({ kind: 'upload', src: uploaded.url, path: uploaded.path })
+      } catch {
+        setError(MESSAGES['save-failed'])
+        return
+      }
+      if (old && old !== uploaded.path) void adminApi.deleteImage(old).catch(() => {})
     } catch (e) {
       const key = e instanceof Error ? e.message : ''
       setError(MESSAGES[key] ?? 'Could not read that file.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const handleClear = async () => {
+    setError('')
+    setBusy(true)
+    try {
+      const old = value.kind === 'upload' && value.path ? value.path : undefined
+      try {
+        await onClear()
+      } catch {
+        setError(MESSAGES['clear-failed'])
+        return
+      }
+      if (old) void adminApi.deleteImage(old).catch(() => {})
     } finally {
       setBusy(false)
     }
@@ -62,16 +99,14 @@ export function ImageUpload({
           <button
             type="button"
             className="admin-btn admin-btn--danger"
-            onClick={onClear}
+            disabled={busy}
+            onClick={() => void handleClear()}
           >
             Remove
           </button>
         )}
       </div>
       {error && <span className="admin-imageupload__error">{error}</span>}
-      {value.kind === 'upload' && value.fileName && (
-        <span className="admin-field__hint">Uploaded: {value.fileName}</span>
-      )}
     </div>
   )
 }

@@ -11,6 +11,18 @@ import { ToastProvider } from '../components/Toast'
 import { SettingsPage } from './SettingsPage'
 import * as authModule from '../auth/useAuth'
 
+vi.mock('../../admin/api', () => ({
+  adminApi: {
+    saveSection: vi.fn().mockResolvedValue(undefined),
+    saveSeo: vi.fn().mockResolvedValue(undefined),
+    resetContent: vi.fn().mockResolvedValue(undefined),
+    createCard: vi.fn().mockResolvedValue(undefined),
+    updateCard: vi.fn().mockResolvedValue(undefined),
+    deleteCard: vi.fn().mockResolvedValue(undefined),
+    reorderCards: vi.fn().mockResolvedValue(undefined),
+  },
+}))
+
 beforeEach(() => {
   localStorage.clear()
   vi.restoreAllMocks()

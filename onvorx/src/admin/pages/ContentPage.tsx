@@ -31,15 +31,19 @@ function SectionEditor({ section }: { section: SectionText }) {
     !eqL(draft.body, stored.body) ||
     Boolean(draft.ctaLabel && stored.ctaLabel && !eqL(draft.ctaLabel, stored.ctaLabel))
 
-  const save = () => {
+  const save = async () => {
     const patch: Partial<Draft> = {}
     if (!eqL(draft.eyebrow, stored.eyebrow)) patch.eyebrow = draft.eyebrow
     if (!eqL(draft.title, stored.title)) patch.title = draft.title
     if (!eqL(draft.body, stored.body)) patch.body = draft.body
     if (draft.ctaLabel && stored.ctaLabel && !eqL(draft.ctaLabel, stored.ctaLabel))
       patch.ctaLabel = draft.ctaLabel
-    actions.updateSection(section.key, patch)
-    toast('Saved')
+    try {
+      await actions.updateSection(section.key, patch)
+      toast('Saved')
+    } catch {
+      toast('Save failed', 'error')
+    }
   }
 
   return (

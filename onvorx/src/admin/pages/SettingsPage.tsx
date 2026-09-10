@@ -18,13 +18,17 @@ export function SettingsPage() {
     const ok = await confirm({
       title: 'Reset all content?',
       message:
-        'This discards every edit you have made and restores the original site content and the sample estimate requests. This cannot be undone.',
+        'This discards every edit you have made and restores the original site content. This cannot be undone.',
       confirmLabel: 'Reset everything',
       danger: true,
     })
     if (!ok) return
-    actions.resetAll()
-    toast('Content reset to defaults')
+    try {
+      await actions.resetAll()
+      toast('Content reset to defaults')
+    } catch {
+      toast('Reset failed', 'error')
+    }
   }, [confirm, actions, toast])
 
   const onLogout = useCallback(async () => {
@@ -41,8 +45,8 @@ export function SettingsPage() {
           <h2>Reset content</h2>
         </legend>
         <p className="admin-field__hint">
-          Restores every text, card and SEO field to the original site content
-          and resets the requests list to the sample data. This cannot be undone.
+          Restores every text, card and SEO field to the original site content.
+          This cannot be undone.
         </p>
         <button
           type="button"
