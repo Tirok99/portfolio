@@ -24,7 +24,9 @@ const rowFor = (t: Kind, patch: Record<string, unknown>) => (t === 'project' ? p
 export const createCardDefault: AdminCardsDeps['create'] = async (type, list, row, env) => {
   const c = getSupabaseAdmin(env)
   if (!c) return { error: 'not_configured' }
-  // `sort` is DB-assigned by a BEFORE INSERT trigger; never send one.
+  // `sort` is DB-assigned by a BEFORE INSERT trigger; never send one. Omitting
+  // it is load-bearing: the column is nullable (see the migration) so an unset
+  // `sort` reaches Postgres as NULL, which is what makes the trigger assign it.
   const { sort: _drop, ...clean } = row as Record<string, unknown>
   for (let attempt = 0; attempt < 3; attempt++) {
     const { error } = await c.from(table(type)).insert({ ...clean, list })

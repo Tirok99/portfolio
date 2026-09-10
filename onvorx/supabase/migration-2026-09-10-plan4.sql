@@ -4,6 +4,14 @@
 -- ============================================================================
 
 -- ---- 1. server-assigned card sort -----------------------------------------
+-- schema.sql declares `sort int not null default 0`; drop that so an omitted
+-- `sort` arrives as NULL and the trigger below assigns it. seed.sql and
+-- reset_content always send an explicit sort, so this is safe for them.
+alter table public.projects alter column sort drop default;
+alter table public.projects alter column sort drop not null;
+alter table public.services alter column sort drop default;
+alter table public.services alter column sort drop not null;
+
 -- one trigger fn per table so `max(sort)` targets the right relation
 create or replace function public.assign_projects_sort() returns trigger
   language plpgsql set search_path = '' as $$
