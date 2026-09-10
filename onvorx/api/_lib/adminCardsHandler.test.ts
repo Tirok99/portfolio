@@ -1,5 +1,9 @@
 import { describe, it, expect, vi } from 'vitest'
-import { handleAdminCards } from './adminCardsHandler'
+
+const { createClientMock } = vi.hoisted(() => ({ createClientMock: vi.fn() }))
+vi.mock('@supabase/supabase-js', () => ({ createClient: createClientMock }))
+
+import { handleAdminCards, createCardDefault } from './adminCardsHandler'
 import { signToken, SESSION_COOKIE } from './session'
 
 const SECRET = 'secret-secret-secret-secret-secret-secret'
@@ -59,5 +63,41 @@ describe('handleAdminCards', () => {
     const d = deps(); d.update.mockResolvedValue({ error: 'boom' })
     expect((await handleAdminCards({ method: 'PUT', cookieHeader: cookie, query: q(),
       body: { list: 'home', id: 'p1', patch: { published: true } } }, ENV, d)).status).toBe(500)
+  })
+})
+
+describe('createCardDefault — DB-assigned sort + retry on unique violation', () => {
+  it('inserts without a client sort and retries once on a 23505, then succeeds', async () => {
+    const insert = vi.fn()
+      .mockResolvedValueOnce({ error: { code: '23505', message: 'duplicate key value violates unique constraint' } })
+      .mockResolvedValueOnce({ error: null })
+    const from = vi.fn(() => ({ insert }))
+    createClientMock.mockReturnValue({ from })
+
+    const res = await createCardDefault('project', 'home',
+      { id: 'proj_1', sort: 7, published: false, title: { en: 'N', uk: 'N' } }, ENV)
+
+    expect(res).toEqual({ error: null })
+    expect(insert).toHaveBeenCalledTimes(2)
+    expect(from).toHaveBeenCalledWith('projects')
+    const sent = insert.mock.calls[0][0] as Record<string, unknown>
+    expect(sent).not.toHaveProperty('sort')
+    expect(sent).toMatchObject({ list: 'home', id: 'proj_1', published: false })
+  })
+
+  it('gives up with sort_conflict after 3 failed attempts', async () => {
+    const insert = vi.fn().mockResolvedValue({ error: { code: '23505', message: 'dup' } })
+    createClientMock.mockReturnValue({ from: () => ({ insert }) })
+    const res = await createCardDefault('service', 'page', { id: 's1' }, ENV)
+    expect(res).toEqual({ error: 'sort_conflict' })
+    expect(insert).toHaveBeenCalledTimes(3)
+  })
+
+  it('returns the message on a non-23505 error without retrying', async () => {
+    const insert = vi.fn().mockResolvedValue({ error: { code: '23502', message: 'null value' } })
+    createClientMock.mockReturnValue({ from: () => ({ insert }) })
+    const res = await createCardDefault('project', 'home', { id: 'p2' }, ENV)
+    expect(res).toEqual({ error: 'null value' })
+    expect(insert).toHaveBeenCalledTimes(1)
   })
 })
