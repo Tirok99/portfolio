@@ -71,7 +71,7 @@ begin
       eyebrow   = coalesce(s -> 'eyebrow',   eyebrow),
       title     = coalesce(s -> 'title',     title),
       body      = coalesce(s -> 'body',      body),
-      cta_label = s -> 'cta_label'
+      cta_label = case when s -> 'cta_label' = 'null'::jsonb or s -> 'cta_label' is null then null else s -> 'cta_label' end
     where key = s ->> 'key';
   end loop;
 
@@ -89,15 +89,22 @@ begin
     if card ->> 'table' = 'projects' then
       insert into public.projects (list, id, sort, published, title, tags, description, image_url, image_path, image_alt)
       values (
-        card ->> 'list', card ->> 'id', (card ->> 'sort')::int, (card ->> 'published')::boolean,
-        card -> 'title', coalesce((select array_agg(x) from jsonb_array_elements_text(card -> 'tags') x), '{}'),
-        card -> 'description', card ->> 'image_url', card ->> 'image_path', card -> 'image_alt'
+        card ->> 'list', card ->> 'id', (card ->> 'sort')::int,
+        coalesce((card ->> 'published')::boolean, false),
+        coalesce(card -> 'title', '{"en":"","uk":""}'::jsonb),
+        coalesce((select array_agg(x) from jsonb_array_elements_text(card -> 'tags') x), '{}'),
+        coalesce(card -> 'description', '{"en":"","uk":""}'::jsonb),
+        card ->> 'image_url', card ->> 'image_path',
+        coalesce(card -> 'image_alt', '{"en":"","uk":""}'::jsonb)
       );
     else
       insert into public.services (list, id, sort, published, featured, title, text, icon_url, icon_path)
       values (
-        card ->> 'list', card ->> 'id', (card ->> 'sort')::int, (card ->> 'published')::boolean,
-        (card ->> 'featured')::boolean, card -> 'title', card -> 'text',
+        card ->> 'list', card ->> 'id', (card ->> 'sort')::int,
+        coalesce((card ->> 'published')::boolean, false),
+        coalesce((card ->> 'featured')::boolean, false),
+        coalesce(card -> 'title', '{"en":"","uk":""}'::jsonb),
+        coalesce(card -> 'text', '{"en":"","uk":""}'::jsonb),
         card ->> 'icon_url', card ->> 'icon_path'
       );
     end if;

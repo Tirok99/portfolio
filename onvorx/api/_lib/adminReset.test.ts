@@ -3,7 +3,10 @@ import { resetContent } from './adminReset'
 
 const L = (s: string) => ({ en: s, uk: s })
 const content = {
-  sections: [{ key: 'hero', title: L('T'), eyebrow: L('E'), body: L('B'), ctaLabel: L('Go') }],
+  sections: [
+    { key: 'hero', title: L('T'), eyebrow: L('E'), body: L('B'), ctaLabel: L('Go') },
+    { key: 'about', title: L('A2') },
+  ],
   seo: [{ pageKey: 'home', title: L('HT'), description: L('HD') }],
   projectsHome: [{ id: 'p1', published: true, title: L('P'), tags: ['x'], description: L('d'),
     image: { kind: 'asset', src: '/a.png' }, imageAlt: L('a') }],
@@ -22,6 +25,7 @@ describe('resetContent', () => {
     expect(fn).toBe('reset_content')
     const p = args.payload
     expect(p.sections[0]).toMatchObject({ key: 'hero', title: L('T'), cta_label: L('Go') })
+    expect(p.sections.find((s: { key: string }) => s.key === 'about').cta_label).toBeNull()
     expect(p.seo[0]).toMatchObject({ page_key: 'home', title: L('HT') })
     expect(p.cards).toEqual(expect.arrayContaining([
       expect.objectContaining({ table: 'projects', list: 'home', id: 'p1', sort: 0, published: true, image_url: '/a.png' }),

@@ -11,12 +11,13 @@ export async function resetContent(
   c: SupabaseClient,
   content: unknown,
 ): Promise<{ error: string | null }> {
-  if (typeof content !== 'object' || content === null) return { error: 'invalid_payload' }
+  if (typeof content !== 'object' || content === null || Array.isArray(content)) return { error: 'invalid_payload' }
   const x = content as Record<string, unknown>
 
   const sections = (Array.isArray(x.sections) ? x.sections : []).map((s) => {
     const o = s as Record<string, unknown>
-    return { key: String(o.key), ...sectionRow(String(o.key), o), cta_label: (sectionRow(String(o.key), o).cta_label ?? null) }
+    const r = sectionRow(String(o.key), o)
+    return { key: String(o.key), ...r, cta_label: r.cta_label ?? null }
   })
   const seo = (Array.isArray(x.seo) ? x.seo : []).map((e) => {
     const o = e as Record<string, unknown>
