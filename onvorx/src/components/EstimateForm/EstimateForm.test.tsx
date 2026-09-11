@@ -105,6 +105,21 @@ describe('EstimateForm', () => {
     expect(await screen.findByText(/thank you/i)).toBeInTheDocument()
   })
 
+  it('renders a hidden honeypot field and sends it empty', async () => {
+    const user = userEvent.setup()
+    setup()
+    await user.click(screen.getByText('open form'))
+    const hp = document.querySelector('input[name="ref_token"]') as HTMLInputElement | null
+    expect(hp).not.toBeNull()
+    expect(hp).not.toBeVisible() // jest-dom: off-screen / aria-hidden
+    await user.type(screen.getByLabelText(/name/i), 'Jane')
+    await user.type(screen.getByLabelText(/email/i), 'jane@roe.com')
+    await user.type(screen.getByLabelText(/message/i), 'hi there')
+    await user.click(screen.getByRole('button', { name: /send request/i }))
+    const sent = JSON.parse(fetchMock.mock.calls[0][1].body)
+    expect(sent.ref_token).toBe('')
+  })
+
   it('shows an error and keeps the form when the request fails', async () => {
     const user = userEvent.setup()
     fetchMock.mockResolvedValueOnce({ ok: false, json: async () => ({ error: 'insert_failed' }) })

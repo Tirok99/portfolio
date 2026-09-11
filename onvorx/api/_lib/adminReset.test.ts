@@ -1,99 +1,44 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { resetContent } from './adminReset'
 
 const L = (s: string) => ({ en: s, uk: s })
-
-interface Call {
-  table: string
-  op: 'update' | 'delete' | 'insert'
-  payload?: unknown
-  col?: string
-  val?: unknown
-}
-
-function makeClient(errorFor: (c: Call) => string | null = () => null) {
-  const calls: Call[] = []
-  const settle = (c: Call) => {
-    calls.push(c)
-    const msg = errorFor(c)
-    return Promise.resolve({ error: msg ? { message: msg } : null })
-  }
-  const client = {
-    from(table: string) {
-      return {
-        update(payload: unknown) {
-          return { eq: (col: string, val: unknown) => settle({ table, op: 'update', payload, col, val }) }
-        },
-        delete() {
-          return { eq: (col: string, val: unknown) => settle({ table, op: 'delete', col, val }) }
-        },
-        insert(payload: unknown) {
-          return settle({ table, op: 'insert', payload })
-        },
-      }
-    },
-  }
-  return { client, calls }
-}
-
-const content = () => ({
+const content = {
   sections: [
-    { key: 'hero', title: L('H'), ctaLabel: L('Go') },
-    { key: 'about', title: L('A') },
+    { key: 'hero', title: L('T'), eyebrow: L('E'), body: L('B'), ctaLabel: L('Go') },
+    { key: 'about', title: L('A2') },
   ],
-  seo: [{ pageKey: 'home', title: L('T'), description: L('D') }],
-  projectsHome: [{ id: 'p1', title: L('P1') }],
-  projectsPage: [],
-  servicesHome: [],
-  servicesPage: [{ id: 's1', title: L('S1'), text: L('t') }],
-})
+  seo: [{ pageKey: 'home', title: L('HT'), description: L('HD') }],
+  projectsHome: [{ id: 'p1', published: true, title: L('P'), tags: ['x'], description: L('d'),
+    image: { kind: 'asset', src: '/a.png' }, imageAlt: L('a') }],
+  projectsPage: [], servicesHome: [{ id: 's1', published: true, featured: true, title: L('S'), text: L('t'),
+    icon: { kind: 'asset', src: '/i.png' } }],
+  servicesPage: [],
+}
 
 describe('resetContent', () => {
-  it('updates each section by key, nulling cta_label when the section has no ctaLabel', async () => {
-    const { client, calls } = makeClient()
-    const r = await resetContent(client as never, content())
+  it('builds a snake_case payload and calls reset_content once', async () => {
+    const rpc = vi.fn().mockResolvedValue({ error: null })
+    const r = await resetContent({ rpc } as never, content)
     expect(r).toEqual({ error: null })
-
-    const secCalls = calls.filter((c) => c.table === 'site_sections' && c.op === 'update')
-    expect(secCalls.map((c) => [c.col, c.val])).toEqual([
-      ['key', 'hero'],
-      ['key', 'about'],
-    ])
-    expect((secCalls[0].payload as Record<string, unknown>).cta_label).toEqual(L('Go'))
-    expect((secCalls[1].payload as Record<string, unknown>).cta_label).toBeNull()
+    expect(rpc).toHaveBeenCalledTimes(1)
+    const [fn, args] = rpc.mock.calls[0]
+    expect(fn).toBe('reset_content')
+    const p = args.payload
+    expect(p.sections[0]).toMatchObject({ key: 'hero', title: L('T'), cta_label: L('Go') })
+    expect(p.sections.find((s: { key: string }) => s.key === 'about').cta_label).toBeNull()
+    expect(p.seo[0]).toMatchObject({ page_key: 'home', title: L('HT') })
+    expect(p.cards).toEqual(expect.arrayContaining([
+      expect.objectContaining({ table: 'projects', list: 'home', id: 'p1', sort: 0, published: true, image_url: '/a.png' }),
+      expect.objectContaining({ table: 'services', list: 'home', id: 's1', sort: 0, featured: true }),
+    ]))
   })
-
-  it('updates seo rows by page_key', async () => {
-    const { client, calls } = makeClient()
-    await resetContent(client as never, content())
-    const seoCall = calls.find((c) => c.table === 'seo_pages')
-    expect(seoCall).toMatchObject({ op: 'update', col: 'page_key', val: 'home' })
+  it('surfaces an rpc error', async () => {
+    const rpc = vi.fn().mockResolvedValue({ error: { message: 'boom' } })
+    expect(await resetContent({ rpc } as never, content)).toEqual({ error: 'boom' })
   })
-
-  it('deletes every card list (even empty ones) then inserts only the non-empty ones with sort = index', async () => {
-    const { client, calls } = makeClient()
-    await resetContent(client as never, content())
-
-    const deletes = calls.filter((c) => c.op === 'delete').map((c) => [c.table, c.val])
-    expect(deletes).toEqual([
-      ['projects', 'home'],
-      ['projects', 'page'],
-      ['services', 'home'],
-      ['services', 'page'],
-    ])
-
-    const inserts = calls.filter((c) => c.op === 'insert')
-    expect(inserts.map((c) => c.table)).toEqual(['projects', 'services'])
-    const projectRows = inserts[0].payload as Record<string, unknown>[]
-    expect(projectRows).toHaveLength(1)
-    expect(projectRows[0]).toMatchObject({ list: 'home', id: 'p1', sort: 0 })
-  })
-
-  it('stops and returns the first error', async () => {
-    const { client, calls } = makeClient((c) => (c.table === 'seo_pages' ? 'boom' : null))
-    const r = await resetContent(client as never, content())
-    expect(r).toEqual({ error: 'boom' })
-    expect(calls.some((c) => c.op === 'delete')).toBe(false)
-    expect(calls.some((c) => c.op === 'insert')).toBe(false)
+  it('rejects a non-object payload', async () => {
+    const rpc = vi.fn()
+    expect((await resetContent({ rpc } as never, null)).error).toBeTruthy()
+    expect(rpc).not.toHaveBeenCalled()
   })
 })

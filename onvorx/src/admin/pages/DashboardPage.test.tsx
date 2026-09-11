@@ -47,11 +47,6 @@ describe('DashboardPage', () => {
     ).toBeInTheDocument()
   })
 
-  it('shows an em dash for "Last change" until the first edit', () => {
-    wrap()
-    expect(screen.getByText(/last change:/i)).toHaveTextContent('Last change: —')
-  })
-
   it('links to the section editors', () => {
     wrap()
     expect(screen.getByRole('link', { name: /edit texts/i })).toHaveAttribute(

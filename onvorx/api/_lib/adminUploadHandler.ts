@@ -9,7 +9,6 @@ const MIME_EXT: Record<string, string> = {
   'image/png': 'png',
   'image/jpeg': 'jpg',
   'image/webp': 'webp',
-  'image/svg+xml': 'svg',
 }
 const MAX_BYTES = 2_000_000
 

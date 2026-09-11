@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { dispatchApi } from './admin-api-dev'
+import { dispatchApi, KNOWN_API_PATHS, apiMiddlewareDecision } from './admin-api-dev'
 import { SESSION_COOKIE, signToken } from '../api/_lib/session'
 
 const ENV = { ADMIN_PASSWORD: 'devpassword123', ADMIN_SESSION_SECRET: 'x'.repeat(40) }
@@ -10,6 +10,50 @@ describe('dispatchApi', () => {
     expect(await dispatchApi({ url: '/', method: 'GET', secure: false }, ENV)).toBeNull()
   })
 
+  it('KNOWN_API_PATHS lists exactly the served routes', () => {
+    expect([...KNOWN_API_PATHS].sort()).toEqual([
+      '/api/admin/cards', '/api/admin/content', '/api/admin/login',
+      '/api/admin/logout', '/api/admin/requests', '/api/admin/session',
+      '/api/admin/upload', '/api/estimate',
+    ])
+  })
+})
+
+describe('apiMiddlewareDecision', () => {
+  it('returns dispatch-no-body for known GET routes', () => {
+    expect(apiMiddlewareDecision('/api/admin/session', 'GET')).toBe('dispatch-no-body')
+  })
+
+  it('returns dispatch-no-body for known HEAD routes', () => {
+    expect(apiMiddlewareDecision('/api/admin/session', 'HEAD')).toBe('dispatch-no-body')
+  })
+
+  it('returns dispatch-with-body for known PUT routes', () => {
+    expect(apiMiddlewareDecision('/api/admin/content?x=1', 'PUT')).toBe('dispatch-with-body')
+  })
+
+  it('returns dispatch-with-body for known POST routes', () => {
+    expect(apiMiddlewareDecision('/api/estimate', 'POST')).toBe('dispatch-with-body')
+  })
+
+  it('returns dispatch-with-body for known PATCH routes', () => {
+    expect(apiMiddlewareDecision('/api/admin/requests', 'PATCH')).toBe('dispatch-with-body')
+  })
+
+  it('returns dispatch-with-body for known DELETE routes', () => {
+    expect(apiMiddlewareDecision('/api/admin/upload', 'DELETE')).toBe('dispatch-with-body')
+  })
+
+  it('returns skip for unknown /api/* routes', () => {
+    expect(apiMiddlewareDecision('/api/unknown', 'POST')).toBe('skip')
+  })
+
+  it('returns skip for non-/api/ routes', () => {
+    expect(apiMiddlewareDecision('/assets/x.js', 'GET')).toBe('skip')
+  })
+})
+
+describe('dispatchApi', () => {
   it('handles login with a JSON body', async () => {
     const r = await dispatchApi(
       { url: '/api/admin/login', method: 'POST', jsonBody: { password: 'devpassword123' }, secure: false },

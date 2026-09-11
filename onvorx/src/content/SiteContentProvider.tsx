@@ -19,12 +19,6 @@ import type {
 } from '../admin/types'
 import * as A from '../admin/actions'
 import { adminApi } from '../admin/api'
-import {
-  STORAGE_KEY,
-  isAdminData,
-  loadAdminData,
-  saveAdminData,
-} from './persistence'
 import { fetchRemoteContent } from './remote'
 import { loadContentCache, saveContentCache } from './contentCache'
 import { cardKindOf, cardListOf } from './cardList'
@@ -72,54 +66,19 @@ export const SiteContentContext =
 
 export function SiteContentProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<AdminData>(() => {
-    const base = loadAdminData()
+    const base = buildDefaults()
     const cache = loadContentCache()
     return cache ? { ...base, ...cache } : base
   })
-  const skipNextPersist = useRef(false)
-  const firstRun = useRef(true)
   const mounted = useRef(true)
   const reconcileTimer = useRef<number | undefined>(undefined)
 
-  // persist whenever data changes, except when the change came from another
-  // tab's storage event, a remote refetch, or on the initial mount
-  useEffect(() => {
-    if (firstRun.current) {
-      firstRun.current = false
-      return
-    }
-    if (skipNextPersist.current) {
-      skipNextPersist.current = false
-      return
-    }
-    saveAdminData(data)
-  }, [data])
-
-  // cross-tab sync
-  useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
-      if (e.key !== STORAGE_KEY || !e.newValue) return
-      let parsed: unknown
-      try {
-        parsed = JSON.parse(e.newValue)
-      } catch {
-        return
-      }
-      if (!isAdminData(parsed)) return
-      skipNextPersist.current = true
-      setData(parsed)
-    }
-    window.addEventListener('storage', onStorage)
-    return () => window.removeEventListener('storage', onStorage)
-  }, [])
-
   // Pull the managed content from Supabase and overlay it on top of the
-  // seeded/persisted defaults. Failure (no env, offline, query error) is a
-  // no-op — the current content stays. Also refreshes the local content cache.
+  // seeded defaults. Failure (no env, offline, query error) is a no-op — the
+  // current content stays. Also refreshes the local content cache.
   const refetch = useCallback(async () => {
     const remote = await fetchRemoteContent()
     if (!remote || !mounted.current) return
-    skipNextPersist.current = true
     setData((d) => ({ ...d, ...remote }))
     saveContentCache(remote)
   }, [])
@@ -155,6 +114,12 @@ export function SiteContentProvider({ children }: { children: ReactNode }) {
   // mount refetch + refetch on window focus
   useEffect(() => {
     mounted.current = true
+    // one-time cleanup of the retired admin working store
+    try {
+      localStorage.removeItem('onvorx.admin.v1')
+    } catch {
+      /* private mode / unavailable — nothing to clean up */
+    }
     void refetch()
     const onFocus = () => void refetch()
     window.addEventListener('focus', onFocus)

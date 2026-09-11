@@ -30,6 +30,11 @@ describe('handleAdminUpload', () => {
     expect((await handleAdminUpload({ method: 'POST', cookieHeader: cookie,
       body: { dataUrl: big, fileName: 'x.png', folder: 'projects' } }, ENV, deps())).status).toBe(400)
   })
+  it('400 on an svg data URL (svg not allowed for uploads)', async () => {
+    const svg = 'data:image/svg+xml;base64,' + Buffer.from('<svg/>').toString('base64')
+    expect((await handleAdminUpload({ method: 'POST', cookieHeader: cookie,
+      body: { dataUrl: svg, fileName: 'x.svg', folder: 'services' } }, ENV, deps())).status).toBe(400)
+  })
   it('POST a valid png → deps.put with a projects/<slug>-<hex>.png key, returns {url,path}', async () => {
     const d = deps()
     const r = await handleAdminUpload({ method: 'POST', cookieHeader: cookie,

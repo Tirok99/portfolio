@@ -1,43 +1,37 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { projectRow, serviceRow, sectionRow, seoRow } from './adminRows'
 
-/** Replace all content rows with the supplied `SiteContent`-shaped payload. */
+const LISTS: [string, 'projects' | 'services', 'home' | 'page'][] = [
+  ['projectsHome', 'projects', 'home'], ['projectsPage', 'projects', 'page'],
+  ['servicesHome', 'services', 'home'], ['servicesPage', 'services', 'page'],
+]
+
+/** Replace all content rows with the supplied `SiteContent`-shaped payload, atomically. */
 export async function resetContent(
   c: SupabaseClient,
   content: unknown,
 ): Promise<{ error: string | null }> {
+  if (typeof content !== 'object' || content === null || Array.isArray(content)) return { error: 'invalid_payload' }
   const x = content as Record<string, unknown>
-  const sections = Array.isArray(x.sections) ? x.sections : []
-  const seo = Array.isArray(x.seo) ? x.seo : []
-  const lists: [string, 'project' | 'service', 'home' | 'page'][] = [
-    ['projectsHome', 'project', 'home'], ['projectsPage', 'project', 'page'],
-    ['servicesHome', 'service', 'home'], ['servicesPage', 'service', 'page'],
-  ]
-  try {
-    for (const s of sections as Record<string, unknown>[]) {
-      const row = sectionRow(String(s.key), s)
-      const { error } = await c.from('site_sections').update({ ...row, cta_label: row.cta_label ?? null }).eq('key', s.key)
-      if (error) return { error: error.message }
-    }
-    for (const e of seo as Record<string, unknown>[]) {
-      const { error } = await c.from('seo_pages').update(seoRow(e)).eq('page_key', e.pageKey)
-      if (error) return { error: error.message }
-    }
-    for (const [key, type, list] of lists) {
-      const cards = Array.isArray(x[key]) ? (x[key] as Record<string, unknown>[]) : []
-      const table = type === 'project' ? 'projects' : 'services'
-      const { error: delErr } = await c.from(table).delete().eq('list', list)
-      if (delErr) return { error: delErr.message }
-      if (cards.length === 0) continue
-      const rows = cards.map((card, i) => ({
-        list, id: String(card.id),
-        ...(type === 'project' ? projectRow({ ...card, order: i }) : serviceRow({ ...card, order: i })),
-      }))
-      const { error: insErr } = await c.from(table).insert(rows)
-      if (insErr) return { error: insErr.message }
-    }
-    return { error: null }
-  } catch (err) {
-    return { error: err instanceof Error ? err.message : 'reset_failed' }
+
+  const sections = (Array.isArray(x.sections) ? x.sections : []).map((s) => {
+    const o = s as Record<string, unknown>
+    const r = sectionRow(String(o.key), o)
+    return { key: String(o.key), ...r, cta_label: r.cta_label ?? null }
+  })
+  const seo = (Array.isArray(x.seo) ? x.seo : []).map((e) => {
+    const o = e as Record<string, unknown>
+    return { page_key: String(o.pageKey), ...seoRow(o) }
+  })
+  const cards: Record<string, unknown>[] = []
+  for (const [key, table, list] of LISTS) {
+    const arr = Array.isArray(x[key]) ? (x[key] as Record<string, unknown>[]) : []
+    arr.forEach((card, i) => {
+      const row = table === 'projects' ? projectRow({ ...card, order: i }) : serviceRow({ ...card, order: i })
+      cards.push({ table, list, id: String(card.id), ...row })
+    })
   }
+
+  const { error } = await c.rpc('reset_content', { payload: { sections, seo, cards } })
+  return { error: error ? error.message : null }
 }

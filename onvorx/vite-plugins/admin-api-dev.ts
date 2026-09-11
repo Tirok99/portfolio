@@ -9,6 +9,26 @@ import { handleAdminCards } from '../api/_lib/adminCardsHandler'
 import { handleAdminRequests } from '../api/_lib/adminRequestsHandler'
 import { handleAdminUpload } from '../api/_lib/adminUploadHandler'
 
+export const KNOWN_API_PATHS = new Set([
+  '/api/admin/login',
+  '/api/admin/session',
+  '/api/admin/logout',
+  '/api/estimate',
+  '/api/admin/content',
+  '/api/admin/requests',
+  '/api/admin/upload',
+  '/api/admin/cards',
+])
+
+export type ApiMiddlewareDecision = 'skip' | 'dispatch-no-body' | 'dispatch-with-body'
+
+export function apiMiddlewareDecision(url: string, method: string): ApiMiddlewareDecision {
+  if (!url.startsWith('/api/')) return 'skip'
+  const path = url.split('?')[0]
+  if (!KNOWN_API_PATHS.has(path)) return 'skip'
+  return method === 'GET' || method === 'HEAD' ? 'dispatch-no-body' : 'dispatch-with-body'
+}
+
 /**
  * Pure route dispatcher. Returns `null` for any URL that is not one of the
  * known api routes (query string stripped first) so callers can fall
@@ -38,7 +58,7 @@ export async function dispatchApi(
     case '/api/admin/logout':
       return handleLogout({ method: input.method, secure: input.secure })
     case '/api/estimate':
-      return handleEstimate({ method: input.method, body: input.jsonBody ?? {} }, env)
+      return handleEstimate({ method: input.method, body: input.jsonBody ?? {}, ip: '' }, env)
     case '/api/admin/content':
       return handleAdminContent(
         { method: input.method, cookieHeader: input.cookieHeader, body: input.jsonBody ?? {} },
@@ -71,10 +91,26 @@ export async function dispatchApi(
   }
 }
 
+/** Sentinel returned by readJsonBody when the request body exceeds the cap. */
+export const BODY_TOO_LARGE = { __tooLarge: true } as const
+
 function readJsonBody(req: IncomingMessage): Promise<unknown> {
   return new Promise((resolve) => {
     const chunks: Buffer[] = []
-    req.on('data', (c: Buffer) => chunks.push(c))
+    let totalBytes = 0
+    const maxBytes = 2_000_000
+    let tooLarge = false
+    req.on('data', (c: Buffer) => {
+      if (tooLarge) return
+      totalBytes += c.length
+      if (totalBytes > maxBytes) {
+        tooLarge = true
+        resolve(BODY_TOO_LARGE)
+        req.destroy()
+        return
+      }
+      chunks.push(c)
+    })
     req.on('end', () => {
       const raw = Buffer.concat(chunks).toString('utf8')
       if (!raw) return resolve(undefined)
@@ -117,11 +153,19 @@ export function adminApiDev(): Plugin {
     configureServer(server) {
       server.middlewares.use((req: IncomingMessage, res: ServerResponse, next) => {
         const url = req.url ?? ''
-        if (!url.startsWith('/api/')) return next()
+        const method = req.method ?? 'GET'
+        const decision = apiMiddlewareDecision(url, method)
+        if (decision === 'skip') return next()
         const run = async () => {
-          const method = req.method ?? 'GET'
           const jsonBody =
-            method !== 'GET' && method !== 'HEAD' ? await readJsonBody(req) : undefined
+            decision === 'dispatch-with-body' ? await readJsonBody(req) : undefined
+          if (jsonBody === BODY_TOO_LARGE) {
+            res.setHeader('Cache-Control', 'no-store')
+            res.statusCode = 413
+            res.setHeader('Content-Type', 'application/json')
+            res.end('{"error":"payload_too_large"}')
+            return
+          }
           const result = await dispatchApi(
             { url, method, cookieHeader: req.headers.cookie, jsonBody, secure: false },
             env,

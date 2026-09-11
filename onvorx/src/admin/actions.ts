@@ -10,7 +10,7 @@ import type {
   ServiceCard,
 } from './types'
 import { newId } from './lib/id'
-import { seedAdminData } from '../content/persistence'
+import { buildDefaults } from '../content/defaults'
 
 const stamp = (d: AdminData): AdminData => ({
   ...d,
@@ -158,5 +158,5 @@ export function updateSeo(
 }
 
 export function resetAll(): AdminData {
-  return seedAdminData()
+  return buildDefaults()
 }

@@ -7,7 +7,6 @@ import {
   type SiteContentActions,
 } from './SiteContentProvider'
 import { useSiteContent } from './useSiteContent'
-import { STORAGE_KEY } from './persistence'
 import { adminApi } from '../admin/api'
 import type { AdminData } from '../admin/types'
 
@@ -98,14 +97,24 @@ describe('SiteContentProvider', () => {
     expect(screen.getByTestId('hero-title').textContent).toBeTruthy()
   })
 
-  it('applies an edit and persists it to localStorage', async () => {
+  it('clears the retired admin working store (onvorx.admin.v1) on mount', () => {
+    localStorage.setItem('onvorx.admin.v1', '{"stale":true}')
+    const spy = vi.spyOn(Storage.prototype, 'removeItem')
+    wrap()
+    expect(spy).toHaveBeenCalledWith('onvorx.admin.v1')
+    expect(localStorage.getItem('onvorx.admin.v1')).toBeNull()
+    spy.mockRestore()
+  })
+
+  it('applies an edit optimistically and calls adminApi.updateSection through the button', async () => {
     wrap()
     await act(async () => {
       screen.getByText('edit').click()
     })
     expect(screen.getByTestId('hero-title')).toHaveTextContent('Edited EN')
-    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY)!)
-    expect(stored.sections.find((s: { key: string }) => s.key === 'hero').title.en).toBe('Edited EN')
+    expect(adminApi.saveSection).toHaveBeenCalledWith('hero', {
+      title: { en: 'Edited EN', uk: 'Edited UK' },
+    })
   })
 
   it('falls back to EN when the active language value is empty', async () => {
@@ -278,8 +287,6 @@ describe('SiteContentProvider', () => {
     fetchRemoteContent.mockResolvedValue(remoteWith('From Supabase'))
     wrap()
     expect(await screen.findByText('From Supabase')).toBeInTheDocument()
-    // the mount overlay must not be written back to the admin working cache
-    expect(localStorage.getItem(STORAGE_KEY)).not.toContain('From Supabase')
   })
 
   it('keeps the seeded content when the remote fetch returns null', async () => {
@@ -298,6 +305,5 @@ describe('SiteContentProvider', () => {
     resolve(remoteWith('AFTER UNMOUNT'))
     await act(async () => {})
     expect(screen.queryByText('AFTER UNMOUNT')).not.toBeInTheDocument()
-    expect(localStorage.getItem(STORAGE_KEY)).not.toContain('AFTER UNMOUNT')
   })
 })

@@ -17,22 +17,49 @@ export interface AdminCardsDeps {
 const table = (t: Kind) => (t === 'project' ? 'projects' : 'services')
 const rowFor = (t: Kind, patch: Record<string, unknown>) => (t === 'project' ? projectRow(patch) : serviceRow(patch))
 
+// `sort` is assigned by a BEFORE INSERT trigger (see
+// supabase/migration-2026-09-10-plan4.sql); the insert never sends one, and
+// `unique (list, sort)` means a concurrent create can lose a race with a
+// `23505` (unique_violation) — retry a few times before giving up.
+export const createCardDefault: AdminCardsDeps['create'] = async (type, list, row, env) => {
+  const c = getSupabaseAdmin(env)
+  if (!c) return { error: 'not_configured' }
+  // `sort` is DB-assigned by a BEFORE INSERT trigger; never send one. Omitting
+  // it is load-bearing: the column is nullable (see the migration) so an unset
+  // `sort` reaches Postgres as NULL, which is what makes the trigger assign it.
+  const { sort: _drop, ...clean } = row as Record<string, unknown>
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const { error } = await c.from(table(type)).insert({ ...clean, list })
+    if (!error) return { error: null }
+    // 23505 = unique_violation on (list, sort) — a concurrent create raced us; retry
+    if ((error as { code?: string }).code !== '23505') return { error: error.message }
+  }
+  return { error: 'sort_conflict' }
+}
+
+// `unique (list, sort)` (see the migration) means the naive one-`update`-per-row
+// reorder collides mid-flight: moving B up in [A0,B1,C2] would set B.sort=0 while
+// A.sort is still 0 -> 23505. Two passes avoid any transient collision: first
+// park every row well above any real sort, then assign the final 0..n-1.
+export const reorderCardsDefault: AdminCardsDeps['reorder'] = async (type, list, orderedIds, env) => {
+  const c = getSupabaseAdmin(env)
+  if (!c) return { error: 'not_configured' }
+  // pass 1: park each row at a non-colliding offset (well above any real sort)
+  for (let i = 0; i < orderedIds.length; i++) {
+    const { error } = await c.from(table(type)).update({ sort: 100000 + i }).eq('list', list).eq('id', orderedIds[i])
+    if (error) return { error: error.message }
+  }
+  // pass 2: assign the final contiguous 0..n-1
+  for (let i = 0; i < orderedIds.length; i++) {
+    const { error } = await c.from(table(type)).update({ sort: i }).eq('list', list).eq('id', orderedIds[i])
+    if (error) return { error: error.message }
+  }
+  return { error: null }
+}
+
 const defaultDeps: AdminCardsDeps = {
-  create: async (type, list, row, env) => {
-    const c = getSupabaseAdmin(env)
-    if (!c) return { error: 'not_configured' }
-    // Derive `sort` from the server so concurrent creates can't collide on a
-    // client-supplied index (the handler strips any client `sort` from `row`).
-    const { data } = await c
-      .from(table(type))
-      .select('sort')
-      .eq('list', list)
-      .order('sort', { ascending: false })
-      .limit(1)
-    const nextSort = ((data?.[0]?.sort ?? -1) as number) + 1
-    const { error } = await c.from(table(type)).insert({ ...row, list, sort: nextSort })
-    return { error: error ? error.message : null }
-  },
+  create: createCardDefault,
+  reorder: reorderCardsDefault,
   update: async (type, list, id, row, env) => {
     const c = getSupabaseAdmin(env)
     if (!c) return { error: 'not_configured' }
@@ -50,15 +77,6 @@ const defaultDeps: AdminCardsDeps = {
     if (error) return { error: error.message }
     if (typeof objectPath === 'string' && objectPath) {
       await c.storage.from(env.SUPABASE_MEDIA_BUCKET ?? 'public-media').remove([objectPath])
-    }
-    return { error: null }
-  },
-  reorder: async (type, list, orderedIds, env) => {
-    const c = getSupabaseAdmin(env)
-    if (!c) return { error: 'not_configured' }
-    for (let i = 0; i < orderedIds.length; i++) {
-      const { error } = await c.from(table(type)).update({ sort: i }).eq('list', list).eq('id', orderedIds[i])
-      if (error) return { error: error.message }
     }
     return { error: null }
   },

@@ -77,4 +77,13 @@ describe('validateEstimate', () => {
     expect(validateEstimate({ ...base, message: 'x'.repeat(5001) }).ok).toBe(false)
     expect(validateEstimate({ ...base, name: 'x'.repeat(201) }).ok).toBe(false)
   })
+
+  it('rejects a filled honeypot field with error "honeypot"', () => {
+    const r = validateEstimate({ ...base, ref_token: 'http://spam.example' })
+    expect(r).toEqual({ ok: false, error: 'honeypot' })
+  })
+
+  it('ignores an empty-string honeypot', () => {
+    expect(validateEstimate({ ...base, ref_token: '' }).ok).toBe(true)
+  })
 })

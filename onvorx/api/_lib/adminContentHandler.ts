@@ -2,6 +2,7 @@ import type { HandlerResult, AuthEnv, SupabaseAdminEnv } from './types'
 import { requireSession } from './handlers'
 import { getSupabaseAdmin } from './supabaseAdmin'
 import { sectionRow, seoRow, isSectionKey, isSeoPageKey } from './adminRows'
+import { resetContent } from './adminReset'
 
 type Env = AuthEnv & SupabaseAdminEnv
 interface DepResult { error: string | null }
@@ -27,7 +28,6 @@ const defaultDeps: AdminContentDeps = {
   resetAll: async (content, env) => {
     const c = getSupabaseAdmin(env)
     if (!c) return { error: 'not_configured' }
-    const { resetContent } = await import('./adminReset')
     return resetContent(c, content)
   },
 }

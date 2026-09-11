@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest'
-import { seedAdminData } from './persistence'
+import { buildDefaults } from './defaults'
 import { toSiteContent } from './toSiteContent'
 
 describe('toSiteContent', () => {
   it('picks the 6 content keys and nothing else', () => {
-    const d = seedAdminData()
+    const d = buildDefaults()
     expect(Object.keys(toSiteContent(d)).sort()).toEqual(
       [
         'projectsHome',
