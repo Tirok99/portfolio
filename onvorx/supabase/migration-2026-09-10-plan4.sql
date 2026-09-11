@@ -91,8 +91,10 @@ begin
     where page_key = e ->> 'page_key';
   end loop;
 
-  delete from public.projects;
-  delete from public.services;
+  -- `where true`: Supabase's pg-safeupdate guard rejects a bare DELETE
+  -- (no WHERE clause) even inside a function body.
+  delete from public.projects where true;
+  delete from public.services where true;
 
   for card in select * from jsonb_array_elements(payload -> 'cards') loop
     if card ->> 'table' = 'projects' then
