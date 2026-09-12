@@ -148,4 +148,40 @@ describe('dispatch — Administrators, owner-only', () => {
     await dispatch(makeCtx({ callbackData: 'admins:remove:cancel' }), ENV, deps)
     expect(getManagers()).toEqual([MANAGER])
   })
+
+  it('shows an error and does not add the manager when addManager fails', async () => {
+    const { deps, admins, getManagers } = makeDeps()
+    ;(admins.addManager as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ error: 'boom' })
+
+    await dispatch(makeCtx({ callbackData: 'admins:add' }), ENV, deps)
+    await dispatch(makeCtx({ text: '42' }), ENV, deps)
+    await dispatch(makeCtx({ callbackData: 'admins:add:role:content_manager' }), ENV, deps)
+    const finalCtx = makeCtx({ text: 'Anna' })
+    await dispatch(finalCtx, ENV, deps)
+
+    expect(getManagers()).toEqual([])
+    expect(finalCtx.reply).toHaveBeenCalledWith({ text: 'Could not add the manager — please try again.' })
+  })
+
+  it('shows an error and keeps the manager when removeManager fails', async () => {
+    const { deps, admins, setManagers, getManagers } = makeDeps()
+    setManagers([MANAGER])
+    ;(admins.removeManager as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ error: 'boom' })
+
+    await dispatch(makeCtx({ callbackData: 'admins:remove:42' }), ENV, deps)
+    const confirmCtx = makeCtx({ callbackData: 'admins:remove:confirm:42' })
+    await dispatch(confirmCtx, ENV, deps)
+
+    expect(getManagers()).toEqual([MANAGER])
+    expect(confirmCtx.reply).toHaveBeenCalledWith({ text: 'Could not remove the manager — please try again.' })
+  })
+
+  it('rejects a stale admins:add:role tap when the session has no pending telegramId', async () => {
+    const { deps, getManagers } = makeDeps({ screen: 'main_menu' })
+    const ctx = makeCtx({ callbackData: 'admins:add:role:content_manager' })
+    await dispatch(ctx, ENV, deps)
+
+    expect(getManagers()).toEqual([])
+    expect(ctx.reply).toHaveBeenCalledWith({ text: 'Session out of sync — please /start and try again.' })
+  })
 })

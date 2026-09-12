@@ -109,6 +109,10 @@ async function handleCallback(
     const roleChoice = data.slice('admins:add:role:'.length) as ManagerRole
     const state = await deps.sessions.load(ctx.chatId, env)
     const telegramId = Number(state.data?.telegramId)
+    if (!Number.isInteger(telegramId) || telegramId <= 0) {
+      await ctx.reply({ text: 'Session out of sync — please /start and try again.' })
+      return
+    }
     await deps.sessions.save(
       ctx.chatId,
       { screen: 'admins_add_label', data: { telegramId, role: roleChoice } },
@@ -130,7 +134,11 @@ async function handleCallback(
 
   if (data.startsWith('admins:remove:confirm:')) {
     const telegramId = Number(data.slice('admins:remove:confirm:'.length))
-    await deps.admins.removeManager(telegramId, env)
+    const { error } = await deps.admins.removeManager(telegramId, env)
+    if (error) {
+      await ctx.reply({ text: 'Could not remove the manager — please try again.' })
+      return
+    }
     await showAdminsList(ctx, env, deps)
     return
   }
@@ -186,6 +194,10 @@ async function finishAddManager(
     await ctx.reply({ text: 'Something went wrong — /start to try again.' })
     return
   }
-  await deps.admins.addManager({ telegramId, role, label, addedBy: ctx.fromId }, env)
+  const { error } = await deps.admins.addManager({ telegramId, role, label, addedBy: ctx.fromId }, env)
+  if (error) {
+    await ctx.reply({ text: 'Could not add the manager — please try again.' })
+    return
+  }
   await showAdminsList(ctx, env, deps)
 }
