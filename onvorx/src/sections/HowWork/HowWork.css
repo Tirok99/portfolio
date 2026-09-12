@@ -24,7 +24,7 @@
   z-index: var(--z-decor);
   pointer-events: none;
   overflow: clip;
-  opacity: 0.4;
+  opacity: 0.3;
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
   mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
 }

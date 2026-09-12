@@ -216,6 +216,9 @@
   .hero {
     min-height: 0;
   }
+  .hero__wave--right {
+    display: none;
+  }
   .hero__inner {
     grid-template-columns: 1fr;
     gap: clamp(2.5rem, 7vw, 3.5rem);
@@ -277,5 +280,9 @@
   .hero__cta {
     width: 100%;
     justify-content: center;
+  }
+  .hero__card {
+    padding-top: 10px;
+    padding-bottom: 10px;
   }
 }

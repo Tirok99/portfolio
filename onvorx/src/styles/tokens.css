@@ -88,3 +88,12 @@
 
   --focus-ring: var(--accent-glow);
 }
+
+/* Section/block headings hold at a flat 28px on small phones instead of
+   continuing to shrink along the fluid clamp. */
+@media (max-width: 560px) {
+  :root {
+    --fs-h1: 1.75rem;
+    --fs-h2: 1.75rem;
+  }
+}

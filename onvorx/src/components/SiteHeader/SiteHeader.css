@@ -25,6 +25,12 @@
   padding-inline: clamp(0px, 2vw, 3.0625rem); /* aligns with --content-px on wide screens */
 }
 
+@media (min-width: 901px) {
+  .site-header__bar {
+    padding-block: 20px;
+  }
+}
+
 .site-header__logo {
   display: inline-flex;
   flex-shrink: 0;

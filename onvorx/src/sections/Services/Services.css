@@ -152,7 +152,7 @@
   z-index: var(--z-decor);
   pointer-events: none;
   overflow: clip;
-  opacity: 0.4;
+  opacity: 0.3;
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
   mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
 }
@@ -185,11 +185,11 @@
   .services__card {
     min-height: 0;
   }
-}
-
-@media (max-width: 480px) {
   .services__card-preview {
-    display: none;
+    align-self: stretch;
+    width: clamp(96px, 26vw, 140px);
+    height: auto;
+    object-fit: cover;
   }
 }
 
