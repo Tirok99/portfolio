@@ -352,6 +352,18 @@ describe('dispatch — Content, owner + content_manager', () => {
     expect(reply.text).toContain('New English title')
   })
 
+  it('a content_manager can complete the full edit flow and save', async () => {
+    const { deps, setManagers, getSections } = makeDeps()
+    setManagers([MANAGER])
+    await dispatch(makeCtx({ fromId: 42, callbackData: 'content:section:hero' }), ENV, deps)
+    await dispatch(makeCtx({ fromId: 42, callbackData: 'content:field:title' }), ENV, deps)
+    await dispatch(makeCtx({ fromId: 42, callbackData: 'content:lang:en' }), ENV, deps)
+    const finalCtx = makeCtx({ fromId: 42, text: 'New English title' })
+    await dispatch(finalCtx, ENV, deps)
+
+    expect(getSections().hero.title).toEqual({ en: 'New English title', uk: 'Створено під ваш бізнес' })
+  })
+
   it('editing UA preserves the existing EN text', async () => {
     const { deps, getSections } = makeDeps()
     await dispatch(makeCtx({ callbackData: 'content:section:hero' }), ENV, deps)
