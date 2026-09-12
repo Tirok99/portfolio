@@ -22,6 +22,7 @@
 | **SEO** (8 страниц) | Редактирование title/description (EN/UA). Больше ничего — ни картинок, ни других полей |
 | **Requests** | Список с фильтрами; просмотр карточки; смена статуса; правка заметки; **удаление заявки (с подтверждением)**. Сами поля заявки (имя/email/сообщение) — только просмотр, как и в вебе |
 | **Settings** | **Недоступно.** Reset content — только через веб-интерфейс |
+| **Administrators** | *Только для Telegram-бота — аналога в вебе нет.* Просмотр/добавление/удаление менеджеров с ролями. Виден только владельцам |
 
 ### Явно решено на этапе спеки
 
@@ -35,15 +36,44 @@
   только с уже существующими карточками (правки, картинка, порядок,
   публикация, удаление). Создание новых карточек остаётся за веб-админкой.
 
+### Роли и доступ (только для бота — в вебе одна общая учётка)
+
+Два уровня, поверх уже существующего whitelist:
+
+- **Owner** — из переменной окружения `TELEGRAM_ADMIN_IDS`. Несгораемый
+  список: изменить его можно только через `.env.local`/Vercel + редеплой, не
+  из бота. Видит всё, включая раздел **Administrators**.
+- **Manager** — строка в новой таблице `telegram_admins`, которую owner
+  добавляет/удаляет прямо в боте, без деплоя. Роль определяет видимые пункты
+  меню:
+  - `content_manager` → Content, Projects, Services, SEO
+  - `sales_manager` → Requests
+
+| Действие | Owner | Content manager | Sales manager |
+|---|---|---|---|
+| Content / Projects / Services / SEO — просмотр и правка | ✅ | ✅ | — |
+| Projects / Services — удаление карточки (с подтверждением) | ✅ | ✅ | — |
+| Requests — просмотр, статус, заметка | ✅ | — | ✅ |
+| Requests — удаление заявки (с подтверждением) | ✅ | — | ✅ |
+| Settings → Reset content | — (только веб) | — | — |
+| Administrators (добавить/удалить менеджера) | ✅ | — | — |
+
+Список в разделе **Administrators** общий для всех owner'ов — независимо от
+того, кто конкретно добавил менеджера, его видят и могут удалить все
+owner'ы. Managers друг друга не видят и раздела Administrators не видят
+вовсе (пункт меню для них просто не существует).
+
 ### Что сознательно не делаем
 
 - Никакой новой бизнес-логики. Каждое изменение идёт через уже существующие
   функции `handleAdminContent` / `handleAdminCards` / `handleAdminRequests` /
   `handleAdminUpload` в `api/_lib/*Handler.ts` — бот это новый **транспорт**,
   а не новый **бэкенд**.
-- Без мультитенантности и без ролей/уровней доступа. Плоский whitelist
-  (`TELEGRAM_ADMIN_IDS`) — у всех, кто в списке, полный доступ, точно как
-  сейчас у веб-админки один общий `ADMIN_PASSWORD` на всех.
+- Без сложной системы прав — только 2 фиксированные роли (content_manager,
+  sales_manager) плюс несгораемые owner'ы из env. Не проектируем общий
+  permission-фреймворк на будущее — если понадобится третья роль, это
+  осознанное расширение таблицы `telegram_admins`, а не миграция на новую
+  архитектуру.
 - Без офлайн-очереди и повторных попыток — если Supabase или Telegram
   недоступны, бот отвечает ошибкой, как и веб-админка отвечает тостом
   "Save failed".
@@ -95,12 +125,15 @@ api/telegram/webhook.ts  (Vercel-функция, по форме как api/admi
       │  тонкий адаптер: проверить секретный заголовок → вызвать обработчик
       ▼
 api/_lib/telegramHandler.ts
-      │  1. проверить from.id ∈ TELEGRAM_ADMIN_IDS
-      │  2. загрузить/продвинуть состояние диалога из `telegram_sessions` (Supabase)
-      │  3. подписать cookie admin_session через signToken(ADMIN_SESSION_SECRET)
-      │  4. вызвать handleAdminContent / handleAdminCards / handleAdminRequests /
+      │  1. определить роль from.id: owner (∈ TELEGRAM_ADMIN_IDS) →
+      │     manager (строка в telegram_admins) → иначе отказ
+      │  2. отфильтровать меню/команды по роли (content_manager/sales_manager
+      │     видят только свои разделы; Administrators — только owner)
+      │  3. загрузить/продвинуть состояние диалога из `telegram_sessions` (Supabase)
+      │  4. подписать cookie admin_session через signToken(ADMIN_SESSION_SECRET)
+      │  5. вызвать handleAdminContent / handleAdminCards / handleAdminRequests /
       │     handleAdminUpload с этим cookie — ТЕ ЖЕ функции, что вызывает /admin
-      │  5. ответить через grammY (меню / подтверждение / текст ошибки)
+      │  6. ответить через grammY (меню / подтверждение / текст ошибки)
       ▼
 Supabase (таблицы контента + telegram_sessions + Storage)
 ```
@@ -132,25 +165,48 @@ alter table public.telegram_sessions enable row level security;
 по уже принятой в этом репозитории конвенции: один плоский, идемпотентный,
 "safe to re-run" файл, который оператор вставляет в Supabase SQL Editor —
 **не** папка `supabase/migrations/` с CLI-подходом (в этом проекте так
-никогда не делали).
+никогда не делали). Уже выполнена оператором 2026-09-12.
+
+### Вторая таблица — менеджеры
+
+```sql
+create table public.telegram_admins (
+  telegram_id bigint primary key,
+  role        text not null check (role in ('content_manager','sales_manager')),
+  label       text,               -- опциональная метка, например "Анна (контент)"
+  added_by    bigint not null,    -- telegram_id owner'а, который добавил
+  created_at  timestamptz not null default now()
+);
+alter table public.telegram_admins enable row level security;
+-- политик нет: доступ только через service-role, как и telegram_sessions
+```
+
+`role` — ровно два допустимых значения по решению из раздела 1; owner'ы в
+эту таблицу не попадают (они целиком живут в `TELEGRAM_ADMIN_IDS`), поэтому
+никакой баг в логике управления менеджерами не может случайно понизить или
+удалить владельца. Отдельный файл
+`supabase/migration-2026-09-12-telegram-admins.sql` — добавляется поверх уже
+применённой `telegram-sessions`-миграции, тем же способом (SQL Editor).
 
 ---
 
 ## 5. Структура меню (зеркалит навигацию `/admin`)
 
 ```
-/start → главное меню (inline-кнопки)
-  ├─ Content   → список из 6 блоков → выбор → правка eyebrow/title/body/cta (EN/UA)
-  ├─ Projects  → вкладки Home | Page → список карточек → правка полей, замена изображения,
-  │              порядок, удаление (с подтверждением) — без добавления новых карточек
-  ├─ Services  → вкладки Home | Page → список карточек → то же самое + featured (только Home)
-  ├─ SEO       → список из 8 страниц → правка title/description (EN/UA)
-  └─ Requests  → список с фильтрами → карточка заявки → смена статуса / заметка /
-                 удаление (с подтверждением)
+/start → главное меню (inline-кнопки, отфильтровано по роли)
+  ├─ Content         → список из 6 блоков → выбор → правка eyebrow/title/body/cta (EN/UA)      [owner, content_manager]
+  ├─ Projects        → вкладки Home | Page → список карточек → правка полей, замена изображения,
+  │                     порядок, удаление (с подтверждением) — без добавления новых карточек    [owner, content_manager]
+  ├─ Services        → вкладки Home | Page → список карточек → то же самое + featured (Home)    [owner, content_manager]
+  ├─ SEO             → список из 8 страниц → правка title/description (EN/UA)                   [owner, content_manager]
+  ├─ Requests        → список с фильтрами → карточка заявки → статус / заметка /
+  │                     удаление (с подтверждением)                                              [owner, sales_manager]
+  └─ Administrators  → список менеджеров → добавить (Telegram ID → роль → метка) /
+                        удалить (с подтверждением)                                               [только owner]
 ```
 
-`Settings` (Reset content) в меню бота нет — это действие оставлено только
-за веб-интерфейсом.
+`Settings` (Reset content) в меню бота нет вообще ни для кого — это действие
+оставлено только за веб-интерфейсом.
 
 Каждая правка текста — это короткий шаг диалога («пришлите новый заголовок
 на EN»), так как у Telegram нет полноценных форм; каждое разрушительное
@@ -178,13 +234,15 @@ TELEGRAM_WEBHOOK_SECRET  # случайная строка, сверяется �
 
 1. Оператор: создаёт бота, собирает Telegram ID администраторов, прописывает
    3 переменные окружения локально и в Vercel.
-2. Оператор: выполняет миграцию `telegram_sessions` в Supabase SQL Editor.
+2. Оператор: выполняет миграции `telegram_sessions` и `telegram_admins` в
+   Supabase SQL Editor (первая уже выполнена 2026-09-12).
 3. Реализация (в этом репозитории, через subagent-driven-development, как и
-   Supabase-планы): зависимость grammY, файл миграции
-   `telegram_sessions`, `api/_lib/telegramHandler.ts` (+ тесты, инжектируемые
-   зависимости — как у всех остальных `_lib/*Handler.ts`),
-   `api/telegram/webhook.ts`, меню/машина состояний, мост фото-загрузки в
-   тот же путь, что использует `adminUploadHandler`.
+   Supabase-планы): зависимость grammY, файлы миграций
+   (`telegram_sessions` + `telegram_admins`), `api/_lib/telegramHandler.ts`
+   (+ тесты, инжектируемые зависимости — как у всех остальных
+   `_lib/*Handler.ts`), `api/telegram/webhook.ts`, роль-фильтрация меню,
+   машина состояний, мост фото-загрузки в тот же путь, что использует
+   `adminUploadHandler`.
 4. Один вызов `setWebhook` на реальный домен Vercel
    (сейчас — `portfolio-three-rho-45ofj86fdk.vercel.app`, кастомного домена
    пока нет) с `secret_token`, равным `TELEGRAM_WEBHOOK_SECRET`.
