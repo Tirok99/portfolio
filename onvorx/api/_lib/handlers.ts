@@ -1,19 +1,16 @@
-import { timingSafeEqual } from 'node:crypto'
 import type { AuthEnv, HandlerResult } from './types'
 import {
   SESSION_COOKIE,
   SESSION_TTL_SECONDS,
   parseCookies,
+  safeEqual,
   serializeCookie,
   signToken,
   verifyToken,
 } from './session'
 
 function passwordMatches(input: string, expected: string): boolean {
-  const a = Buffer.from(input)
-  const b = Buffer.from(expected)
-  if (a.length !== b.length) return false
-  return timingSafeEqual(a, b)
+  return safeEqual(input, expected)
 }
 
 export function handleLogin(

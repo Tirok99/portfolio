@@ -52,6 +52,14 @@ describe('dispatch — access control', () => {
     await dispatch(ctx, ENV, deps)
     expect(ctx.reply).toHaveBeenCalledWith({ text: "You don't have access to this bot." })
   })
+
+  it('an unknown id tapping a button still gets the callback answered (no stuck spinner)', async () => {
+    const { deps } = makeDeps()
+    const ctx = makeCtx({ fromId: 999, callbackData: 'stub:content' })
+    await dispatch(ctx, ENV, deps)
+    expect(ctx.answerCallback).toHaveBeenCalled()
+    expect(ctx.reply).toHaveBeenCalledWith({ text: "You don't have access to this bot." })
+  })
 })
 
 describe('dispatch — /start', () => {
@@ -72,6 +80,25 @@ describe('dispatch — stub sections', () => {
     await dispatch(ctx, ENV, deps)
     expect(ctx.answerCallback).toHaveBeenCalled()
     expect(ctx.reply).toHaveBeenCalledWith({ text: 'content management is coming in a later update.' })
+  })
+
+  it('stub:requests replies with "no access" for a role that cannot see that section', async () => {
+    const { deps, setManagers } = makeDeps()
+    setManagers([MANAGER]) // content_manager — not allowed on the requests section
+    const ctx = makeCtx({ fromId: 42, callbackData: 'stub:requests' })
+    await dispatch(ctx, ENV, deps)
+    expect(ctx.reply).toHaveBeenCalledWith({ text: "You don't have access to this bot." })
+  })
+})
+
+describe('dispatch — menu:main', () => {
+  it('is reachable and resets state + shows the main menu', async () => {
+    const { deps, sessions } = makeDeps({ screen: 'admins_list' })
+    const ctx = makeCtx({ callbackData: 'menu:main' })
+    await dispatch(ctx, ENV, deps)
+    expect(sessions.save).toHaveBeenCalledWith(1, { screen: 'main_menu' }, ENV)
+    const reply = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    expect(reply.text).toBe('ONVORX admin — choose a section:')
   })
 })
 
@@ -183,5 +210,22 @@ describe('dispatch — Administrators, owner-only', () => {
 
     expect(getManagers()).toEqual([])
     expect(ctx.reply).toHaveBeenCalledWith({ text: 'Session out of sync — please /start and try again.' })
+  })
+})
+
+describe('dispatch — free text fallback', () => {
+  it('a non-owner sending free text gets a helpful hint instead of silence', async () => {
+    const { deps, setManagers } = makeDeps()
+    setManagers([MANAGER])
+    const ctx = makeCtx({ fromId: 42, text: 'hello' })
+    await dispatch(ctx, ENV, deps)
+    expect(ctx.reply).toHaveBeenCalledWith({ text: 'Use the menu buttons below, or /start to see them again.' })
+  })
+
+  it('an owner sending free text on main_menu (no flow in progress) gets a helpful hint', async () => {
+    const { deps } = makeDeps({ screen: 'main_menu' })
+    const ctx = makeCtx({ text: 'hello' })
+    await dispatch(ctx, ENV, deps)
+    expect(ctx.reply).toHaveBeenCalledWith({ text: 'Use the menu buttons below, or /start to see them again.' })
   })
 })

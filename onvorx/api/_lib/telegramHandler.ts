@@ -2,6 +2,7 @@ import type { Update } from 'grammy/types'
 import type { HandlerResult, SupabaseAdminEnv, TelegramEnv } from './types'
 import { getBot } from './telegramBot'
 import type { DispatchDeps } from './telegramDispatch'
+import { safeEqual } from './session'
 
 type Env = TelegramEnv & SupabaseAdminEnv
 
@@ -13,11 +14,11 @@ export async function handleTelegramWebhook(
   if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_WEBHOOK_SECRET) {
     return { status: 500, body: { error: 'not_configured' } }
   }
-  if (input.secretHeader !== env.TELEGRAM_WEBHOOK_SECRET) {
+  if (typeof input.secretHeader !== 'string' || !safeEqual(input.secretHeader, env.TELEGRAM_WEBHOOK_SECRET)) {
     return { status: 401, body: { error: 'unauthorized' } }
   }
-  const bot = await getBot(env, deps)
   try {
+    const bot = await getBot(env, deps)
     await bot.handleUpdate(input.body as Update)
   } catch (err) {
     console.error('telegram webhook handling failed', err)

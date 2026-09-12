@@ -27,8 +27,14 @@ describe('handleTelegramWebhook', () => {
     expect(getBotMock).not.toHaveBeenCalled()
   })
 
-  it('401 on a missing/wrong secret header', async () => {
+  it('401 on a wrong secret header', async () => {
     const r = await handleTelegramWebhook({ secretHeader: 'wrong', body: {} }, ENV)
+    expect(r.status).toBe(401)
+    expect(getBotMock).not.toHaveBeenCalled()
+  })
+
+  it('401 on a missing secret header (undefined does not throw)', async () => {
+    const r = await handleTelegramWebhook({ secretHeader: undefined, body: {} }, ENV)
     expect(r.status).toBe(401)
     expect(getBotMock).not.toHaveBeenCalled()
   })
@@ -44,6 +50,15 @@ describe('handleTelegramWebhook', () => {
     handleUpdateMock.mockRejectedValueOnce(new Error('boom'))
     const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     const r = await handleTelegramWebhook({ secretHeader: 'shh', body: { update_id: 2 } }, ENV)
+    expect(r.status).toBe(200)
+    expect(errSpy).toHaveBeenCalled()
+    errSpy.mockRestore()
+  })
+
+  it('still acks 200 even if getBot itself rejects (e.g. a getMe network blip)', async () => {
+    getBotMock.mockRejectedValueOnce(new Error('getMe failed'))
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const r = await handleTelegramWebhook({ secretHeader: 'shh', body: { update_id: 3 } }, ENV)
     expect(r.status).toBe(200)
     expect(errSpy).toHaveBeenCalled()
     errSpy.mockRestore()

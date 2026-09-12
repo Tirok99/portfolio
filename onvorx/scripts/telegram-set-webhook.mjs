@@ -12,7 +12,8 @@ if (!token || !secret || !domain) {
   process.exit(1)
 }
 
-const url = `https://${domain}/api/telegram/webhook`
+const cleanDomain = domain.replace(/^https?:\/\//, '').replace(/\/+$/, '')
+const url = `https://${cleanDomain}/api/telegram/webhook`
 const bot = new Bot(token)
 await bot.api.setWebhook(url, { secret_token: secret })
 console.log('Webhook set to', url)

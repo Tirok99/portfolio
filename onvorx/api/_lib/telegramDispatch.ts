@@ -42,6 +42,7 @@ export async function dispatch(
 ): Promise<void> {
   const role = await resolveRole(ctx.fromId, env, deps.admins)
   if (!role) {
+    if (ctx.callbackData) await ctx.answerCallback()
     await ctx.reply(menu.buildNoAccessReply())
     return
   }
@@ -84,6 +85,10 @@ async function handleCallback(
 
   if (data.startsWith('stub:')) {
     const section = data.slice('stub:'.length)
+    if (!menu.canAccessSection(role, section)) {
+      await ctx.reply(menu.buildNoAccessReply())
+      return
+    }
     await ctx.reply(menu.buildStubReply(section))
     return
   }
@@ -155,6 +160,8 @@ async function handleCallback(
   }
 }
 
+const TEXT_FALLBACK_REPLY = { text: 'Use the menu buttons below, or /start to see them again.' }
+
 async function handleText(
   ctx: BotCtx,
   text: string,
@@ -162,7 +169,10 @@ async function handleText(
   env: Env,
   deps: DispatchDeps,
 ): Promise<void> {
-  if (role !== 'owner') return
+  if (role !== 'owner') {
+    await ctx.reply(TEXT_FALLBACK_REPLY)
+    return
+  }
   const state = await deps.sessions.load(ctx.chatId, env)
 
   if (state.screen === 'admins_add_id') {
@@ -178,7 +188,10 @@ async function handleText(
 
   if (state.screen === 'admins_add_label') {
     await finishAddManager(ctx, env, deps, text)
+    return
   }
+
+  await ctx.reply(TEXT_FALLBACK_REPLY)
 }
 
 async function finishAddManager(

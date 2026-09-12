@@ -1,4 +1,4 @@
-import { Bot, InlineKeyboard, type ApiClientOptions, type Context } from 'grammy'
+import { Bot, type ApiClientOptions, type Context } from 'grammy'
 import type { SupabaseAdminEnv, TelegramEnv } from './types'
 import { dispatch, defaultDispatchDeps, type BotCtx, type DispatchDeps } from './telegramDispatch'
 import type { BotReply } from './telegramMenu'
@@ -17,10 +17,14 @@ function toBotCtx(ctx: Context): BotCtx | null {
     text: ctx.message?.text,
     callbackData: ctx.callbackQuery?.data,
     reply: async (r: BotReply) => {
-      await ctx.reply(r.text, r.keyboard ? { reply_markup: r.keyboard as InlineKeyboard } : undefined)
+      await ctx.reply(r.text, r.keyboard ? { reply_markup: r.keyboard } : undefined)
     },
     answerCallback: async () => {
-      await ctx.answerCallbackQuery()
+      try {
+        await ctx.answerCallbackQuery()
+      } catch {
+        // best-effort: an expired/already-answered query shouldn't abort the reply
+      }
     },
   }
 }
@@ -51,5 +55,8 @@ export function getBot(
     return bot
   })()
   cached = { token, botPromise }
+  botPromise.catch(() => {
+    if (cached?.botPromise === botPromise) cached = null
+  })
   return botPromise
 }

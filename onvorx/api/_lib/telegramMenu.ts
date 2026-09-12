@@ -29,6 +29,11 @@ export function buildStubReply(section: string): BotReply {
   return { text: `${section} management is coming in a later update.` }
 }
 
+export function canAccessSection(role: Role, key: string): boolean {
+  const item = MENU_ITEMS.find((m) => m.key === key)
+  return item ? item.roles.includes(role) : false
+}
+
 export function buildNoAccessReply(): BotReply {
   return { text: "You don't have access to this bot." }
 }
@@ -43,7 +48,7 @@ export function buildAdminsList(managers: ManagerRecord[]): BotReply {
   managers.forEach((m) => {
     kb.text(`🗑 Remove ${m.label ?? m.telegramId}`, `admins:remove:${m.telegramId}`).row()
   })
-  kb.text('➕ Add manager', 'admins:add')
+  kb.text('➕ Add manager', 'admins:add').row().text('⬅ Back', 'menu:main')
   if (managers.length === 0) return { text: 'No managers yet.', keyboard: kb }
   const lines = managers.map((m) => `• ${m.label ?? m.telegramId} — ${ROLE_LABEL[m.role]} (id ${m.telegramId})`)
   return { text: `Managers:\n${lines.join('\n')}`, keyboard: kb }

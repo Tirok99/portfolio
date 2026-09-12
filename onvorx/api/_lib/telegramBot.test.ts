@@ -45,6 +45,34 @@ describe('getBot', () => {
     expect(a).not.toBe(b)
   })
 
+  it('does not keep a rejected botPromise cached — the next call for the same token gets a fresh attempt', async () => {
+    // grammY's bot.init() retries getMe internally on transient errors (5xx, 429,
+    // network errors), so to observe a genuinely rejected botPromise we need a
+    // non-retryable Telegram error (grammY only rethrows outside that retry loop
+    // for a 4xx other than 429 — e.g. 401, an invalid-token response).
+    const calls: string[] = []
+    const token = '333:ccc'
+    let getMeCallCount = 0
+    const fetchImpl = vi.fn(async (url: unknown) => {
+      const u = String(url)
+      calls.push(u)
+      if (u.includes('getMe')) {
+        getMeCallCount += 1
+        if (getMeCallCount === 1) {
+          return { json: async () => ({ ok: false, description: 'Unauthorized', error_code: 401 }) } as Response
+        }
+        return { json: async () => ({ ok: true, result: FAKE_ME }) } as Response
+      }
+      return { json: async () => ({ ok: true, result: true }) } as Response
+    })
+    const client = { fetch: fetchImpl as unknown as typeof fetch }
+
+    await expect(getBot({ TELEGRAM_BOT_TOKEN: token }, undefined, client)).rejects.toBeTruthy()
+    const bot = await getBot({ TELEGRAM_BOT_TOKEN: token }, undefined, client)
+    expect(bot).toBeTruthy()
+    expect(calls.filter((u) => u.includes('getMe'))).toHaveLength(2)
+  })
+
   it('a real Update flows through bot.handleUpdate to a real ctx.reply, network faked via client.fetch', async () => {
     const calls: string[] = []
     const deps: DispatchDeps = {

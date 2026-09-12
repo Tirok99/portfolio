@@ -8,6 +8,7 @@ import {
   buildRolePrompt,
   buildLabelPrompt,
   buildRemoveConfirm,
+  canAccessSection,
 } from './telegramMenu'
 import type { ManagerRecord } from './telegramAdmins'
 
@@ -54,17 +55,36 @@ describe('buildNoAccessReply', () => {
 })
 
 describe('buildAdminsList', () => {
-  it('empty list still offers Add manager', () => {
+  it('empty list still offers Add manager and Back', () => {
     const r = buildAdminsList([])
-    expect(readButtons(r).map((b) => b.text)).toEqual(['➕ Add manager'])
+    expect(readButtons(r).map((b) => b.text)).toEqual(['➕ Add manager', '⬅ Back'])
   })
-  it('lists each manager with a remove button, then Add manager', () => {
+  it('lists each manager with a remove button, then Add manager, then Back', () => {
     const r = buildAdminsList([MANAGER])
     expect(r.text).toContain('Anna')
     expect(r.text).toContain('Content manager')
     const buttons = readButtons(r)
     expect(buttons[0]).toEqual({ text: '🗑 Remove Anna', data: 'admins:remove:42' })
     expect(buttons[1].text).toBe('➕ Add manager')
+    expect(buttons[2]).toEqual({ text: '⬅ Back', data: 'menu:main' })
+  })
+})
+
+describe('canAccessSection', () => {
+  it('owner can access admins', () => {
+    expect(canAccessSection('owner', 'admins')).toBe(true)
+  })
+  it('content_manager can access content but not admins or requests', () => {
+    expect(canAccessSection('content_manager', 'content')).toBe(true)
+    expect(canAccessSection('content_manager', 'admins')).toBe(false)
+    expect(canAccessSection('content_manager', 'requests')).toBe(false)
+  })
+  it('sales_manager can access requests but not content', () => {
+    expect(canAccessSection('sales_manager', 'requests')).toBe(true)
+    expect(canAccessSection('sales_manager', 'content')).toBe(false)
+  })
+  it('returns false for an unknown section key', () => {
+    expect(canAccessSection('owner', 'not-a-real-section')).toBe(false)
   })
 })
 
