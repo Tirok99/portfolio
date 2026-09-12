@@ -36,27 +36,29 @@ function SeoEntryEditor({ entry }: { entry: SeoEntry }) {
   }
 
   return (
-    <fieldset className="admin-fieldset">
-      <legend>
+    <details className="admin-disclosure">
+      <summary className="admin-disclosure__summary">
         <h2>{entry.label}</h2>
-      </legend>
-      <LocalizedField
-        label="SEO title"
-        value={draft.title}
-        recommended={60}
-        onChange={(v) => setDraft((d) => ({ ...d, title: v }))}
-      />
-      <LocalizedField
-        label="Meta description"
-        value={draft.description}
-        multiline
-        recommended={155}
-        onChange={(v) => setDraft((d) => ({ ...d, description: v }))}
-      />
-      <p className="admin-field__hint">Google preview (English):</p>
-      <SerpPreview title={draft.title.en} description={draft.description.en} path={entry.path} />
-      <SaveBar dirty={dirty} onSave={save} onDiscard={() => setDraft(stored)} />
-    </fieldset>
+      </summary>
+      <div className="admin-disclosure__body">
+        <LocalizedField
+          label="SEO title"
+          value={draft.title}
+          recommended={60}
+          onChange={(v) => setDraft((d) => ({ ...d, title: v }))}
+        />
+        <LocalizedField
+          label="Meta description"
+          value={draft.description}
+          multiline
+          recommended={155}
+          onChange={(v) => setDraft((d) => ({ ...d, description: v }))}
+        />
+        <p className="admin-field__hint">Google preview (English):</p>
+        <SerpPreview title={draft.title.en} description={draft.description.en} path={entry.path} />
+        <SaveBar dirty={dirty} onSave={save} onDiscard={() => setDraft(stored)} />
+      </div>
+    </details>
   )
 }
 

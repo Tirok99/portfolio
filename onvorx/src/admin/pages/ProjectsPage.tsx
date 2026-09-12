@@ -176,13 +176,18 @@ export function ProjectsPage() {
           onSave={save}
           onDiscard={() => stored && setDraft(stored)}
         />
-        <button
-          type="button"
-          className="admin-btn admin-btn--danger"
-          onClick={del}
-        >
-          Delete card
-        </button>
+        <div className="admin-detail__actions">
+          <button type="button" className="admin-btn" onClick={() => setSelectedId(null)}>
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="admin-btn admin-btn--danger"
+            onClick={del}
+          >
+            Delete card
+          </button>
+        </div>
       </div>
     ) : (
       <EmptyState

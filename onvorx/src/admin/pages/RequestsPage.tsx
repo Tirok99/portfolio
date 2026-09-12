@@ -155,15 +155,15 @@ export function RequestsPage() {
       ) : rows.length === 0 ? (
         <EmptyState title="No requests match" hint="Try a different filter." />
       ) : (
-        <table className="admin-table">
+        <table className="admin-table admin-table--stack">
           <thead>
             <tr><th>Date</th><th>Name</th><th>Email</th><th>Budget</th><th>Status</th></tr>
           </thead>
           <tbody>
             {rows.map((r) => (
               <tr key={r.id} className={r.id === openId ? 'is-selected' : undefined}>
-                <td>{fmtDate(r.createdAt)}</td>
-                <td>
+                <td data-label="Date"><span>{fmtDate(r.createdAt)}</span></td>
+                <td data-label="Name">
                   <button
                     type="button"
                     className="admin-rowbtn"
@@ -173,9 +173,9 @@ export function RequestsPage() {
                     {r.name}
                   </button>
                 </td>
-                <td>{r.email}</td>
-                <td>{r.budget ?? '—'}</td>
-                <td><StatusBadge status={r.status} /></td>
+                <td data-label="Email"><span>{r.email}</span></td>
+                <td data-label="Budget"><span>{r.budget ?? '—'}</span></td>
+                <td data-label="Status"><StatusBadge status={r.status} /></td>
               </tr>
             ))}
           </tbody>

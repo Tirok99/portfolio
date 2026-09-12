@@ -47,35 +47,37 @@ function SectionEditor({ section }: { section: SectionText }) {
   }
 
   return (
-    <fieldset className="admin-fieldset">
-      <legend>
+    <details className="admin-disclosure">
+      <summary className="admin-disclosure__summary">
         <h2>{section.label}</h2>
-      </legend>
-      <LocalizedField
-        label="Eyebrow"
-        value={draft.eyebrow}
-        onChange={(v) => setDraft((d) => ({ ...d, eyebrow: v }))}
-      />
-      <LocalizedField
-        label="Title"
-        value={draft.title}
-        onChange={(v) => setDraft((d) => ({ ...d, title: v }))}
-      />
-      <LocalizedField
-        label="Body"
-        value={draft.body}
-        multiline
-        onChange={(v) => setDraft((d) => ({ ...d, body: v }))}
-      />
-      {draft.ctaLabel && (
+      </summary>
+      <div className="admin-disclosure__body">
         <LocalizedField
-          label="Button label"
-          value={draft.ctaLabel}
-          onChange={(v) => setDraft((d) => ({ ...d, ctaLabel: v }))}
+          label="Eyebrow"
+          value={draft.eyebrow}
+          onChange={(v) => setDraft((d) => ({ ...d, eyebrow: v }))}
         />
-      )}
-      <SaveBar dirty={dirty} onSave={save} onDiscard={() => setDraft(stored)} />
-    </fieldset>
+        <LocalizedField
+          label="Title"
+          value={draft.title}
+          onChange={(v) => setDraft((d) => ({ ...d, title: v }))}
+        />
+        <LocalizedField
+          label="Body"
+          value={draft.body}
+          multiline
+          onChange={(v) => setDraft((d) => ({ ...d, body: v }))}
+        />
+        {draft.ctaLabel && (
+          <LocalizedField
+            label="Button label"
+            value={draft.ctaLabel}
+            onChange={(v) => setDraft((d) => ({ ...d, ctaLabel: v }))}
+          />
+        )}
+        <SaveBar dirty={dirty} onSave={save} onDiscard={() => setDraft(stored)} />
+      </div>
+    </details>
   )
 }
 
