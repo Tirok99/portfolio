@@ -3,16 +3,64 @@ import { dispatch } from './telegramDispatch'
 import type { BotCtx, DispatchDeps } from './telegramDispatch'
 import type { TelegramAdminsDeps, ManagerRecord } from './telegramAdmins'
 import type { TelegramSessionsDeps, TelegramState } from './telegramSessions'
+import type { TelegramContentDeps, SectionRecord, SeoRecord } from './telegramContent'
+import type { AdminContentDeps } from './adminContentHandler'
 
-const ENV = { TELEGRAM_ADMIN_IDS: '111' }
+const ENV = {
+  TELEGRAM_ADMIN_IDS: '111',
+  ADMIN_SESSION_SECRET: 'a-long-enough-test-secret-value',
+  SUPABASE_URL: 'https://example.supabase.co',
+  SUPABASE_SERVICE_ROLE_KEY: 'test-service-role-key',
+}
 const OWNER_ID = 111
 const MANAGER: ManagerRecord = {
   telegramId: 42, role: 'content_manager', label: 'Anna', addedBy: OWNER_ID, createdAt: '2026-01-01T00:00:00Z',
+}
+const SALES: ManagerRecord = {
+  telegramId: 77, role: 'sales_manager', label: 'Sam', addedBy: OWNER_ID, createdAt: '2026-01-01T00:00:00Z',
+}
+
+const L = (en: string, uk: string) => ({ en, uk })
+
+const HERO: SectionRecord = {
+  key: 'hero',
+  eyebrow: L('Web solutions', 'Веб-рішення'),
+  title: L('Built around your business', 'Створено під ваш бізнес'),
+  body: L('We design and build.', 'Ми проєктуємо і будуємо.'),
+  ctaLabel: L('Request an estimate', 'Отримати оцінку'),
+}
+const ABOUT: SectionRecord = {
+  key: 'about',
+  eyebrow: L('About', 'Про нас'),
+  title: L('Who we are', 'Хто ми'),
+  body: L('A small team.', 'Невелика команда.'),
+  ctaLabel: null,
+}
+const HOME_SEO: SeoRecord = {
+  pageKey: 'home',
+  title: L('ONVORX', 'ONVORX'),
+  description: L('Web solutions built around your business.', 'Веб-рішення під ваш бізнес.'),
+}
+
+function applySectionPatch(record: SectionRecord, patch: Record<string, unknown>): SectionRecord {
+  const next = { ...record }
+  if ('eyebrow' in patch) next.eyebrow = patch.eyebrow as SectionRecord['eyebrow']
+  if ('title' in patch) next.title = patch.title as SectionRecord['title']
+  if ('body' in patch) next.body = patch.body as SectionRecord['body']
+  if ('cta_label' in patch) next.ctaLabel = patch.cta_label as SectionRecord['ctaLabel']
+  return next
+}
+
+function applySeoPatch(record: SeoRecord, patch: Record<string, unknown>): SeoRecord {
+  return { ...record, ...(patch as Partial<SeoRecord>) }
 }
 
 function makeDeps(initialState: TelegramState = { screen: 'main_menu' }) {
   let state = initialState
   let managers: ManagerRecord[] = []
+  let sections: Record<string, SectionRecord> = { hero: { ...HERO }, about: { ...ABOUT } }
+  let seoPages: Record<string, SeoRecord> = { home: { ...HOME_SEO } }
+
   const admins: TelegramAdminsDeps = {
     findManager: vi.fn(async (id: number) => managers.find((m) => m.telegramId === id) ?? null),
     listManagers: vi.fn(async () => managers),
@@ -31,8 +79,32 @@ function makeDeps(initialState: TelegramState = { screen: 'main_menu' }) {
       state = next
     }),
   }
-  const deps: DispatchDeps = { admins, sessions }
-  return { deps, admins, sessions, getState: () => state, getManagers: () => managers, setManagers: (m: ManagerRecord[]) => (managers = m) }
+  const content: TelegramContentDeps = {
+    getSection: vi.fn(async (key: string) => sections[key] ?? null),
+    getSeo: vi.fn(async (pageKey: string) => seoPages[pageKey] ?? null),
+  }
+  const adminContent: AdminContentDeps = {
+    updateSection: vi.fn(async (key: string, patch: Record<string, unknown>) => {
+      if (!sections[key]) return { error: 'not_found' }
+      sections[key] = applySectionPatch(sections[key], patch)
+      return { error: null }
+    }),
+    updateSeo: vi.fn(async (pageKey: string, patch: Record<string, unknown>) => {
+      if (!seoPages[pageKey]) return { error: 'not_found' }
+      seoPages[pageKey] = applySeoPatch(seoPages[pageKey], patch)
+      return { error: null }
+    }),
+    resetAll: vi.fn(async () => ({ error: null })),
+  }
+  const deps: DispatchDeps = { admins, sessions, content, adminContent }
+  return {
+    deps, admins, sessions, content, adminContent,
+    getState: () => state,
+    getManagers: () => managers,
+    setManagers: (m: ManagerRecord[]) => (managers = m),
+    getSections: () => sections,
+    getSeoPages: () => seoPages,
+  }
 }
 
 function makeCtx(overrides: Partial<BotCtx>): BotCtx {
@@ -74,12 +146,12 @@ describe('dispatch — /start', () => {
 })
 
 describe('dispatch — stub sections', () => {
-  it('stub:content replies with a coming-soon message for anyone with access', async () => {
+  it('stub:projects replies with a coming-soon message for anyone with access', async () => {
     const { deps } = makeDeps()
-    const ctx = makeCtx({ callbackData: 'stub:content' })
+    const ctx = makeCtx({ callbackData: 'stub:projects' })
     await dispatch(ctx, ENV, deps)
     expect(ctx.answerCallback).toHaveBeenCalled()
-    expect(ctx.reply).toHaveBeenCalledWith({ text: 'content management is coming in a later update.' })
+    expect(ctx.reply).toHaveBeenCalledWith({ text: 'projects management is coming in a later update.' })
   })
 
   it('stub:requests replies with "no access" for a role that cannot see that section', async () => {
@@ -227,5 +299,185 @@ describe('dispatch — free text fallback', () => {
     const ctx = makeCtx({ text: 'hello' })
     await dispatch(ctx, ENV, deps)
     expect(ctx.reply).toHaveBeenCalledWith({ text: 'Use the menu buttons below, or /start to see them again.' })
+  })
+})
+
+describe('dispatch — Content, owner + content_manager', () => {
+  it('a sales_manager cannot open content:list', async () => {
+    const { deps, setManagers } = makeDeps()
+    setManagers([SALES])
+    const ctx = makeCtx({ fromId: 77, callbackData: 'content:list' })
+    await dispatch(ctx, ENV, deps)
+    expect(ctx.reply).toHaveBeenCalledWith({ text: "You don't have access to this bot." })
+  })
+
+  it('owner opens content:list and sees the six blocks', async () => {
+    const { deps } = makeDeps()
+    const ctx = makeCtx({ callbackData: 'content:list' })
+    await dispatch(ctx, ENV, deps)
+    const reply = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    expect(reply.text).toBe('Content — choose a block:')
+  })
+
+  it('a content_manager opens a section detail and sees current EN/UA text', async () => {
+    const { deps, setManagers } = makeDeps()
+    setManagers([MANAGER])
+    const ctx = makeCtx({ fromId: 42, callbackData: 'content:section:hero' })
+    await dispatch(ctx, ENV, deps)
+    const reply = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    expect(reply.text).toContain('Built around your business')
+    expect(reply.text).toContain('Створено під ваш бізнес')
+  })
+
+  it('an unknown section key shows an error and falls back to the list', async () => {
+    const { deps } = makeDeps()
+    const ctx = makeCtx({ callbackData: 'content:section:bogus' })
+    await dispatch(ctx, ENV, deps)
+    expect(ctx.reply).toHaveBeenCalledWith({ text: 'Could not load that section — please try again.' })
+    const listReply = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[1][0]
+    expect(listReply.text).toBe('Content — choose a block:')
+  })
+
+  it('full edit flow: section -> field -> language -> new text -> saved, other language untouched', async () => {
+    const { deps, getSections } = makeDeps()
+    await dispatch(makeCtx({ callbackData: 'content:section:hero' }), ENV, deps)
+    await dispatch(makeCtx({ callbackData: 'content:field:title' }), ENV, deps)
+    await dispatch(makeCtx({ callbackData: 'content:lang:en' }), ENV, deps)
+    const finalCtx = makeCtx({ text: 'New English title' })
+    await dispatch(finalCtx, ENV, deps)
+
+    expect(getSections().hero.title).toEqual({ en: 'New English title', uk: 'Створено під ваш бізнес' })
+    const reply = (finalCtx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    expect(reply.text).toContain('Saved.')
+    expect(reply.text).toContain('New English title')
+  })
+
+  it('editing UA preserves the existing EN text', async () => {
+    const { deps, getSections } = makeDeps()
+    await dispatch(makeCtx({ callbackData: 'content:section:hero' }), ENV, deps)
+    await dispatch(makeCtx({ callbackData: 'content:field:body' }), ENV, deps)
+    await dispatch(makeCtx({ callbackData: 'content:lang:uk' }), ENV, deps)
+    await dispatch(makeCtx({ text: 'Новий текст' }), ENV, deps)
+
+    expect(getSections().hero.body).toEqual({ en: 'We design and build.', uk: 'Новий текст' })
+  })
+
+  it('editing the CTA label on hero works and merges correctly', async () => {
+    const { deps, getSections } = makeDeps()
+    await dispatch(makeCtx({ callbackData: 'content:section:hero' }), ENV, deps)
+    await dispatch(makeCtx({ callbackData: 'content:field:ctaLabel' }), ENV, deps)
+    await dispatch(makeCtx({ callbackData: 'content:lang:en' }), ENV, deps)
+    await dispatch(makeCtx({ text: 'Get a quote' }), ENV, deps)
+
+    expect(getSections().hero.ctaLabel).toEqual({ en: 'Get a quote', uk: 'Отримати оцінку' })
+  })
+
+  it('about has no ctaLabel button, so its detail view never offers editing a null CTA label', async () => {
+    const { deps } = makeDeps()
+    const ctx = makeCtx({ callbackData: 'content:section:about' })
+    await dispatch(ctx, ENV, deps)
+    const reply = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    const buttonTexts = (reply.keyboard.inline_keyboard as { text: string }[][]).flat().map((b) => b.text)
+    expect(buttonTexts).not.toContain('CTA label')
+  })
+
+  it('a stale field tap with no section chosen yet shows "session out of sync"', async () => {
+    const { deps } = makeDeps({ screen: 'main_menu' })
+    const ctx = makeCtx({ callbackData: 'content:field:title' })
+    await dispatch(ctx, ENV, deps)
+    expect(ctx.reply).toHaveBeenCalledWith({ text: 'Session out of sync — please /start and try again.' })
+  })
+
+  it('a save failure shows an error with a Back button and does not change the record', async () => {
+    const { deps, adminContent, getSections } = makeDeps()
+    ;(adminContent.updateSection as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ error: 'boom' })
+    await dispatch(makeCtx({ callbackData: 'content:section:hero' }), ENV, deps)
+    await dispatch(makeCtx({ callbackData: 'content:field:title' }), ENV, deps)
+    await dispatch(makeCtx({ callbackData: 'content:lang:en' }), ENV, deps)
+    const finalCtx = makeCtx({ text: 'This should not stick' })
+    await dispatch(finalCtx, ENV, deps)
+
+    expect(getSections().hero.title).toEqual(HERO.title)
+    expect(finalCtx.reply).toHaveBeenCalledWith({
+      text: 'Could not save — please try again.',
+      keyboard: expect.anything(),
+    })
+  })
+
+  it('replies with a config error and does not call handleAdminContent when ADMIN_SESSION_SECRET is missing', async () => {
+    const { deps, adminContent } = makeDeps()
+    const badEnv = { TELEGRAM_ADMIN_IDS: '111' }
+    await dispatch(makeCtx({ callbackData: 'content:section:hero' }), badEnv, deps)
+    await dispatch(makeCtx({ callbackData: 'content:field:title' }), badEnv, deps)
+    await dispatch(makeCtx({ callbackData: 'content:lang:en' }), badEnv, deps)
+    const finalCtx = makeCtx({ text: 'Anything' })
+    await dispatch(finalCtx, badEnv, deps)
+
+    expect(adminContent.updateSection).not.toHaveBeenCalled()
+    expect(finalCtx.reply).toHaveBeenCalledWith({ text: 'Bot is not fully configured — contact the site owner.' })
+  })
+})
+
+describe('dispatch — SEO, owner + content_manager', () => {
+  it('a sales_manager cannot open seo:list', async () => {
+    const { deps, setManagers } = makeDeps()
+    setManagers([SALES])
+    const ctx = makeCtx({ fromId: 77, callbackData: 'seo:list' })
+    await dispatch(ctx, ENV, deps)
+    expect(ctx.reply).toHaveBeenCalledWith({ text: "You don't have access to this bot." })
+  })
+
+  it('owner opens seo:list and sees all eight pages', async () => {
+    const { deps } = makeDeps()
+    const ctx = makeCtx({ callbackData: 'seo:list' })
+    await dispatch(ctx, ENV, deps)
+    const reply = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    expect(reply.text).toBe('SEO — choose a page:')
+  })
+
+  it('full edit flow: page -> field -> language -> new text -> saved, other language untouched', async () => {
+    const { deps, getSeoPages } = makeDeps()
+    await dispatch(makeCtx({ callbackData: 'seo:page:home' }), ENV, deps)
+    await dispatch(makeCtx({ callbackData: 'seo:field:description' }), ENV, deps)
+    await dispatch(makeCtx({ callbackData: 'seo:lang:en' }), ENV, deps)
+    const finalCtx = makeCtx({ text: 'New English description' })
+    await dispatch(finalCtx, ENV, deps)
+
+    expect(getSeoPages().home.description).toEqual({
+      en: 'New English description',
+      uk: 'Веб-рішення під ваш бізнес.',
+    })
+    const reply = (finalCtx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    expect(reply.text).toContain('Saved.')
+  })
+
+  it('an unknown page key shows an error and falls back to the list', async () => {
+    const { deps } = makeDeps()
+    const ctx = makeCtx({ callbackData: 'seo:page:bogus' })
+    await dispatch(ctx, ENV, deps)
+    expect(ctx.reply).toHaveBeenCalledWith({ text: 'Could not load that page — please try again.' })
+  })
+
+  it('a stale field tap with no page chosen yet shows "session out of sync"', async () => {
+    const { deps } = makeDeps({ screen: 'main_menu' })
+    const ctx = makeCtx({ callbackData: 'seo:field:title' })
+    await dispatch(ctx, ENV, deps)
+    expect(ctx.reply).toHaveBeenCalledWith({ text: 'Session out of sync — please /start and try again.' })
+  })
+
+  it('a save failure shows an error with a Back button and does not change the record', async () => {
+    const { deps, adminContent, getSeoPages } = makeDeps()
+    ;(adminContent.updateSeo as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ error: 'boom' })
+    await dispatch(makeCtx({ callbackData: 'seo:page:home' }), ENV, deps)
+    await dispatch(makeCtx({ callbackData: 'seo:field:title' }), ENV, deps)
+    await dispatch(makeCtx({ callbackData: 'seo:lang:uk' }), ENV, deps)
+    const finalCtx = makeCtx({ text: 'Nope' })
+    await dispatch(finalCtx, ENV, deps)
+
+    expect(getSeoPages().home.title).toEqual(HOME_SEO.title)
+    expect(finalCtx.reply).toHaveBeenCalledWith({
+      text: 'Could not save — please try again.',
+      keyboard: expect.anything(),
+    })
   })
 })
