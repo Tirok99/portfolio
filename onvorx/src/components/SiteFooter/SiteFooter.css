@@ -69,9 +69,10 @@
 }
 
 .site-footer__link {
-  display: inline-flex;
-  align-items: flex-start;
-  gap: var(--space-2);
+  /* plain inline flow (not flex): a chevron pinned as a flex sibling sits at
+     the width of the WIDEST wrapped line, drifting away from a shorter last
+     line. Flowing it inline keeps it immediately after the last word. */
+  display: inline;
   font-size: var(--fs-title-sm);
   font-weight: var(--fw-medium);
   color: var(--text);
@@ -79,10 +80,11 @@
 }
 
 .site-footer__chevron {
-  flex-shrink: 0;
-  /* aligns with the first line of a wrapped (multi-line) label instead of
-     drifting to the vertical center of the whole block */
-  margin-top: 0.3rem;
+  /* the global `svg { display: block }` reset would force a line break
+     before the icon even when it comfortably fits the current line */
+  display: inline-block;
+  margin-left: var(--space-2);
+  vertical-align: -2px;
   color: var(--accent);
   transition: transform var(--dur) var(--ease);
 }

@@ -271,12 +271,10 @@
     display: none;
   }
   .hero__wave--left {
-    width: 130vw;
-    opacity: 0.35;
-  }
-  .hero__wave--right {
+    left: 0;
+    bottom: -20px;
     width: 100vw;
-    opacity: 0.4;
+    opacity: 0.35;
   }
   .hero__cta {
     width: 100%;

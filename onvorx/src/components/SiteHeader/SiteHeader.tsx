@@ -78,44 +78,44 @@ export function SiteHeader() {
         </div>
       </div>
 
-      {menuOpen && (
-        <>
-          <div id="site-menu" className="site-header__drawer">
-            <nav aria-label={t("nav.menu")}>
-              <ul className="site-header__drawer-list">
-                <li>
-                  <Link to="/" className="site-header__drawer-link">
-                    {t("nav.home")}
-                  </Link>
-                </li>
-                {MAIN_NAV.map((item) => (
-                  <li key={item.to}>
-                    <Link to={item.to} className="site-header__drawer-link">
-                      {t(item.key)}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-            <button
-              type="button"
-              className="btn site-header__drawer-cta"
-              onClick={() => open(location.pathname)}
-            >
-              {t("nav.cta")}
-            </button>
-            <LangSwitch className="site-header__drawer-lang" />
-          </div>
+      <div
+        id="site-menu"
+        className={`site-header__drawer ${menuOpen ? "is-open" : ""}`}
+        inert={menuOpen ? undefined : true}
+      >
+        <nav aria-label={t("nav.menu")}>
+          <ul className="site-header__drawer-list">
+            <li>
+              <Link to="/" className="site-header__drawer-link">
+                {t("nav.home")}
+              </Link>
+            </li>
+            {MAIN_NAV.map((item) => (
+              <li key={item.to}>
+                <Link to={item.to} className="site-header__drawer-link">
+                  {t(item.key)}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+        <button
+          type="button"
+          className="btn site-header__drawer-cta"
+          onClick={() => open(location.pathname)}
+        >
+          {t("nav.cta")}
+        </button>
+        <LangSwitch className="site-header__drawer-lang" />
+      </div>
 
-          <button
-            type="button"
-            className="site-header__scrim"
-            aria-hidden="true"
-            tabIndex={-1}
-            onClick={() => setMenuOpen(false)}
-          />
-        </>
-      )}
+      <button
+        type="button"
+        className={`site-header__scrim ${menuOpen ? "is-open" : ""}`}
+        aria-hidden="true"
+        tabIndex={-1}
+        onClick={() => setMenuOpen(false)}
+      />
     </header>
   );
 }

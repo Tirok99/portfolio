@@ -158,7 +158,11 @@
   .projects__item--reverse .projects__media {
     order: 0;
   }
+  .projects__media {
+    height: clamp(220px, 34vw, 320px);
+  }
   .projects__content {
+    padding-inline: var(--space-4);
     padding-block: 0 var(--space-2);
   }
 }

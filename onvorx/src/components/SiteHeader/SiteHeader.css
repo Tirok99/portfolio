@@ -9,6 +9,7 @@
     backdrop-filter var(--dur-slow) var(--ease);
 }
 
+
 .site-header.is-scrolled {
   background: color-mix(in srgb, var(--bg) 82%, transparent);
   backdrop-filter: blur(12px);
@@ -76,6 +77,11 @@
   height: 40px;
   margin-right: -8px;
   color: var(--text);
+  /* the scrim (z-index: var(--z-overlay) - 1) is a sibling inside this same
+     header stacking context — without its own stacking position, the button
+     would render (and sit un-clickable) underneath it while the drawer is open */
+  position: relative;
+  z-index: calc(var(--z-overlay) + 1);
 }
 
 /* ---- Drawer ---- */
@@ -90,14 +96,21 @@
   background: var(--bg-elevated);
   border-bottom: 1px solid var(--border);
   transform-origin: top;
-  animation: drawer-in var(--dur-slow) var(--ease-out);
+  opacity: 0;
+  transform: translateY(-12px);
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity var(--dur-slow) var(--ease-out),
+    transform var(--dur-slow) var(--ease-out), visibility 0s linear var(--dur-slow);
 }
 
-@keyframes drawer-in {
-  from {
-    opacity: 0;
-    transform: translateY(-12px);
-  }
+.site-header__drawer.is-open {
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
+  pointer-events: auto;
+  transition: opacity var(--dur-slow) var(--ease-out),
+    transform var(--dur-slow) var(--ease-out), visibility 0s linear 0s;
 }
 
 .site-header__drawer-list {
@@ -124,13 +137,17 @@
   z-index: calc(var(--z-overlay) - 1);
   background: rgba(0, 0, 0, 0.5);
   border: 0;
-  animation: scrim-in var(--dur-slow) var(--ease-out);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity var(--dur-slow) var(--ease-out), visibility 0s linear var(--dur-slow);
 }
 
-@keyframes scrim-in {
-  from {
-    opacity: 0;
-  }
+.site-header__scrim.is-open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition: opacity var(--dur-slow) var(--ease-out), visibility 0s linear 0s;
 }
 
 .site-header__drawer-link,
