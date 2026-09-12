@@ -86,6 +86,15 @@ describe('getBot', () => {
         load: vi.fn().mockResolvedValue({ screen: 'main_menu' }),
         save: vi.fn().mockResolvedValue(undefined),
       },
+      content: {
+        getSection: vi.fn().mockResolvedValue(null),
+        getSeo: vi.fn().mockResolvedValue(null),
+      },
+      adminContent: {
+        updateSection: vi.fn().mockResolvedValue({ error: null }),
+        updateSeo: vi.fn().mockResolvedValue({ error: null }),
+        resetAll: vi.fn().mockResolvedValue({ error: null }),
+      },
     }
     const bot = await getBot(
       { TELEGRAM_BOT_TOKEN: '444:ddd', TELEGRAM_ADMIN_IDS: '111' },

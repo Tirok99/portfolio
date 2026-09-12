@@ -13,6 +13,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
       TELEGRAM_WEBHOOK_SECRET: process.env.TELEGRAM_WEBHOOK_SECRET,
       SUPABASE_URL: process.env.SUPABASE_URL,
       SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+      ADMIN_SESSION_SECRET: process.env.ADMIN_SESSION_SECRET,
     },
   )
   send(res, result)

@@ -1,10 +1,10 @@
 import type { Update } from 'grammy/types'
-import type { HandlerResult, SupabaseAdminEnv, TelegramEnv } from './types'
+import type { AuthEnv, HandlerResult, SupabaseAdminEnv, TelegramEnv } from './types'
 import { getBot } from './telegramBot'
 import type { DispatchDeps } from './telegramDispatch'
 import { safeEqual } from './session'
 
-type Env = TelegramEnv & SupabaseAdminEnv
+type Env = TelegramEnv & SupabaseAdminEnv & AuthEnv
 
 export async function handleTelegramWebhook(
   input: { secretHeader: string | undefined; body: unknown },

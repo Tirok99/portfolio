@@ -1,4 +1,4 @@
-import type { SupabaseAdminEnv, TelegramEnv } from './types'
+import type { AuthEnv, SupabaseAdminEnv, TelegramEnv } from './types'
 import {
   resolveRole,
   defaultTelegramAdminsDeps,
@@ -12,6 +12,14 @@ import {
   MAIN_MENU_STATE,
   type TelegramSessionsDeps,
 } from './telegramSessions'
+import {
+  defaultTelegramContentDeps,
+  type TelegramContentDeps,
+  type ContentField,
+  type SeoField,
+} from './telegramContent'
+import { handleAdminContent, defaultAdminContentDeps, type AdminContentDeps } from './adminContentHandler'
+import { signToken } from './session'
 import * as menu from './telegramMenu'
 
 export interface BotCtx {
@@ -26,14 +34,23 @@ export interface BotCtx {
 export interface DispatchDeps {
   admins: TelegramAdminsDeps
   sessions: TelegramSessionsDeps
+  content: TelegramContentDeps
+  adminContent: AdminContentDeps
 }
 
 export const defaultDispatchDeps: DispatchDeps = {
   admins: defaultTelegramAdminsDeps,
   sessions: defaultTelegramSessionsDeps,
+  content: defaultTelegramContentDeps,
+  adminContent: defaultAdminContentDeps,
 }
 
-type Env = TelegramEnv & SupabaseAdminEnv
+type Env = TelegramEnv & SupabaseAdminEnv & AuthEnv
+
+function adminCookieHeader(env: Env): string | null {
+  if (!env.ADMIN_SESSION_SECRET) return null
+  return `admin_session=${signToken(env.ADMIN_SESSION_SECRET)}`
+}
 
 export async function dispatch(
   ctx: BotCtx,
@@ -80,6 +97,24 @@ async function handleCallback(
   if (data === 'menu:main') {
     await deps.sessions.save(ctx.chatId, MAIN_MENU_STATE, env)
     await ctx.reply(menu.buildMainMenu(role))
+    return
+  }
+
+  if (data.startsWith('content:')) {
+    if (!menu.canAccessSection(role, 'content')) {
+      await ctx.reply(menu.buildNoAccessReply())
+      return
+    }
+    await handleContentCallback(ctx, data, env, deps)
+    return
+  }
+
+  if (data.startsWith('seo:')) {
+    if (!menu.canAccessSection(role, 'seo')) {
+      await ctx.reply(menu.buildNoAccessReply())
+      return
+    }
+    await handleSeoCallback(ctx, data, env, deps)
     return
   }
 
@@ -160,6 +195,181 @@ async function handleCallback(
   }
 }
 
+async function showContentList(ctx: BotCtx, env: Env, deps: DispatchDeps): Promise<void> {
+  await deps.sessions.save(ctx.chatId, { screen: 'content_list' }, env)
+  await ctx.reply(menu.buildContentList())
+}
+
+async function showSectionDetail(
+  ctx: BotCtx, env: Env, deps: DispatchDeps, key: string, saved = false,
+): Promise<void> {
+  const record = await deps.content.getSection(key, env)
+  if (!record) {
+    await ctx.reply({ text: 'Could not load that section — please try again.' })
+    await showContentList(ctx, env, deps)
+    return
+  }
+  await deps.sessions.save(ctx.chatId, { screen: 'content_detail', data: { key } }, env)
+  await ctx.reply(menu.buildSectionDetail(record, { saved }))
+}
+
+async function handleContentCallback(ctx: BotCtx, data: string, env: Env, deps: DispatchDeps): Promise<void> {
+  if (data === 'content:list') {
+    await showContentList(ctx, env, deps)
+    return
+  }
+  if (data.startsWith('content:section:')) {
+    await showSectionDetail(ctx, env, deps, data.slice('content:section:'.length))
+    return
+  }
+  if (data.startsWith('content:field:')) {
+    const field = data.slice('content:field:'.length) as ContentField
+    const state = await deps.sessions.load(ctx.chatId, env)
+    const key = state.data?.key as string | undefined
+    if (!key) {
+      await ctx.reply({ text: 'Session out of sync — please /start and try again.' })
+      return
+    }
+    await deps.sessions.save(ctx.chatId, { screen: 'content_lang', data: { key, field } }, env)
+    await ctx.reply(menu.buildContentFieldLangPrompt(key, field))
+    return
+  }
+  if (data.startsWith('content:lang:')) {
+    const lang = data.slice('content:lang:'.length) as 'en' | 'uk'
+    const state = await deps.sessions.load(ctx.chatId, env)
+    const key = state.data?.key as string | undefined
+    const field = state.data?.field as ContentField | undefined
+    if (!key || !field) {
+      await ctx.reply({ text: 'Session out of sync — please /start and try again.' })
+      return
+    }
+    const record = await deps.content.getSection(key, env)
+    if (!record) {
+      await ctx.reply({ text: 'Could not load that section — please try again.' })
+      await showContentList(ctx, env, deps)
+      return
+    }
+    const current = menu.sectionFieldValue(record, field)
+    await deps.sessions.save(ctx.chatId, { screen: 'content_value', data: { key, field, lang } }, env)
+    await ctx.reply(menu.buildContentValuePrompt(field, lang, current[lang]))
+  }
+}
+
+async function saveContentField(
+  ctx: BotCtx, env: Env, deps: DispatchDeps, key: string, field: ContentField, lang: 'en' | 'uk', text: string,
+): Promise<void> {
+  const cookieHeader = adminCookieHeader(env)
+  if (!cookieHeader) {
+    await ctx.reply({ text: 'Bot is not fully configured — contact the site owner.' })
+    return
+  }
+  const record = await deps.content.getSection(key, env)
+  if (!record) {
+    await ctx.reply({ text: 'Could not load that section — please try again.' })
+    await showContentList(ctx, env, deps)
+    return
+  }
+  const current = menu.sectionFieldValue(record, field)
+  const nextValue = lang === 'en' ? { en: text, uk: current.uk } : { en: current.en, uk: text }
+  const result = await handleAdminContent(
+    { method: 'PUT', cookieHeader, body: { kind: 'section', key, patch: { [field]: nextValue } } },
+    env,
+    deps.adminContent,
+  )
+  if (result.status !== 200) {
+    await ctx.reply(menu.buildSaveFailed(`content:section:${key}`))
+    return
+  }
+  await showSectionDetail(ctx, env, deps, key, true)
+}
+
+async function showSeoList(ctx: BotCtx, env: Env, deps: DispatchDeps): Promise<void> {
+  await deps.sessions.save(ctx.chatId, { screen: 'seo_list' }, env)
+  await ctx.reply(menu.buildSeoList())
+}
+
+async function showSeoDetail(
+  ctx: BotCtx, env: Env, deps: DispatchDeps, pageKey: string, saved = false,
+): Promise<void> {
+  const record = await deps.content.getSeo(pageKey, env)
+  if (!record) {
+    await ctx.reply({ text: 'Could not load that page — please try again.' })
+    await showSeoList(ctx, env, deps)
+    return
+  }
+  await deps.sessions.save(ctx.chatId, { screen: 'seo_detail', data: { pageKey } }, env)
+  await ctx.reply(menu.buildSeoDetail(record, { saved }))
+}
+
+async function handleSeoCallback(ctx: BotCtx, data: string, env: Env, deps: DispatchDeps): Promise<void> {
+  if (data === 'seo:list') {
+    await showSeoList(ctx, env, deps)
+    return
+  }
+  if (data.startsWith('seo:page:')) {
+    await showSeoDetail(ctx, env, deps, data.slice('seo:page:'.length))
+    return
+  }
+  if (data.startsWith('seo:field:')) {
+    const field = data.slice('seo:field:'.length) as SeoField
+    const state = await deps.sessions.load(ctx.chatId, env)
+    const pageKey = state.data?.pageKey as string | undefined
+    if (!pageKey) {
+      await ctx.reply({ text: 'Session out of sync — please /start and try again.' })
+      return
+    }
+    await deps.sessions.save(ctx.chatId, { screen: 'seo_lang', data: { pageKey, field } }, env)
+    await ctx.reply(menu.buildSeoFieldLangPrompt(pageKey, field))
+    return
+  }
+  if (data.startsWith('seo:lang:')) {
+    const lang = data.slice('seo:lang:'.length) as 'en' | 'uk'
+    const state = await deps.sessions.load(ctx.chatId, env)
+    const pageKey = state.data?.pageKey as string | undefined
+    const field = state.data?.field as SeoField | undefined
+    if (!pageKey || !field) {
+      await ctx.reply({ text: 'Session out of sync — please /start and try again.' })
+      return
+    }
+    const record = await deps.content.getSeo(pageKey, env)
+    if (!record) {
+      await ctx.reply({ text: 'Could not load that page — please try again.' })
+      await showSeoList(ctx, env, deps)
+      return
+    }
+    await deps.sessions.save(ctx.chatId, { screen: 'seo_value', data: { pageKey, field, lang } }, env)
+    await ctx.reply(menu.buildSeoValuePrompt(field, lang, record[field][lang]))
+  }
+}
+
+async function saveSeoField(
+  ctx: BotCtx, env: Env, deps: DispatchDeps, pageKey: string, field: SeoField, lang: 'en' | 'uk', text: string,
+): Promise<void> {
+  const cookieHeader = adminCookieHeader(env)
+  if (!cookieHeader) {
+    await ctx.reply({ text: 'Bot is not fully configured — contact the site owner.' })
+    return
+  }
+  const record = await deps.content.getSeo(pageKey, env)
+  if (!record) {
+    await ctx.reply({ text: 'Could not load that page — please try again.' })
+    await showSeoList(ctx, env, deps)
+    return
+  }
+  const current = record[field]
+  const nextValue = lang === 'en' ? { en: text, uk: current.uk } : { en: current.en, uk: text }
+  const result = await handleAdminContent(
+    { method: 'PUT', cookieHeader, body: { kind: 'seo', pageKey, patch: { [field]: nextValue } } },
+    env,
+    deps.adminContent,
+  )
+  if (result.status !== 200) {
+    await ctx.reply(menu.buildSaveFailed(`seo:page:${pageKey}`))
+    return
+  }
+  await showSeoDetail(ctx, env, deps, pageKey, true)
+}
+
 const TEXT_FALLBACK_REPLY = { text: 'Use the menu buttons below, or /start to see them again.' }
 
 async function handleText(
@@ -169,11 +379,32 @@ async function handleText(
   env: Env,
   deps: DispatchDeps,
 ): Promise<void> {
+  const state = await deps.sessions.load(ctx.chatId, env)
+
+  if (state.screen === 'content_value') {
+    if (!menu.canAccessSection(role, 'content')) {
+      await ctx.reply(TEXT_FALLBACK_REPLY)
+      return
+    }
+    const { key, field, lang } = state.data as { key: string; field: ContentField; lang: 'en' | 'uk' }
+    await saveContentField(ctx, env, deps, key, field, lang, text)
+    return
+  }
+
+  if (state.screen === 'seo_value') {
+    if (!menu.canAccessSection(role, 'seo')) {
+      await ctx.reply(TEXT_FALLBACK_REPLY)
+      return
+    }
+    const { pageKey, field, lang } = state.data as { pageKey: string; field: SeoField; lang: 'en' | 'uk' }
+    await saveSeoField(ctx, env, deps, pageKey, field, lang, text)
+    return
+  }
+
   if (role !== 'owner') {
     await ctx.reply(TEXT_FALLBACK_REPLY)
     return
   }
-  const state = await deps.sessions.load(ctx.chatId, env)
 
   if (state.screen === 'admins_add_id') {
     const telegramId = Number(text)

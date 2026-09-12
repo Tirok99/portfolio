@@ -1,9 +1,9 @@
 import { Bot, type ApiClientOptions, type Context } from 'grammy'
-import type { SupabaseAdminEnv, TelegramEnv } from './types'
+import type { AuthEnv, SupabaseAdminEnv, TelegramEnv } from './types'
 import { dispatch, defaultDispatchDeps, type BotCtx, type DispatchDeps } from './telegramDispatch'
 import type { BotReply } from './telegramMenu'
 
-type Env = TelegramEnv & SupabaseAdminEnv
+type Env = TelegramEnv & SupabaseAdminEnv & AuthEnv
 
 let cached: { token: string; botPromise: Promise<Bot> } | null = null
 

@@ -12,7 +12,7 @@ export interface AdminContentDeps {
   resetAll: (content: unknown, env: Env) => Promise<DepResult>
 }
 
-const defaultDeps: AdminContentDeps = {
+export const defaultAdminContentDeps: AdminContentDeps = {
   updateSection: async (key, patch, env) => {
     const c = getSupabaseAdmin(env)
     if (!c) return { error: 'not_configured' }
@@ -39,7 +39,7 @@ const fail = (): HandlerResult => ({ status: 500, body: { error: 'write_failed' 
 export async function handleAdminContent(
   input: { method: string; cookieHeader: string | undefined; body: unknown },
   env: Env,
-  deps: AdminContentDeps = defaultDeps,
+  deps: AdminContentDeps = defaultAdminContentDeps,
 ): Promise<HandlerResult> {
   if (!requireSession(input.cookieHeader, env)) return { status: 401, body: { error: 'unauthorized' } }
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) return { status: 500, body: { error: 'not_configured' } }
