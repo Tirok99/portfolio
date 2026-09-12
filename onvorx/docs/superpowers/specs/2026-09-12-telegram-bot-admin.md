@@ -1,102 +1,107 @@
-# ONVORX — Telegram bot admin — design
+# ONVORX — Telegram-бот для админки — спека
 
-**Date:** 2026-09-12
-**Status:** Approved direction, spec under review
-**Phase:** Alternative management channel for the existing `/admin` panel. No new
-data model beyond one dialog-state table; every read/write goes through the
-Supabase-backed logic that `/admin` already uses.
-
----
-
-## 1. Goal
-
-Let the site owner manage ONVORX content from Telegram, as a second front-end
-to the same backend the web `/admin` panel already uses — full parity:
-
-1. Edit block texts (Content screen equivalent).
-2. Manage project cards (Projects) — text fields **and** image upload via
-   Telegram photo messages.
-3. Manage service cards (Services) — text fields **and** icon upload via
-   Telegram photo messages.
-4. Edit per-page SEO title + description.
-5. View and triage "Request an Estimate" submissions (status, note).
-6. Trigger "Reset content" (Settings equivalent).
-
-### Non-goals
-
-- No new business logic. Every mutation goes through the existing
-  `handleAdminContent` / `handleAdminCards` / `handleAdminRequests` /
-  `handleAdminUpload` functions in `api/_lib/*Handler.ts` — the bot is a new
-  **transport**, not a new **backend**.
-- No multi-tenant bot / no per-user permission tiers. A flat whitelist
-  (`TELEGRAM_ADMIN_IDS`) — everyone on it has full access, matching the single
-  shared `ADMIN_PASSWORD` model the web admin already uses.
-- No offline queue / retry — if Supabase or Telegram is down, the bot replies
-  with an error, same as the web admin's toast-on-failure.
+**Дата:** 2026-09-12
+**Статус:** Направление согласовано, спека на ревью
+**Фаза:** Альтернативный канал управления для существующей панели `/admin`.
+Новых сущностей — одна таблица под состояние диалога; каждое чтение/запись
+идёт через ту же Supabase-логику, которую уже использует `/admin`.
 
 ---
 
-## 2. Confirmed decisions
+## 1. Цель
 
-- **Bot library: [grammY](https://grammy.dev/).** Lightweight, first-class
-  serverless/webhook support (`webhookCallback`), no long-polling process to
-  keep alive — fits the existing Vercel Functions model with no new
-  infrastructure.
-- **Auth reuse, not reimplementation.** `api/_lib/handlers.ts`'s
-  `requireSession(cookieHeader, env)` verifies a signed `admin_session` cookie
-  produced by `signToken(ADMIN_SESSION_SECRET)`. The bot's webhook handler
-  mints that same token internally (it already has `ADMIN_SESSION_SECRET` in
-  its env) and calls the existing `handleAdminX` functions with a synthesized
-  `cookieHeader: "admin_session=<token>"`. Zero duplicated auth or business
-  logic — the exact code path `/admin` uses today, verified by the exact same
-  test suite.
-- **Access control is two-layered:**
-  1. `X-Telegram-Bot-Api-Secret-Token` header, set via `setWebhook`'s `secret_token`
-     and checked against `TELEGRAM_WEBHOOK_SECRET` — rejects anything that
-     isn't really Telegram calling the endpoint.
-  2. The message's `from.id` checked against `TELEGRAM_ADMIN_IDS` — rejects
-     anyone real users didn't explicitly allow-list, even if they somehow
-     find the bot's username.
-- **Dialog state lives in Supabase**, not in-memory — Vercel Functions are
-  stateless/ephemeral between invocations, so "what menu is this chat
-  currently in / which card are they editing" must persist server-side.
-- **Image upload has real parity**, not a stub: a Telegram photo message is
-  downloaded via the Bot API's `getFile`, then piped through the same
-  `deps.put` upload path `adminUploadHandler.ts` already uses (same bucket,
-  same `projects/`/`services/` folder split, same 2 MB cap and MIME allowlist
-  enforcement — re-encode/validate before upload since Telegram recompresses
-  photos as JPEG).
+Дать владельцу сайта управлять контентом ONVORX прямо из Telegram — как
+второй интерфейс к тому же бэкенду, которым уже пользуется веб-панель
+`/admin`. Полный паритет:
+
+1. Редактирование текстов блоков (аналог экрана Content).
+2. Управление карточками проектов (Projects) — текстовые поля **и** загрузка
+   изображения через фото в Telegram.
+3. Управление карточками услуг (Services) — текстовые поля **и** загрузка
+   иконки через фото в Telegram.
+4. Редактирование SEO title + description по страницам.
+5. Просмотр и обработка заявок "Request an Estimate" (статус, заметка).
+6. Запуск "Reset content" (аналог экрана Settings).
+
+### Что сознательно не делаем
+
+- Никакой новой бизнес-логики. Каждое изменение идёт через уже существующие
+  функции `handleAdminContent` / `handleAdminCards` / `handleAdminRequests` /
+  `handleAdminUpload` в `api/_lib/*Handler.ts` — бот это новый **транспорт**,
+  а не новый **бэкенд**.
+- Без мультитенантности и без ролей/уровней доступа. Плоский whitelist
+  (`TELEGRAM_ADMIN_IDS`) — у всех, кто в списке, полный доступ, точно как
+  сейчас у веб-админки один общий `ADMIN_PASSWORD` на всех.
+- Без офлайн-очереди и повторных попыток — если Supabase или Telegram
+  недоступны, бот отвечает ошибкой, как и веб-админка отвечает тостом
+  "Save failed".
 
 ---
 
-## 3. Architecture overview
+## 2. Принятые решения
+
+- **Библиотека для бота — [grammY](https://grammy.dev/).** Лёгкая, из коробки
+  поддерживает serverless/webhook-режим (`webhookCallback`), не требует
+  постоянно работающего long-polling процесса — вписывается в уже
+  используемую модель Vercel Functions без новой инфраструктуры.
+- **Переиспользование авторизации, а не повторная реализация.** Функция
+  `requireSession(cookieHeader, env)` из `api/_lib/handlers.ts` проверяет
+  подписанный cookie `admin_session`, который создаётся через
+  `signToken(ADMIN_SESSION_SECRET)`. Обработчик бота сам подписывает себе
+  такой же токен (у него уже есть `ADMIN_SESSION_SECRET` в переменных
+  окружения) и вызывает существующие `handleAdminX`-функции, передавая
+  синтезированный `cookieHeader: "admin_session=<token>"`. Ноль дублирования
+  логики авторизации или бизнес-логики — ровно тот же код, которым сегодня
+  пользуется `/admin`, проверенный теми же тестами.
+- **Контроль доступа в два слоя:**
+  1. Заголовок `X-Telegram-Bot-Api-Secret-Token`, который задаётся через
+     `secret_token` в `setWebhook` и сверяется с `TELEGRAM_WEBHOOK_SECRET` —
+     отсекает всё, что не является настоящим запросом от Telegram.
+  2. `from.id` сообщения сверяется со списком `TELEGRAM_ADMIN_IDS` — отсекает
+     любого, кого явно не внесли в whitelist, даже если он каким-то образом
+     найдёт username бота.
+- **Состояние диалога хранится в Supabase**, а не в памяти процесса —
+  Vercel Functions между вызовами ничего не помнят (stateless), поэтому
+  "в каком меню сейчас находится этот чат / какую карточку редактирует"
+  обязано жить на сервере.
+- **Загрузка изображений — с реальным паритетом**, не заглушка: фото из
+  Telegram скачивается через `getFile` из Bot API, а дальше идёт по тому же
+  пути `deps.put`, что уже использует `adminUploadHandler.ts` (тот же bucket,
+  то же разделение на папки `projects/`/`services/`, тот же лимит 2 МБ и та
+  же проверка MIME-типа — с перепроверкой перед загрузкой, так как Telegram
+  всегда пережимает фото в JPEG).
+
+---
+
+## 3. Архитектура
 
 ```
-Telegram servers
+Серверы Telegram
       │  HTTPS POST (Update JSON) + X-Telegram-Bot-Api-Secret-Token
       ▼
-api/telegram/webhook.ts  (Vercel function, same shape as api/admin/*.ts)
-      │  thin adapter: verify secret header → call handler
+api/telegram/webhook.ts  (Vercel-функция, по форме как api/admin/*.ts)
+      │  тонкий адаптер: проверить секретный заголовок → вызвать обработчик
       ▼
 api/_lib/telegramHandler.ts
-      │  1. verify from.id ∈ TELEGRAM_ADMIN_IDS
-      │  2. load/advance dialog state from `telegram_sessions` (Supabase)
-      │  3. mint admin_session cookie via signToken(ADMIN_SESSION_SECRET)
-      │  4. call handleAdminContent / handleAdminCards / handleAdminRequests /
-      │     handleAdminUpload with that cookie — SAME functions /admin calls
-      │  5. reply via grammY (menu / confirmation / error text)
+      │  1. проверить from.id ∈ TELEGRAM_ADMIN_IDS
+      │  2. загрузить/продвинуть состояние диалога из `telegram_sessions` (Supabase)
+      │  3. подписать cookie admin_session через signToken(ADMIN_SESSION_SECRET)
+      │  4. вызвать handleAdminContent / handleAdminCards / handleAdminRequests /
+      │     handleAdminUpload с этим cookie — ТЕ ЖЕ функции, что вызывает /admin
+      │  5. ответить через grammY (меню / подтверждение / текст ошибки)
       ▼
-Supabase (content tables + telegram_sessions + Storage)
+Supabase (таблицы контента + telegram_sessions + Storage)
 ```
 
-grammY's `Bot` instance is constructed once per cold start (module scope, like
-`getSupabaseAdmin`'s cached client) and driven via `webhookCallback(bot, ...)`
-adapted to the Vercel request/response shape, following the same
-`vercel-adapter.ts` pattern already used for the admin/estimate functions.
+Экземпляр `Bot` из grammY создаётся один раз на холодный старт (на уровне
+модуля, как уже кэшированный клиент в `getSupabaseAdmin`) и приводится в
+действие через `webhookCallback(bot, ...)`, адаптированный под форму
+запроса/ответа Vercel — по тому же паттерну, что уже использует
+`vercel-adapter.ts` для admin- и estimate-функций.
 
 ---
 
-## 4. Data model — new table
+## 4. Модель данных — новая таблица
 
 ```sql
 create table public.telegram_sessions (
@@ -105,79 +110,85 @@ create table public.telegram_sessions (
   updated_at  timestamptz not null default now()
 );
 alter table public.telegram_sessions enable row level security;
--- no policies: service-role only, same treatment as estimate_requests
+-- политик нет: доступ только через service-role, как у estimate_requests
 ```
 
-One row per Telegram chat. `state` holds exactly enough to resume a
-multi-step flow (e.g. "editing service card X, waiting for the next photo")
-across separate webhook invocations. Ships as
-`supabase/migration-2026-09-12-telegram-sessions.sql`, following this repo's
-existing convention: a single flat, idempotent, "safe to re-run" file the
-operator pastes into the Supabase SQL Editor — **not** a `supabase/migrations/`
-CLI-driven folder (this repo has never used that workflow).
+Одна строка на Telegram-чат. `state` хранит ровно столько, сколько нужно,
+чтобы продолжить многошаговый сценарий (например «редактируем карточку
+услуги X, ждём следующее фото») между отдельными вызовами webhook'а.
+Поставляется как файл `supabase/migration-2026-09-12-telegram-sessions.sql`,
+по уже принятой в этом репозитории конвенции: один плоский, идемпотентный,
+"safe to re-run" файл, который оператор вставляет в Supabase SQL Editor —
+**не** папка `supabase/migrations/` с CLI-подходом (в этом проекте так
+никогда не делали).
 
 ---
 
-## 5. Menu structure (mirrors `/admin` nav)
+## 5. Структура меню (зеркалит навигацию `/admin`)
 
 ```
-/start → main menu (inline keyboard)
-  ├─ Content        → list of 6 sections → pick → edit eyebrow/title/body/cta (EN/UA)
-  ├─ Projects       → Home | Page tabs → card list → edit fields, replace image, reorder, delete, add
-  ├─ Services       → Home | Page tabs → card list → edit fields, replace icon, reorder, delete, add
-  ├─ SEO            → list of 8 pages → edit title/description (EN/UA)
-  ├─ Requests       → filterable list → view detail → set status / note
-  └─ Settings       → Reset content (with a confirm step — same danger as the web button)
+/start → главное меню (inline-кнопки)
+  ├─ Content   → список из 6 блоков → выбор → правка eyebrow/title/body/cta (EN/UA)
+  ├─ Projects  → вкладки Home | Page → список карточек → правка полей, замена изображения, порядок, удаление, добавление
+  ├─ Services  → вкладки Home | Page → список карточек → правка полей, замена иконки, порядок, удаление, добавление
+  ├─ SEO       → список из 8 страниц → правка title/description (EN/UA)
+  ├─ Requests  → список с фильтрами → карточка заявки → смена статуса / заметка
+  └─ Settings  → Reset content (с шагом подтверждения — та же опасность, что и у кнопки в вебе)
 ```
 
-Every text edit is a short conversational step ("send the new EN title") since
-Telegram has no form widgets; every destructive action (delete card, reset
-content) requires an inline-keyboard confirm button, mirroring the web
-admin's `ConfirmDialog`.
+Каждая правка текста — это короткий шаг диалога («пришлите новый заголовок
+на EN»), так как у Telegram нет полноценных форм; каждое разрушительное
+действие (удаление карточки, сброс контента) требует подтверждения через
+inline-кнопку — зеркалит `ConfirmDialog` веб-админки.
 
 ---
 
-## 6. Environment variables
+## 6. Переменные окружения
 
 ```
-TELEGRAM_BOT_TOKEN       # from @BotFather
-TELEGRAM_ADMIN_IDS       # comma-separated numeric Telegram user ids
-TELEGRAM_WEBHOOK_SECRET  # random string, verified via X-Telegram-Bot-Api-Secret-Token
+TELEGRAM_BOT_TOKEN       # от @BotFather
+TELEGRAM_ADMIN_IDS       # числовые Telegram user id через запятую
+TELEGRAM_WEBHOOK_SECRET  # случайная строка, сверяется через X-Telegram-Bot-Api-Secret-Token
 ```
 
-Server-only (never `VITE_`-prefixed). Same as `ADMIN_PASSWORD`/`SUPABASE_SERVICE_ROLE_KEY`,
-set in `.env.local` for dev and in Vercel Production (+ Preview, if testing
-against a second bot on preview deploys).
+Только серверные (никогда не с префиксом `VITE_`). Как и
+`ADMIN_PASSWORD`/`SUPABASE_SERVICE_ROLE_KEY` — прописываются в `.env.local`
+для разработки и в Vercel Production (+ Preview, если хотите тестировать
+второго бота на preview-деплоях).
 
 ---
 
-## 7. Rollout
+## 7. Раскатка
 
-1. Operator: create the bot, collect admin Telegram ids, set the 3 env vars
-   locally and in Vercel.
-2. Operator: run the `telegram_sessions` migration in the Supabase SQL Editor.
-3. Implementation (this repo, via subagent-driven-development, same as the
-   Supabase plans): grammY dependency, `telegram_sessions` migration file,
-   `api/_lib/telegramHandler.ts` (+ tests, injectable deps matching every
-   other `_lib/*Handler.ts`), `api/telegram/webhook.ts`, menu/state machine,
-   photo-upload bridge into `adminUploadHandler`'s upload path.
-4. One `setWebhook` call against the live Vercel domain
-   (`portfolio-three-rho-45ofj86fdk.vercel.app` today — no custom domain yet)
-   with `secret_token` set to `TELEGRAM_WEBHOOK_SECRET`.
-5. Live verification: every menu path exercised for real in Telegram, cross-checked
-   against `/admin` and the public site — same bar Plan 4 used before merging.
+1. Оператор: создаёт бота, собирает Telegram ID администраторов, прописывает
+   3 переменные окружения локально и в Vercel.
+2. Оператор: выполняет миграцию `telegram_sessions` в Supabase SQL Editor.
+3. Реализация (в этом репозитории, через subagent-driven-development, как и
+   Supabase-планы): зависимость grammY, файл миграции
+   `telegram_sessions`, `api/_lib/telegramHandler.ts` (+ тесты, инжектируемые
+   зависимости — как у всех остальных `_lib/*Handler.ts`),
+   `api/telegram/webhook.ts`, меню/машина состояний, мост фото-загрузки в
+   тот же путь, что использует `adminUploadHandler`.
+4. Один вызов `setWebhook` на реальный домен Vercel
+   (сейчас — `portfolio-three-rho-45ofj86fdk.vercel.app`, кастомного домена
+   пока нет) с `secret_token`, равным `TELEGRAM_WEBHOOK_SECRET`.
+5. Живая проверка: каждый пункт меню прогоняется по-настоящему в Telegram и
+   сверяется с тем, что видно в `/admin` и на публичном сайте — та же планка,
+   что использовалась перед мержем Plan 4.
 
 ---
 
-## 8. Open items for the implementation plan
+## 8. Открытые вопросы для плана реализации
 
-- Exact grammY session-storage adapter for `telegram_sessions` (grammY ships a
-  generic `session()` middleware with a pluggable storage adapter — write a
-  thin Supabase-backed one rather than pulling in a second storage dependency).
-- Photo re-validation before re-upload (Telegram recompresses to JPEG
-  regardless of source format — decide whether to accept JPEG-only from the
-  bot or convert, matching `adminUploadHandler.ts`'s existing PNG/JPEG/WebP
-  allowlist).
-- Command/menu copy (Russian vs English chat UI) — the web admin is
-  English-only by design; confirm whether the bot's own chrome (button
-  labels, prompts) should match that or default to Russian for the operator.
+- Точный адаптер хранения сессий grammY под `telegram_sessions` (у grammY
+  есть общий middleware `session()` с подключаемым storage-адаптером —
+  напишем тонкий адаптер под Supabase, а не тянем ради этого вторую
+  storage-зависимость).
+- Повторная проверка фото перед загрузкой (Telegram всегда пережимает в
+  JPEG независимо от исходного формата — решить, принимать от бота только
+  JPEG или что-то конвертировать, сверяясь с уже существующим allowlist
+  PNG/JPEG/WebP в `adminUploadHandler.ts`).
+- Язык текстов бота (команды, меню) — веб-админка полностью на английском
+  по замыслу; нужно решить, должен ли интерфейс бота (подписи кнопок,
+  подсказки) соответствовать этому или по умолчанию быть на русском, раз
+  это интерфейс для оператора.
