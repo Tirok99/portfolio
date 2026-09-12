@@ -28,7 +28,8 @@
   left: clamp(-380px, -22vw, -180px);
   bottom: clamp(-230px, -13vw, -140px);
   width: clamp(880px, 125vw, 1800px);
-  opacity: 0.62;
+  /* Figma: 70% layer opacity x 55% fill opacity = 38.5% effective */
+  opacity: 0.385;
 }
 
 .hero__wave--right {
