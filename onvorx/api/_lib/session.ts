@@ -10,7 +10,7 @@ function hmac(payloadB64: string, secret: string): string {
   return createHmac('sha256', secret).update(payloadB64).digest('base64url')
 }
 
-function safeEqual(a: string, b: string): boolean {
+export function safeEqual(a: string, b: string): boolean {
   const ab = Buffer.from(a)
   const bb = Buffer.from(b)
   if (ab.length !== bb.length) return false

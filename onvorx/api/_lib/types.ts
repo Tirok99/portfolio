@@ -14,3 +14,9 @@ export interface SupabaseAdminEnv {
   SUPABASE_SERVICE_ROLE_KEY?: string
   SUPABASE_MEDIA_BUCKET?: string
 }
+
+export interface TelegramEnv {
+  TELEGRAM_BOT_TOKEN?: string
+  TELEGRAM_ADMIN_IDS?: string
+  TELEGRAM_WEBHOOK_SECRET?: string
+}

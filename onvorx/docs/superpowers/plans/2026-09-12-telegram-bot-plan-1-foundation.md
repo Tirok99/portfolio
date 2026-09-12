@@ -1050,7 +1050,7 @@ async function finishAddManager(
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run api/_lib/telegramDispatch.test.ts`
-Expected: PASS (11 tests).
+Expected: PASS (18 tests) — grew from the original 10 across the Task 4 fix round and the final-review fix wave (dead `menu:main` branch made reachable, role-vs-section check on stub callbacks, unauthorized-callback ack, and text-fallback replies for non-owners/idle owners).
 
 - [ ] **Step 5: Commit**
 
