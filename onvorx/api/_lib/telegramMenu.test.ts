@@ -604,6 +604,16 @@ describe('buildRequestDetail', () => {
   it('prefixes "Saved." when opts.saved is true', () => {
     expect(buildRequestDetail(REQUEST_A, { saved: true }).text.startsWith('Saved.\n\n')).toBe(true)
   })
+  it('clips a very long message and note so the reply stays under Telegram\'s 4096-char limit', () => {
+    const req: EstimateRequestDTO = {
+      ...REQUEST_A,
+      message: 'x'.repeat(5000),
+      note: 'y'.repeat(5000),
+    }
+    const r = buildRequestDetail(req)
+    expect(r.text.length).toBeLessThan(4096)
+    expect(r.text).toContain('…')
+  })
 })
 
 describe('buildRequestStatusPrompt', () => {
@@ -628,6 +638,11 @@ describe('buildRequestNotePrompt', () => {
   })
   it('shows "(none)" when there is no current note', () => {
     expect(buildRequestNotePrompt(undefined).text).toContain('(none)')
+  })
+  it('clips a very long current note so the reply stays under Telegram\'s 4096-char limit', () => {
+    const r = buildRequestNotePrompt('y'.repeat(5000))
+    expect(r.text.length).toBeLessThan(4096)
+    expect(r.text).toContain('…')
   })
 })
 

@@ -368,6 +368,8 @@ const STATUS_LABEL: Record<string, string> = {
   archived: 'Archived',
 }
 
+const clip = (s: string, max: number): string => (s.length > max ? `${s.slice(0, max)}…` : s)
+
 const FILTERS: { key: RequestFilter; label: string }[] = [
   { key: 'all', label: 'All' },
   { key: 'new', label: 'New' },
@@ -406,9 +408,9 @@ export function buildRequestDetail(req: EstimateRequestDTO, opts: { saved?: bool
     `From page: ${req.sourcePage || '—'}`,
     `Received: ${formatReceivedAt(req.createdAt)}`,
     '',
-    req.message,
+    clip(req.message, 1500),
     '',
-    `Note: ${req.note || '(none)'}`,
+    `Note: ${req.note ? clip(req.note, 800) : '(none)'}`,
   ]
   const kb = new InlineKeyboard()
     .text(`Status: ${STATUS_LABEL[req.status] ?? req.status}`, 'requests:status')
@@ -438,7 +440,7 @@ export function buildRequestStatusPrompt(current: string, backCallback: string):
 
 export function buildRequestNotePrompt(currentNote: string | undefined): BotReply {
   return {
-    text: `Current note:\n${currentNote || '(none)'}\n\nSend the new note text.`,
+    text: `Current note:\n${currentNote ? clip(currentNote, 800) : '(none)'}\n\nSend the new note text.`,
   }
 }
 
