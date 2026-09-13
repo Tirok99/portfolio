@@ -103,6 +103,14 @@ describe('RequestsPage', () => {
     expect(await within(detail).findByText(/no notes yet/i)).toBeInTheDocument()
   })
 
+  it('shows an error state when notes fail to load', async () => {
+    vi.mocked(adminApi.listRequestNotes).mockRejectedValueOnce(new Error('boom'))
+    wrap()
+    await userEvent.setup().click(await screen.findByRole('button', { name: /Olena Kravets/i }))
+    const detail = screen.getByRole('region', { name: /request detail/i })
+    expect(await within(detail).findByText(/couldn.t load notes/i)).toBeInTheDocument()
+  })
+
   it('shows existing notes and adds a new one without touching the old ones', async () => {
     const user = userEvent.setup()
     wrap()

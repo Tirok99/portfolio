@@ -21,7 +21,7 @@ interface DetailProps {
 function Detail({ req, setStatus, remove }: DetailProps) {
   const { confirm, dialog } = useConfirm()
   const toast = useToast()
-  const { notes, addNote } = useRequestNotes(req.id)
+  const { notes, error: notesError, addNote } = useRequestNotes(req.id)
   const [draft, setDraft] = useState('')
 
   const del = async () => {
@@ -82,7 +82,9 @@ function Detail({ req, setStatus, remove }: DetailProps) {
 
       <div className="admin-field">
         <span className="admin-field__label">Notes</span>
-        {notes === null ? (
+        {notesError ? (
+          <p className="admin-page__hint">Couldn't load notes.</p>
+        ) : notes === null ? (
           <p className="admin-page__hint">Loading notes…</p>
         ) : notes.length === 0 ? (
           <p className="admin-page__hint">No notes yet.</p>
