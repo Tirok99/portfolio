@@ -24,13 +24,17 @@ export function Cta() {
               height={1254}
               decoding="async"
             />
-            <img
-              className="cta__wave-red"
-              src="/assets/decor/wave-red-tight.png"
-              alt=""
-              loading="lazy"
-              decoding="async"
-            />
+            <div className="cta__wave-wrap">
+              <div className="cta__wave-rotate">
+                <img
+                  className="cta__wave-red"
+                  src="/assets/decor/wave-red-tight.png"
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+            </div>
           </div>
 
           <div className="cta__content">

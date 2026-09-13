@@ -5,7 +5,6 @@
 
 .cta__card {
   position: relative;
-  overflow: clip;
   border-radius: var(--radius-xl);
   background: #010206;
   padding: clamp(3rem, 9vw, 5.5rem) clamp(1.5rem, 6vw, 4rem);
@@ -31,13 +30,38 @@
   mix-blend-mode: screen;
 }
 
-/* wave_red_01 — lower-right of the card */
+/* cta__decor-wave-right — upper-right of the card, per Figma layout-en-vscode.
+   Figma sizes the OUTER box to the rotated element's bounding box and centers
+   an inner, unrotated-size box inside it before rotating that inner box — a
+   plain `transform: rotate()` on the <img> itself doesn't grow its own layout
+   box to match, so the image would visually spill past its intended footprint.
+   Three layers reproduce this: .cta__wave-wrap (outer, positioned + sized to
+   the bounding box), .cta__wave-rotate (inner, sized to the pre-rotation
+   image box, rotated -171.36deg + flipped on Y), .cta__wave-red (fills the
+   rotated box). */
+.cta__wave-wrap {
+  position: absolute;
+  right: clamp(-100px, calc(-10vw + 70px), -10px);
+  top: clamp(-130px, calc(-5vw - 40px), -80px);
+  width: clamp(440px, 52vw, 760px);
+  aspect-ratio: 837.414 / 551.402;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cta__wave-rotate {
+  width: 93.18%;
+  aspect-ratio: 780.289 / 439.146;
+  transform: rotate(-171.36deg) scaleY(-1);
+}
+
 .cta__wave-red {
   position: absolute;
-  right: clamp(-140px, -9vw, -70px);
-  bottom: clamp(-100px, -7vw, -50px);
-  width: clamp(420px, 48vw, 720px);
-  max-width: none;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
   opacity: 0.7;
 }
 
@@ -56,7 +80,7 @@
 
 .cta__title {
   color: #fff;
-  max-width: 20ch;
+  max-width: 31ch;
 }
 
 .cta__dash {
@@ -86,8 +110,10 @@
     top: -70px;
     right: -70px;
   }
+  .cta__wave-wrap {
+    width: 92vw;
+  }
   .cta__wave-red {
-    width: 90vw;
     opacity: 0.5;
   }
   .cta__button {
