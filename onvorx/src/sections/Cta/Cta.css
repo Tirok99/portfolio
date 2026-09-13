@@ -3,9 +3,12 @@
   padding-block: clamp(3rem, 7vw, 6rem);
 }
 
+/* full-bleed, edge to edge — matches Figma's "cta" frame exactly, unlike
+   every other section which sits inside a max-width `.cta__container`-
+   style column. `.cta__content` below carries its own max-width, so text
+   still reads at a normal line length even at full section width. */
 .cta__card {
   position: relative;
-  border-radius: var(--radius-xl);
   background: #010206;
   padding: clamp(3rem, 9vw, 5.5rem) clamp(1.5rem, 6vw, 4rem);
   isolation: isolate;
