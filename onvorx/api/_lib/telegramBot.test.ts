@@ -255,4 +255,103 @@ describe('getBot', () => {
     // bytes returned by the stubbed raw download reached the upload call.
     expect(capturedPhotoDataUrl).toBe(`data:image/jpeg;base64,${Buffer.from([1, 2, 3]).toString('base64')}`)
   })
+
+  it('a photo message whose raw byte download fails still gets a reply, not silence', async () => {
+    const sentTexts: string[] = []
+    const grammyFetch = vi.fn(async (url: unknown, init?: RequestInit) => {
+      const u = String(url)
+      if (u.includes('getMe')) return { json: async () => ({ ok: true, result: FAKE_ME }) } as Response
+      if (u.includes('getFile')) {
+        return {
+          json: async () => ({ ok: true, result: { file_id: 'f2', file_unique_id: 'u2', file_path: 'photos/f2.jpg' } }),
+        } as Response
+      }
+      if (u.includes('sendMessage') && typeof init?.body === 'string') {
+        const body = JSON.parse(init.body) as { text?: string }
+        if (typeof body.text === 'string') sentTexts.push(body.text)
+      }
+      return { json: async () => ({ ok: true, result: true }) } as Response
+    })
+
+    // Simulate a flaky download: the raw global fetch call for the file bytes
+    // returns a non-2xx response (toBotCtx's `if (res.ok)` guard skips setting
+    // photoDataUrl, but isPhotoMessage was already computed true beforehand).
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: false, arrayBuffer: async () => new ArrayBuffer(0) }) as unknown as Response),
+    )
+
+    const put = vi.fn()
+    const deps: DispatchDeps = {
+      admins: {
+        findManager: vi.fn().mockResolvedValue(null),
+        listManagers: vi.fn().mockResolvedValue([]),
+        addManager: vi.fn().mockResolvedValue({ error: null }),
+        removeManager: vi.fn().mockResolvedValue({ error: null }),
+      },
+      sessions: {
+        load: vi.fn().mockResolvedValue({ screen: 'main_menu' }),
+        save: vi.fn().mockResolvedValue(undefined),
+      },
+      content: {
+        getSection: vi.fn().mockResolvedValue(null),
+        getSeo: vi.fn().mockResolvedValue(null),
+      },
+      adminContent: {
+        updateSection: vi.fn().mockResolvedValue({ error: null }),
+        updateSeo: vi.fn().mockResolvedValue({ error: null }),
+        resetAll: vi.fn().mockResolvedValue({ error: null }),
+      },
+      cardsDispatch: {
+        cards: {
+          listProjects: vi.fn().mockResolvedValue([]),
+          getProject: vi.fn().mockResolvedValue(null),
+          listServices: vi.fn().mockResolvedValue([]),
+          getService: vi.fn().mockResolvedValue(null),
+        },
+        adminCards: {
+          create: vi.fn().mockResolvedValue({ error: null }),
+          update: vi.fn().mockResolvedValue({ error: null }),
+          remove: vi.fn().mockResolvedValue({ error: null }),
+          reorder: vi.fn().mockResolvedValue({ error: null }),
+        },
+        adminUpload: {
+          put,
+          del: vi.fn().mockResolvedValue({ error: null }),
+        },
+        sessions: {
+          load: vi.fn().mockResolvedValue({
+            screen: 'cards_photo_wait',
+            data: { type: 'projects', list: 'home', id: 'a' },
+          }),
+          save: vi.fn().mockResolvedValue(undefined),
+        },
+      },
+    }
+
+    const bot = await getBot(
+      {
+        TELEGRAM_BOT_TOKEN: '666:fff',
+        TELEGRAM_ADMIN_IDS: '111',
+        ADMIN_SESSION_SECRET: 'a-long-enough-test-secret-value',
+        SUPABASE_URL: 'https://example.supabase.co',
+        SUPABASE_SERVICE_ROLE_KEY: 'test-service-role-key',
+      },
+      deps,
+      { fetch: grammyFetch as unknown as typeof fetch },
+    )
+    await bot.handleUpdate({
+      update_id: 1,
+      message: {
+        message_id: 1,
+        date: 0,
+        chat: { id: 1, type: 'private' as const, first_name: 'Owner' },
+        from: { id: 111, is_bot: false, first_name: 'Owner' },
+        photo: [{ file_id: 'f2', file_unique_id: 'u2', width: 10, height: 10 }],
+      },
+    })
+
+    expect(sentTexts).toContain('Could not process that photo — please try again.')
+    expect(put).not.toHaveBeenCalled()
+  })
 })

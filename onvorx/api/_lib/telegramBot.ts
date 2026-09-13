@@ -14,6 +14,7 @@ async function toBotCtx(ctx: Context): Promise<BotCtx | null> {
 
   let photoDataUrl: string | undefined
   const photoSizes = ctx.message?.photo
+  const isPhotoMessage = Boolean(photoSizes && photoSizes.length > 0)
   if (photoSizes && photoSizes.length > 0) {
     try {
       const largest = photoSizes[photoSizes.length - 1]
@@ -27,9 +28,10 @@ async function toBotCtx(ctx: Context): Promise<BotCtx | null> {
         }
       }
     } catch {
-      // Leave photoDataUrl undefined — dispatch replies "please send a photo
-      // again" for any cards_photo_wait step that never got one, so a flaky
-      // download degrades gracefully instead of crashing the update.
+      // Leave photoDataUrl undefined — isPhotoMessage stays true (it was
+      // computed above, independent of download success), so dispatch() can
+      // tell "a photo that failed to download" apart from "not a photo at
+      // all" and reply with a clear message instead of going silent.
     }
   }
 
@@ -39,6 +41,7 @@ async function toBotCtx(ctx: Context): Promise<BotCtx | null> {
     text: ctx.message?.text,
     callbackData: ctx.callbackQuery?.data,
     photoDataUrl,
+    isPhotoMessage,
     reply: async (r: BotReply) => {
       await ctx.reply(r.text, r.keyboard ? { reply_markup: r.keyboard } : undefined)
     },

@@ -35,6 +35,14 @@ export interface BotCtx {
   text?: string
   callbackData?: string
   photoDataUrl?: string
+  /**
+   * True whenever the incoming update WAS a photo message, regardless of
+   * whether downloading its bytes succeeded — independent of `photoDataUrl`,
+   * which is only ever set on a successful download. This lets `dispatch()`
+   * tell "not a photo" apart from "a photo that failed to download" so a
+   * flaky download can reply with a clear message instead of going silent.
+   */
+  isPhotoMessage?: boolean
   reply: (r: menu.BotReply) => Promise<void>
   answerCallback: () => Promise<void>
 }
@@ -86,9 +94,18 @@ export async function dispatch(
     return
   }
 
-  if (ctx.photoDataUrl) {
+  if (ctx.photoDataUrl || ctx.isPhotoMessage) {
     if (!menu.canAccessSection(role, 'projects')) {
       await ctx.reply(menu.buildNoAccessReply())
+      return
+    }
+    if (!ctx.photoDataUrl) {
+      // The update was a photo message, but toBotCtx couldn't download its
+      // bytes (a flaky network call to Telegram's file server, an expired
+      // file_path, etc.) — tell the user instead of silently doing nothing.
+      // Session state is left untouched so a retry (send the photo again)
+      // still lands on the same cards_photo_wait step.
+      await ctx.reply({ text: 'Could not process that photo — please try again.' })
       return
     }
     await dispatchCardsPhoto(ctx, env, deps.cardsDispatch)

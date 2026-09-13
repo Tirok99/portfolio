@@ -546,4 +546,31 @@ describe('dispatch — photo delegation', () => {
     await dispatch(ctx, ENV, deps)
     expect(ctx.reply).toHaveBeenCalledWith({ text: "You don't have access to this bot." })
   })
+
+  it('a photo message whose download failed (isPhotoMessage true, no photoDataUrl) gets a clear reply, not silence', async () => {
+    const { deps, sessions } = makeDeps({
+      screen: 'cards_photo_wait',
+      data: { type: 'projects', list: 'home', id: 'a' },
+    })
+    const ctx = makeCtx({ isPhotoMessage: true })
+    await dispatch(ctx, ENV, deps)
+    expect(ctx.reply).toHaveBeenCalledWith({ text: 'Could not process that photo — please try again.' })
+    // session state is left untouched so a retry still lands on the same step
+    expect(sessions.save).not.toHaveBeenCalled()
+  })
+
+  it('a failed-download photo message from an unauthorized id still gets the standard "no access" reply, not the photo-specific one', async () => {
+    const { deps } = makeDeps()
+    const ctx = makeCtx({ fromId: 999, isPhotoMessage: true })
+    await dispatch(ctx, ENV, deps)
+    expect(ctx.reply).toHaveBeenCalledWith({ text: "You don't have access to this bot." })
+  })
+
+  it('a failed-download photo message from a sales_manager gets "no access", not the photo-specific reply', async () => {
+    const { deps, setManagers } = makeDeps()
+    setManagers([SALES])
+    const ctx = makeCtx({ fromId: 77, isPhotoMessage: true })
+    await dispatch(ctx, ENV, deps)
+    expect(ctx.reply).toHaveBeenCalledWith({ text: "You don't have access to this bot." })
+  })
 })
