@@ -5,7 +5,6 @@
 
 .cta__card {
   position: relative;
-  overflow: clip;
   border-radius: var(--radius-xl);
   background: #010206;
   padding: clamp(3rem, 9vw, 5.5rem) clamp(1.5rem, 6vw, 4rem);
@@ -42,8 +41,8 @@
    rotated box). */
 .cta__wave-wrap {
   position: absolute;
-  right: clamp(-170px, -10vw, -80px);
-  top: clamp(-90px, -5vw, -40px);
+  right: clamp(-100px, calc(-10vw + 70px), -10px);
+  top: clamp(-130px, calc(-5vw - 40px), -80px);
   width: clamp(440px, 52vw, 760px);
   aspect-ratio: 837.414 / 551.402;
   display: flex;
@@ -81,7 +80,7 @@
 
 .cta__title {
   color: #fff;
-  max-width: 20ch;
+  max-width: 31ch;
 }
 
 .cta__dash {
