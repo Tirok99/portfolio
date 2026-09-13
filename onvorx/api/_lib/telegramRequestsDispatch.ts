@@ -104,7 +104,7 @@ async function startStatusChange(
     return
   }
   await deps.sessions.save(ctx.chatId, { screen: 'requests_status_choice', data: { filter, id } }, env)
-  const current = req.status.replace('_', ' ')
+  const current = menu.STATUS_LABEL[req.status] ?? req.status
   await ctx.reply(menu.buildRequestStatusPrompt(current, `requests:card:${id}`))
 }
 

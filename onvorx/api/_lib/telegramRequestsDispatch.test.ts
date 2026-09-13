@@ -145,6 +145,17 @@ describe('dispatchRequestsCallback — status change', () => {
     await dispatchRequestsCallback(ctx, 'requests:status:done', ENV, deps)
     expect(ctx.reply).toHaveBeenCalledWith({ text: 'Session out of sync — please /start and try again.' })
   })
+
+  it('shows the title-cased current status (via STATUS_LABEL) instead of a raw underscore replace', async () => {
+    const { deps } = makeDeps({ screen: 'requests_detail', data: { filter: 'all', id: 'req-1' } })
+    await dispatchRequestsCallback(makeCtx({}), 'requests:status', ENV, deps)
+    await dispatchRequestsCallback(makeCtx({}), 'requests:status:in_progress', ENV, deps)
+
+    const ctx = makeCtx({})
+    await dispatchRequestsCallback(ctx, 'requests:status', ENV, deps)
+    const reply = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    expect(reply.text).toContain('Current status: In Progress')
+  })
 })
 
 describe('dispatchRequestsCallback — note edit', () => {
@@ -189,7 +200,7 @@ describe('dispatchRequestsCallback — delete', () => {
   })
 
   it('a delete failure shows an error and stays recoverable via its Back button', async () => {
-    const { deps, adminRequests, getRequests } = makeDeps({ screen: 'requests_detail', data: { filter: 'all', id: 'req-1' } })
+    const { deps, adminRequests, getRequests, getState } = makeDeps({ screen: 'requests_detail', data: { filter: 'all', id: 'req-1' } })
     ;(adminRequests.remove as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ error: 'boom' })
     await dispatchRequestsCallback(makeCtx({}), 'requests:delete', ENV, deps)
     const confirmCtx = makeCtx({})
@@ -200,6 +211,7 @@ describe('dispatchRequestsCallback — delete', () => {
       text: 'Could not save — please try again.',
       keyboard: expect.anything(),
     })
+    expect(getState()).toEqual({ screen: 'requests_delete_confirm', data: { filter: 'all', id: 'req-1' } })
   })
 })
 

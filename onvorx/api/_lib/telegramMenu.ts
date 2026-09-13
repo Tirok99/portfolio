@@ -361,7 +361,7 @@ export function buildCardSaveFailed(backCallback: string): BotReply {
 
 export type RequestFilter = 'all' | 'new' | 'in_progress' | 'done' | 'archived'
 
-const STATUS_LABEL: Record<string, string> = {
+export const STATUS_LABEL: Record<string, string> = {
   new: 'New',
   in_progress: 'In Progress',
   done: 'Done',
@@ -395,7 +395,7 @@ export function buildRequestList(filter: RequestFilter, requests: EstimateReques
   return { text: `Requests — ${FILTERS.find((f) => f.key === filter)?.label ?? filter}:`, keyboard: kb }
 }
 
-const formatReceivedAt = (iso: string): string => iso.slice(0, 16).replace('T', ' ')
+const formatReceivedAt = (iso: string): string => `${iso.slice(0, 16).replace('T', ' ')} UTC`
 
 export function buildRequestDetail(req: EstimateRequestDTO, opts: { saved?: boolean } = {}): BotReply {
   const langLabel = req.locale === 'en' ? 'EN' : 'UA'
