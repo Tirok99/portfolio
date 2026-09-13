@@ -3,6 +3,7 @@ import type { ManagerRecord, ManagerRole, Role } from './telegramAdmins'
 import type { ContentField, SeoField, SectionRecord, SeoRecord } from './telegramContent'
 import type { ProjectCardRecord, ServiceCardRecord } from './telegramCards'
 import type { EstimateRequestDTO } from './adminRows'
+import type { RequestNoteDTO } from './adminRequestNotesHandler'
 
 export interface BotReply {
   text: string
@@ -406,7 +407,22 @@ const formatReceivedAt = (iso: string): string => `${iso.slice(0, 16).replace('T
 // individual clip above is miscalculated.
 const TELEGRAM_TEXT_MAX = 4000
 
-export function buildRequestDetail(req: EstimateRequestDTO, opts: { saved?: boolean } = {}): BotReply {
+function formatNoteLine(n: RequestNoteDTO): string {
+  return `• ${formatReceivedAt(n.createdAt)} — ${n.author}: ${clip(n.body, 150)}`
+}
+
+function buildNotesPreview(notes: RequestNoteDTO[]): string[] {
+  if (notes.length === 0) return ['Notes: (none yet)']
+  const shown = notes.slice(0, 3)
+  const header = notes.length > 3 ? `Notes (showing 3 of ${notes.length}):` : 'Notes:'
+  return [header, ...shown.map(formatNoteLine)]
+}
+
+export function buildRequestDetail(
+  req: EstimateRequestDTO,
+  notes: RequestNoteDTO[],
+  opts: { saved?: boolean } = {},
+): BotReply {
   const langLabel = req.locale === 'en' ? 'EN' : 'UA'
   const lines = [
     `Email: ${clip(req.email, 200)}`,
@@ -419,14 +435,17 @@ export function buildRequestDetail(req: EstimateRequestDTO, opts: { saved?: bool
     '',
     clip(req.message, 1500),
     '',
-    `Note: ${req.note ? clip(req.note, 800) : '(none)'}`,
+    ...buildNotesPreview(notes),
   ]
   const kb = new InlineKeyboard()
     .text(`Status: ${STATUS_LABEL[req.status] ?? req.status}`, 'requests:status')
     .row()
-    .text('✏️ Edit note', 'requests:note')
+    .text('➕ Add note', 'requests:note')
     .row()
-    .text('🗑 Delete', 'requests:delete')
+  if (notes.length > 3) {
+    kb.text('📝 Full history', `requests:notes:${req.id}`).row()
+  }
+  kb.text('🗑 Delete', 'requests:delete')
     .row()
     .text('⬅ Back', 'requests:back:list')
   const prefix = opts.saved ? 'Saved.\n\n' : ''
@@ -448,10 +467,32 @@ export function buildRequestStatusPrompt(current: string, backCallback: string):
   return { text: `Current status: ${current}\n\nChoose a new status:`, keyboard: kb }
 }
 
-export function buildRequestNotePrompt(currentNote: string | undefined): BotReply {
-  return {
-    text: `Current note:\n${currentNote ? clip(currentNote, 800) : '(none)'}\n\nSend the new note text.`,
+export function buildRequestNotePrompt(lastNote: RequestNoteDTO | undefined): BotReply {
+  const preview = lastNote
+    ? `Last note (${formatReceivedAt(lastNote.createdAt)} — ${lastNote.author}):\n${clip(lastNote.body, 300)}`
+    : '(no notes yet)'
+  return { text: `${preview}\n\nSend the note text to add (up to 500 characters).` }
+}
+
+const NOTES_HISTORY_MAX = 4000
+
+export function buildRequestNotesHistory(notes: RequestNoteDTO[], backCallback: string): BotReply {
+  const kb = new InlineKeyboard().text('⬅ Back', backCallback)
+  if (notes.length === 0) {
+    return { text: 'No notes yet.', keyboard: kb }
   }
+  const lines = notes.map((n) => `• ${formatReceivedAt(n.createdAt)} — ${n.author}: ${clip(n.body, 300)}`)
+  let shown = notes.length
+  const render = () =>
+    shown === notes.length
+      ? `Full history (${notes.length} total):\n\n${lines.slice(0, shown).join('\n')}`
+      : `Full history (showing ${shown} most recent of ${notes.length} total):\n\n${lines.slice(0, shown).join('\n')}`
+  let text = render()
+  while (text.length > NOTES_HISTORY_MAX && shown > 0) {
+    shown -= 1
+    text = render()
+  }
+  return { text, keyboard: kb }
 }
 
 export function buildRequestDeleteConfirm(name: string): BotReply {

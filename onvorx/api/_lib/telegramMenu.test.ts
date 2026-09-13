@@ -35,12 +35,14 @@ import {
   buildRequestDetail,
   buildRequestStatusPrompt,
   buildRequestNotePrompt,
+  buildRequestNotesHistory,
   buildRequestDeleteConfirm,
 } from './telegramMenu'
 import type { ManagerRecord } from './telegramAdmins'
 import type { SectionRecord, SeoRecord } from './telegramContent'
 import type { ProjectCardRecord, ServiceCardRecord } from './telegramCards'
 import type { EstimateRequestDTO } from './adminRows'
+import type { RequestNoteDTO } from './adminRequestNotesHandler'
 
 const readButtons = (reply: ReturnType<typeof buildMainMenu>) =>
   reply.keyboard!.inline_keyboard.flat().map((b) => ({ text: b.text, data: (b as { callback_data?: string }).callback_data }))
@@ -525,7 +527,6 @@ const REQUEST_A: EstimateRequestDTO = {
   message: 'We need a new website for our product launch.',
   locale: 'en',
   sourcePage: '/services',
-  note: undefined,
 }
 const REQUEST_B: EstimateRequestDTO = {
   id: 'req-2',
@@ -539,7 +540,16 @@ const REQUEST_B: EstimateRequestDTO = {
   message: 'Потрібен новий сайт.',
   locale: 'uk',
   sourcePage: undefined,
-  note: 'Called back, waiting on budget confirmation.',
+}
+
+const NOTE_A: RequestNoteDTO = {
+  id: 'note-1', createdAt: '2026-09-13T10:07:00.000Z', author: 'Owner', body: 'send a letter with estimate',
+}
+const NOTE_B: RequestNoteDTO = {
+  id: 'note-2', createdAt: '2026-09-11T14:20:00.000Z', author: 'Sam (sales_manager)', body: 'called, no answer',
+}
+const NOTE_C: RequestNoteDTO = {
+  id: 'note-3', createdAt: '2026-09-10T09:00:00.000Z', author: 'Admin (web)', body: 'initial review done',
 }
 
 describe('buildRequestFilterMenu', () => {
@@ -574,8 +584,8 @@ describe('buildRequestList', () => {
 })
 
 describe('buildRequestDetail', () => {
-  it('shows every read-only field, a Status button with the current value, Edit note, Delete, Back', () => {
-    const r = buildRequestDetail(REQUEST_A)
+  it('shows every read-only field, a Status button with the current value, Add note, Delete, Back', () => {
+    const r = buildRequestDetail(REQUEST_A, [])
     expect(r.text).toContain('Jane Doe')
     expect(r.text).toContain('jane@example.com')
     expect(r.text).toContain('Acme Inc')
@@ -585,39 +595,48 @@ describe('buildRequestDetail', () => {
     expect(r.text).toContain('/services')
     expect(r.text).toContain('2026-09-10 14:05')
     expect(r.text).toContain('We need a new website for our product launch.')
-    expect(r.text).toContain('(none)')
+    expect(r.text).toContain('Notes: (none yet)')
     const buttons = readButtons(r)
     expect(buttons).toEqual([
       { text: 'Status: New', data: 'requests:status' },
-      { text: '✏️ Edit note', data: 'requests:note' },
+      { text: '➕ Add note', data: 'requests:note' },
       { text: '🗑 Delete', data: 'requests:delete' },
       { text: '⬅ Back', data: 'requests:back:list' },
     ])
   })
   it('shows "—" for missing optional fields and "UA" for the uk locale', () => {
-    const r = buildRequestDetail(REQUEST_B)
+    const r = buildRequestDetail(REQUEST_B, [])
     expect(r.text).toContain('—')
     expect(r.text).toContain('UA')
-    expect(r.text).toContain('Called back, waiting on budget confirmation.')
     expect(readButtons(r).find((b) => b.data === 'requests:status')?.text).toBe('Status: In Progress')
   })
   it('prefixes "Saved." when opts.saved is true', () => {
-    expect(buildRequestDetail(REQUEST_A, { saved: true }).text.startsWith('Saved.\n\n')).toBe(true)
+    expect(buildRequestDetail(REQUEST_A, [], { saved: true }).text.startsWith('Saved.\n\n')).toBe(true)
   })
-  it('clips a very long message and note so the reply stays under Telegram\'s 4096-char limit', () => {
-    const req: EstimateRequestDTO = {
-      ...REQUEST_A,
-      message: 'x'.repeat(5000),
-      note: 'y'.repeat(5000),
-    }
-    const r = buildRequestDetail(req)
+  it('previews up to 3 most recent notes, no "Full history" button when there are 3 or fewer', () => {
+    const r = buildRequestDetail(REQUEST_A, [NOTE_A, NOTE_B, NOTE_C])
+    expect(r.text).toContain('Notes:')
+    expect(r.text).not.toContain('showing 3 of')
+    expect(r.text).toContain('Owner: send a letter with estimate')
+    expect(r.text).toContain('Sam (sales_manager): called, no answer')
+    expect(r.text).toContain('Admin (web): initial review done')
+    expect(readButtons(r).some((b) => b.data === 'requests:notes:req-1')).toBe(false)
+  })
+  it('shows a "Full history" button and "(showing 3 of N)" when there are more than 3 notes', () => {
+    const extra: RequestNoteDTO = { id: 'note-4', createdAt: '2026-09-09T00:00:00.000Z', author: 'Owner', body: 'oldest' }
+    const r = buildRequestDetail(REQUEST_A, [NOTE_A, NOTE_B, NOTE_C, extra])
+    expect(r.text).toContain('Notes (showing 3 of 4):')
+    expect(r.text).not.toContain('oldest')
+    const buttons = readButtons(r)
+    expect(buttons.find((b) => b.data === 'requests:notes:req-1')?.text).toBe('📝 Full history')
+  })
+  it('clips a very long message so the reply stays under Telegram\'s 4096-char limit', () => {
+    const req: EstimateRequestDTO = { ...REQUEST_A, message: 'x'.repeat(5000) }
+    const r = buildRequestDetail(req, [NOTE_A])
     expect(r.text.length).toBeLessThan(4096)
     expect(r.text).toContain('…')
   })
   it('stays under the 4096-char limit even when every field is independently maxed out', () => {
-    // Mirrors validateEstimate's own per-field maximums (estimate.ts), all of
-    // which are attacker-reachable via the public estimate endpoint, not just
-    // message/note — a 20-tag interestedIn list alone runs past 2000 chars.
     const req: EstimateRequestDTO = {
       ...REQUEST_A,
       name: 'n'.repeat(200),
@@ -626,9 +645,11 @@ describe('buildRequestDetail', () => {
       sourcePage: 's'.repeat(200),
       interestedIn: Array.from({ length: 20 }, (_, i) => 'i'.repeat(100) + i),
       message: 'x'.repeat(5000),
-      note: 'y'.repeat(5000),
     }
-    const r = buildRequestDetail(req, { saved: true })
+    const manyNotes = Array.from({ length: 10 }, (_, i) => ({
+      id: `note-${i}`, createdAt: '2026-09-13T00:00:00.000Z', author: 'Owner', body: 'b'.repeat(500),
+    }))
+    const r = buildRequestDetail(req, manyNotes, { saved: true })
     expect(r.text.length).toBeLessThan(4096)
   })
 })
@@ -648,18 +669,50 @@ describe('buildRequestStatusPrompt', () => {
 })
 
 describe('buildRequestNotePrompt', () => {
-  it('shows the current note and asks for the new one, no keyboard', () => {
-    const r = buildRequestNotePrompt('Called back, waiting on budget confirmation.')
-    expect(r.text).toContain('Called back, waiting on budget confirmation.')
+  it('shows the most recent note as context and asks for new text, no keyboard', () => {
+    const r = buildRequestNotePrompt(NOTE_A)
+    expect(r.text).toContain('2026-09-13 10:07 UTC')
+    expect(r.text).toContain('Owner')
+    expect(r.text).toContain('send a letter with estimate')
+    expect(r.text).toContain('Send the note text to add')
     expect(r.keyboard).toBeUndefined()
   })
-  it('shows "(none)" when there is no current note', () => {
-    expect(buildRequestNotePrompt(undefined).text).toContain('(none)')
+  it('shows "(no notes yet)" when there is no prior note', () => {
+    expect(buildRequestNotePrompt(undefined).text).toContain('(no notes yet)')
   })
-  it('clips a very long current note so the reply stays under Telegram\'s 4096-char limit', () => {
-    const r = buildRequestNotePrompt('y'.repeat(5000))
-    expect(r.text.length).toBeLessThan(4096)
+  it('clips a very long last note', () => {
+    const long: RequestNoteDTO = { id: 'n', createdAt: '2026-09-13T00:00:00.000Z', author: 'Owner', body: 'y'.repeat(500) }
+    const r = buildRequestNotePrompt(long)
+    expect(r.text.length).toBeLessThan(1000)
     expect(r.text).toContain('…')
+  })
+})
+
+describe('buildRequestNotesHistory', () => {
+  it('lists every note newest-first with a Back button, no "(showing X of Y)" when nothing is trimmed', () => {
+    const r = buildRequestNotesHistory([NOTE_A, NOTE_B, NOTE_C], 'requests:card:req-1')
+    expect(r.text).toContain('Full history (3 total):')
+    expect(r.text.indexOf('send a letter with estimate')).toBeLessThan(r.text.indexOf('called, no answer'))
+    expect(r.text.indexOf('called, no answer')).toBeLessThan(r.text.indexOf('initial review done'))
+    expect(readButtons(r)).toEqual([{ text: '⬅ Back', data: 'requests:card:req-1' }])
+  })
+  it('shows a friendly empty state', () => {
+    const r = buildRequestNotesHistory([], 'requests:card:req-1')
+    expect(r.text).toBe('No notes yet.')
+  })
+  it('trims from the oldest end and labels the result when the full list would exceed 4096 chars', () => {
+    const many = Array.from({ length: 30 }, (_, i) => ({
+      id: `note-${i}`,
+      createdAt: '2026-09-13T00:00:00.000Z',
+      author: 'Owner',
+      body: `entry-${i} ` + 'x'.repeat(290),
+    }))
+    const r = buildRequestNotesHistory(many, 'requests:card:req-1')
+    expect(r.text.length).toBeLessThan(4096)
+    expect(r.text).toContain('showing')
+    expect(r.text).toContain('most recent of 30 total')
+    // newest entries (index 0) must survive the trim; the oldest (last pushed) may not.
+    expect(r.text).toContain('entry-0')
   })
 })
 
