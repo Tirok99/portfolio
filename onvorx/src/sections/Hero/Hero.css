@@ -104,9 +104,11 @@
   user-select: none;
 }
 
-/* laptop/tablet-only stand-in for .hero__radar (Figma's "central_decor",
-   the same compact hub graphic used in Services) — hidden by default,
-   shown instead of the radar starting at the 1200px breakpoint below. */
+/* laptop/tablet-only stand-in for .hero__radar (Figma's "hero_central_decor"
+   node — the same radar motif without the 4 card-connector lines, since
+   those don't line up with the stacked layout at this tier) — hidden by
+   default, shown instead of the radar starting at the 1200px breakpoint
+   below. */
 .hero__central-decor {
   display: none;
 }
@@ -210,10 +212,10 @@
 
 /* ================= Responsive ================= */
 
-/* radar crowds the cards — swap it for the more compact central_decor hub
-   graphic instead of just shrinking it back, per Figma's laptop/tablet
-   variant (continues to apply at the 1024px tier below too, since
-   nothing there overrides .hero__radar's display or .hero__central-decor). */
+/* radar crowds the cards — swap it for hero_central_decor instead of just
+   shrinking it back, per Figma's laptop/tablet variant (continues to
+   apply at the 1024px tier below too, since nothing there overrides
+   .hero__radar's display or .hero__central-decor). */
 @media (max-width: 1200px) {
   .hero__cards {
     width: clamp(240px, 40%, 300px);
