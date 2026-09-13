@@ -1,6 +1,7 @@
 import { InlineKeyboard } from 'grammy'
 import type { ManagerRecord, ManagerRole, Role } from './telegramAdmins'
 import type { ContentField, SeoField, SectionRecord, SeoRecord } from './telegramContent'
+import type { ProjectField, ServiceField, ProjectCardRecord, ServiceCardRecord } from './telegramCards'
 
 export interface BotReply {
   text: string
@@ -9,8 +10,8 @@ export interface BotReply {
 
 const MENU_ITEMS: { key: string; label: string; roles: Role[]; callback: string }[] = [
   { key: 'content', label: 'Content', roles: ['owner', 'content_manager'], callback: 'content:list' },
-  { key: 'projects', label: 'Projects', roles: ['owner', 'content_manager'], callback: 'stub:projects' },
-  { key: 'services', label: 'Services', roles: ['owner', 'content_manager'], callback: 'stub:services' },
+  { key: 'projects', label: 'Projects', roles: ['owner', 'content_manager'], callback: 'cards:projects:list' },
+  { key: 'services', label: 'Services', roles: ['owner', 'content_manager'], callback: 'cards:services:list' },
   { key: 'seo', label: 'SEO', roles: ['owner', 'content_manager'], callback: 'seo:list' },
   { key: 'requests', label: 'Requests', roles: ['owner', 'sales_manager'], callback: 'stub:requests' },
   { key: 'admins', label: 'Administrators', roles: ['owner'], callback: 'menu:admins' },
@@ -198,6 +199,165 @@ export function buildSeoValuePrompt(field: SeoField, lang: 'en' | 'uk', currentT
 }
 
 export function buildSaveFailed(backCallback: string): BotReply {
+  const kb = new InlineKeyboard().text('⬅ Back', backCallback)
+  return { text: 'Could not save — please try again.', keyboard: kb }
+}
+
+// ---- Cards: Projects & Services ----
+
+// @ts-expect-error TS6133 - used in Task 3 dispatch logic
+const PROJECT_FIELD_LABEL: Record<ProjectField, string> = {
+  title: 'Title', description: 'Description', imageAlt: 'Image alt text', tags: 'Tags',
+}
+// @ts-expect-error TS6133 - used in Task 3 dispatch logic
+const SERVICE_FIELD_LABEL: Record<ServiceField, string> = { title: 'Title', text: 'Text' }
+
+export function buildCardTypeTabs(type: 'projects' | 'services'): BotReply {
+  const pageLabel = type === 'projects' ? 'Projects page' : 'Services page'
+  const kb = new InlineKeyboard()
+    .text('On the home page', `cards:${type}:tab:home`)
+    .row()
+    .text(pageLabel, `cards:${type}:tab:page`)
+    .row()
+    .text('⬅ Back', 'menu:main')
+  return { text: type === 'projects' ? 'Projects — choose a list:' : 'Services — choose a list:', keyboard: kb }
+}
+
+export function buildProjectList(list: 'home' | 'page', cards: ProjectCardRecord[]): BotReply {
+  const kb = new InlineKeyboard()
+  cards.forEach((c) => {
+    kb.text(`${c.published ? '✅' : '🚫'} ${c.title.en || c.id}`, `cards:card:${c.id}`).row()
+  })
+  kb.text('⬅ Back', 'cards:projects:list')
+  if (cards.length === 0) return { text: 'No cards in this list yet.', keyboard: kb }
+  return { text: `Projects — ${list === 'home' ? 'home page' : 'Projects page'}:`, keyboard: kb }
+}
+
+export function buildServiceList(list: 'home' | 'page', cards: ServiceCardRecord[]): BotReply {
+  const kb = new InlineKeyboard()
+  cards.forEach((c) => {
+    kb.text(`${c.published ? '✅' : '🚫'} ${c.title.en || c.id}`, `cards:card:${c.id}`).row()
+  })
+  kb.text('⬅ Back', 'cards:services:list')
+  if (cards.length === 0) return { text: 'No cards in this list yet.', keyboard: kb }
+  return { text: `Services — ${list === 'home' ? 'home page' : 'Services page'}:`, keyboard: kb }
+}
+
+const publishedToggleLabel = (published: boolean): string =>
+  published ? '✅ Published (tap to hide)' : '🚫 Hidden (tap to publish)'
+const featuredToggleLabel = (featured: boolean): string =>
+  featured ? '⭐ Featured (tap to unfeature)' : '☆ Not featured (tap to feature)'
+
+export function buildProjectDetail(
+  card: ProjectCardRecord,
+  position: { index: number; total: number },
+  opts: { saved?: boolean } = {},
+): BotReply {
+  const lines = [
+    `Title — EN: ${card.title.en || '(empty)'} / UA: ${card.title.uk || '(empty)'}`,
+    `Description — EN: ${card.description.en || '(empty)'} / UA: ${card.description.uk || '(empty)'}`,
+    `Tags: ${card.tags.length ? card.tags.join(', ') : '(none)'}`,
+    `Image alt — EN: ${card.imageAlt.en || '(empty)'} / UA: ${card.imageAlt.uk || '(empty)'}`,
+    `Image: ${card.imageUrl ? 'set' : 'none'}`,
+  ]
+  const kb = new InlineKeyboard()
+    .text('Title', 'cards:field:title')
+    .row()
+    .text('Description', 'cards:field:description')
+    .row()
+    .text('Tags', 'cards:field:tags')
+    .row()
+    .text('Image alt text', 'cards:field:imageAlt')
+    .row()
+    .text('🖼 Replace image', 'cards:image:replace')
+    .row()
+  if (card.imageUrl) kb.text('🗑 Remove image', 'cards:image:remove').row()
+  kb.text(publishedToggleLabel(card.published), 'cards:toggle:published')
+    .row()
+    .text('▲ Move up', 'cards:move:up')
+    .text('▼ Move down', 'cards:move:down')
+    .row()
+    .text('🗑 Delete card', 'cards:delete')
+    .row()
+    .text('⬅ Back', 'cards:back:list')
+  const prefix = opts.saved ? 'Saved.\n\n' : ''
+  return {
+    text: `${prefix}${card.title.en || card.id}\nPosition ${position.index + 1} of ${position.total}\n${lines.join('\n')}`,
+    keyboard: kb,
+  }
+}
+
+export function buildServiceDetail(
+  card: ServiceCardRecord,
+  position: { index: number; total: number },
+  opts: { saved?: boolean } = {},
+): BotReply {
+  const lines = [
+    `Title — EN: ${card.title.en || '(empty)'} / UA: ${card.title.uk || '(empty)'}`,
+    `Text — EN: ${card.text.en || '(empty)'} / UA: ${card.text.uk || '(empty)'}`,
+    `Icon: ${card.iconUrl ? 'set' : 'none'}`,
+  ]
+  const kb = new InlineKeyboard()
+    .text('Title', 'cards:field:title')
+    .row()
+    .text('Text', 'cards:field:text')
+    .row()
+    .text('🖼 Replace image', 'cards:image:replace')
+    .row()
+  if (card.iconUrl) kb.text('🗑 Remove image', 'cards:image:remove').row()
+  kb.text(publishedToggleLabel(card.published), 'cards:toggle:published').row()
+  if (card.list === 'home') kb.text(featuredToggleLabel(card.featured), 'cards:toggle:featured').row()
+  kb.text('▲ Move up', 'cards:move:up')
+    .text('▼ Move down', 'cards:move:down')
+    .row()
+    .text('🗑 Delete card', 'cards:delete')
+    .row()
+    .text('⬅ Back', 'cards:back:list')
+  const prefix = opts.saved ? 'Saved.\n\n' : ''
+  return {
+    text: `${prefix}${card.title.en || card.id}\nPosition ${position.index + 1} of ${position.total}\n${lines.join('\n')}`,
+    keyboard: kb,
+  }
+}
+
+export function buildCardFieldLangPrompt(label: string, backCallback: string): BotReply {
+  const kb = new InlineKeyboard()
+    .text('EN', 'cards:lang:en')
+    .text('UA', 'cards:lang:uk')
+    .row()
+    .text('⬅ Back', backCallback)
+  return { text: `Edit ${label} — choose a language:`, keyboard: kb }
+}
+
+export function buildCardValuePrompt(label: string, lang: 'en' | 'uk', currentText: string): BotReply {
+  const langLabel = lang === 'en' ? 'EN' : 'UA'
+  return {
+    text: `Current ${label} (${langLabel}):\n${currentText || '(empty)'}\n\nSend the new ${langLabel} text.`,
+  }
+}
+
+export function buildTagsPrompt(currentTags: string[]): BotReply {
+  const current = currentTags.length ? currentTags.join(', ') : '(none)'
+  return { text: `Current tags: ${current}\n\nSend comma-separated tags, e.g. WordPress, WooCommerce.` }
+}
+
+export function buildPhotoPrompt(backCallback: string): BotReply {
+  const kb = new InlineKeyboard().text('⬅ Back', backCallback)
+  return { text: 'Send a new photo for this card.', keyboard: kb }
+}
+
+export function buildCardDeleteConfirm(title: string, kind: 'project' | 'service'): BotReply {
+  const kb = new InlineKeyboard()
+    .text('Yes, delete', 'cards:delete:confirm')
+    .row()
+    .text('Cancel', 'cards:delete:cancel')
+  return {
+    text: `Delete "${title}"? It will be removed from the list as a ${kind} card. This cannot be undone.`,
+    keyboard: kb,
+  }
+}
+
+export function buildCardSaveFailed(backCallback: string): BotReply {
   const kb = new InlineKeyboard().text('⬅ Back', backCallback)
   return { text: 'Could not save — please try again.', keyboard: kb }
 }
