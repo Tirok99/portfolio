@@ -32,7 +32,7 @@ describe('handleAdminCards', () => {
     expect(r.status).toBe(200)
     expect(d.create).toHaveBeenCalledWith('project', 'home',
       expect.objectContaining({ list: 'home', id: 'proj_1', published: false, title: { en: 'N', uk: 'N' } }), ENV)
-    // `sort` is server-derived (defaultDeps.create) — the handler must not
+    // `sort` is server-derived (defaultAdminCardsDeps.create) — the handler must not
     // forward the client-supplied index.
     const row = d.create.mock.calls[0][2] as Record<string, unknown>
     expect(row).not.toHaveProperty('sort')

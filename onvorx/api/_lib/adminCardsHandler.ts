@@ -107,7 +107,7 @@ export async function handleAdminCards(
   if (input.method === 'POST') {
     const card = (body.card ?? {}) as Record<string, unknown>
     if (typeof card.id !== 'string' || !card.id) return bad()
-    // `sort` is server-derived on create (see defaultDeps.create) — never trust
+    // `sort` is server-derived on create (see defaultAdminCardsDeps.create) — never trust
     // the client-supplied index, so strip it from the mapped row here.
     const { sort: _sort, ...mapped } = rowFor(type, card)
     const row = { ...mapped, id: card.id, list }

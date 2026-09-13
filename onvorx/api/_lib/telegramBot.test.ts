@@ -197,7 +197,11 @@ describe('getBot', () => {
       },
       cardsDispatch: {
         cards: {
-          listProjects: vi.fn().mockResolvedValue([]),
+          listProjects: vi.fn().mockResolvedValue([{
+            list: 'home', id: 'a', sort: 0, published: true,
+            title: { en: 'A', uk: 'А' }, tags: [], description: { en: '', uk: '' },
+            imageUrl: null, imagePath: null, imageAlt: { en: '', uk: '' },
+          }]),
           getProject: vi.fn().mockResolvedValue({
             list: 'home', id: 'a', sort: 0, published: true,
             title: { en: 'A', uk: 'А' }, tags: [], description: { en: '', uk: '' },

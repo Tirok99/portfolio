@@ -233,6 +233,13 @@ describe('dispatchCardsCallback — reorder', () => {
     const sorted = [...getProjects()].sort((x, y) => x.sort - y.sort)
     expect(sorted.map((p) => p.id)).toEqual(['a', 'b'])
   })
+
+  it('moving the last card down is a no-op', async () => {
+    const { deps, getProjects } = makeDeps({ screen: 'cards_detail', data: { type: 'projects', list: 'home', id: 'b' } })
+    await dispatchCardsCallback(makeCtx({}), 'cards:move:down', ENV, deps)
+    const sorted = [...getProjects()].sort((x, y) => x.sort - y.sort)
+    expect(sorted.map((p) => p.id)).toEqual(['a', 'b'])
+  })
 })
 
 describe('dispatchCardsCallback — delete', () => {
@@ -365,6 +372,26 @@ describe('dispatchCardsPhoto — replace flow', () => {
       text: 'Could not save — please try again.',
       keyboard: expect.anything(),
     })
+  })
+
+  it('an unprompted photo (session not in cards_photo_wait) is ignored — no upload, no delete, no change', async () => {
+    const { deps, getProjects } = makeDeps({
+      screen: 'cards_detail', data: { type: 'projects', list: 'home', id: 'a' },
+    })
+    const put = vi.fn(async () => ({ url: 'https://x/new.jpg', path: 'projects/new.jpg', error: null }))
+    const del = vi.fn(async () => ({ error: null }))
+    deps.adminUpload.put = put
+    deps.adminUpload.del = del
+
+    const ctx = makeCtx({ photoDataUrl: 'data:image/jpeg;base64,AAAA' })
+    await dispatchCardsPhoto(ctx, ENV, deps)
+
+    expect(put).not.toHaveBeenCalled()
+    expect(del).not.toHaveBeenCalled()
+    expect(ctx.reply).not.toHaveBeenCalled()
+    const updated = getProjects().find((p) => p.id === 'a')
+    expect(updated?.imageUrl).toBe(PROJECT_A.imageUrl)
+    expect(updated?.imagePath).toBe(PROJECT_A.imagePath)
   })
 
   it('receiving text instead of a photo asks for a photo again and does not touch the record', async () => {

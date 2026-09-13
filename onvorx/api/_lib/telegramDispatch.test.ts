@@ -519,6 +519,17 @@ describe('dispatch — cards delegation', () => {
     expect(ctx.reply).toHaveBeenCalledWith({ text: "You don't have access to this bot." })
   })
 
+  it('text sent while awaiting a photo (cards_photo_wait) is delegated to dispatchCardsText, not the generic fallback', async () => {
+    const { deps, setManagers } = makeDeps({
+      screen: 'cards_photo_wait',
+      data: { type: 'projects', list: 'home', id: 'a' },
+    })
+    setManagers([MANAGER])
+    const ctx = makeCtx({ fromId: 42, text: 'oops, wrong message' })
+    await dispatch(ctx, ENV, deps)
+    expect(ctx.reply).toHaveBeenCalledWith({ text: 'Please send a photo, or /start to cancel.' })
+  })
+
   it('stub:projects no longer fires — the main menu now routes Projects to cards:projects:list', async () => {
     const { deps } = makeDeps()
     const ctx = makeCtx({ text: '/start' })

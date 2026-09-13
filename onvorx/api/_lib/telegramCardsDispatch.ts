@@ -89,9 +89,10 @@ const PROJECT_FIELD_LABEL: Record<ProjectField, string> = {
 const SERVICE_FIELD_LABEL: Record<ServiceField, string> = { title: 'Title', text: 'Text' }
 
 function fieldLabel(type: CardType, field: string): string {
-  return type === 'projects'
+  const label = type === 'projects'
     ? PROJECT_FIELD_LABEL[field as ProjectField]
     : SERVICE_FIELD_LABEL[field as ServiceField]
+  return label ?? 'Field'
 }
 
 function fieldValue(
@@ -111,7 +112,7 @@ function fieldValue(
 async function startFieldEdit(
   ctx: BotCtx, type: CardType, list: CardList, id: string, field: string, env: Env, deps: CardsDispatchDeps,
 ): Promise<void> {
-  if (field === 'tags') {
+  if (field === 'tags' && type === 'projects') {
     const card = await deps.cards.getProject(list, id, env)
     if (!card) {
       await ctx.reply({ text: 'Could not load that card — please try again.' })
@@ -339,6 +340,7 @@ export async function dispatchCardsPhoto(
   ctx: BotCtx, env: Env, deps: CardsDispatchDeps = defaultCardsDispatchDeps,
 ): Promise<void> {
   const state = await loadState(ctx, env, deps)
+  if (state.screen !== 'cards_photo_wait') return
   const type = state.data?.type as CardType | undefined
   const list = state.data?.list as CardList | undefined
   const id = state.data?.id as string | undefined

@@ -451,7 +451,7 @@ async function handleText(
     return
   }
 
-  if (state.screen === 'cards_value' || state.screen === 'cards_tags_value') {
+  if (state.screen === 'cards_value' || state.screen === 'cards_tags_value' || state.screen === 'cards_photo_wait') {
     if (!menu.canAccessSection(role, 'projects')) {
       await ctx.reply(TEXT_FALLBACK_REPLY)
       return
