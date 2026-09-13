@@ -38,12 +38,13 @@ This task has no automated test — per this project's established convention (s
 ```sql
 -- ============================================================================
 --  ONVORX — Request Notes History migration. Run once in the Supabase SQL
---  Editor, after schema.sql + seed.sql. Safe to re-run (the table/index use
---  `if not exists`; the one-time data-migration insert below is idempotent
---  too, since it only ever reads from `estimate_requests.note`, never from
---  `estimate_request_notes` itself — re-running it after notes have already
---  been added by users would insert duplicates, so run this file BEFORE
---  deploying app code that lets anyone add a note through /admin or the bot).
+--  Editor, after schema.sql + seed.sql. The table/index creation below IS
+--  safely re-runnable (guarded by `if not exists`). The one-time data
+--  migration insert in section 3 is NOT — it has no dedup marker, so
+--  running it a second time after real notes have been added would
+--  duplicate every migrated row. Run this file, in full, exactly once,
+--  BEFORE deploying any app code that lets anyone add a note through
+--  /admin or the bot.
 -- ============================================================================
 
 -- ---- 1. append-only comment log per request -------------------------------
