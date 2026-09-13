@@ -143,18 +143,19 @@
 }
 
 /* ---- wave (own band, flush to the bottom edge, full pattern visible) ---- */
-/* shorter than how-work's identical band: the services grid's card row can
-   run taller (long UA copy, the featured card), leaving less clearance
-   above this bottom-anchored band before its top edge — at the wave's
-   full height the crest was rendering behind (z-index) the card above it
-   instead of just being closer to it. */
+/* By design this decor sits ABOVE the content below it (unlike every other
+   section's decor, which sits behind — --z-decor doesn't apply here), so
+   its crest can cross over the bottom of the card row instead of being
+   hidden underneath it. Also shorter than how-work's identical band: the
+   services grid's card row can run taller (long UA copy, the featured
+   card), leaving less clearance above this bottom-anchored band. */
 .services__wave {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
   height: clamp(120px, 13vw, 180px);
-  z-index: var(--z-decor);
+  z-index: 2;
   pointer-events: none;
   overflow: clip;
   opacity: 0.3;

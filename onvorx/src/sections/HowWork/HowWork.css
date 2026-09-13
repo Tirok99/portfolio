@@ -15,13 +15,16 @@
 }
 
 /* ---- wave (below the timeline) ---- */
+/* Sits ABOVE the content above it by design (unlike every other section's
+   decor, which sits behind) so the crest can cross over the step cards'
+   bottom edge instead of being hidden underneath it. */
 .how-work__wave {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
   height: clamp(160px, 17vw, 230px);
-  z-index: var(--z-decor);
+  z-index: 2;
   pointer-events: none;
   overflow: clip;
   opacity: 0.3;

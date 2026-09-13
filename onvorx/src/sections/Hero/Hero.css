@@ -31,10 +31,13 @@
   justify-content: center;
 }
 
-/* grey wisp — upper edge near the CTA button, lower edge crosses into services */
+/* grey wisp — upper edge near the CTA button, lower edge crosses into services.
+   Figma's box bottom sits 331.64px below the hero frame's own bottom edge
+   at the 1600px reference width (~20.7% of that width) — the wave must
+   bleed down onto services by that much, not stop short inside hero. */
 .hero__wave-wrap--left {
   left: clamp(-380px, -22vw, -180px);
-  bottom: clamp(-230px, -13vw, -140px);
+  bottom: clamp(-332px, -20.7vw, -180px);
   width: clamp(880px, 117vw, 1878px);
   aspect-ratio: 1878.852 / 1103.64;
 }
@@ -130,7 +133,7 @@
 .hero__radar {
   position: absolute;
   top: 50%;
-  left: 26%;
+  left: 34%;
   width: clamp(460px, 60%, 720px);
   max-width: none;
   transform: translateY(-50%);
