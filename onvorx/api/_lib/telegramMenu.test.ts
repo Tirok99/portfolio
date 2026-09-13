@@ -614,6 +614,23 @@ describe('buildRequestDetail', () => {
     expect(r.text.length).toBeLessThan(4096)
     expect(r.text).toContain('…')
   })
+  it('stays under the 4096-char limit even when every field is independently maxed out', () => {
+    // Mirrors validateEstimate's own per-field maximums (estimate.ts), all of
+    // which are attacker-reachable via the public estimate endpoint, not just
+    // message/note — a 20-tag interestedIn list alone runs past 2000 chars.
+    const req: EstimateRequestDTO = {
+      ...REQUEST_A,
+      name: 'n'.repeat(200),
+      email: `${'e'.repeat(190)}@x.com`,
+      company: 'c'.repeat(200),
+      sourcePage: 's'.repeat(200),
+      interestedIn: Array.from({ length: 20 }, (_, i) => 'i'.repeat(100) + i),
+      message: 'x'.repeat(5000),
+      note: 'y'.repeat(5000),
+    }
+    const r = buildRequestDetail(req, { saved: true })
+    expect(r.text.length).toBeLessThan(4096)
+  })
 })
 
 describe('buildRequestStatusPrompt', () => {

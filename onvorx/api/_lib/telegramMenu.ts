@@ -397,15 +397,24 @@ export function buildRequestList(filter: RequestFilter, requests: EstimateReques
 
 const formatReceivedAt = (iso: string): string => `${iso.slice(0, 16).replace('T', ' ')} UTC`
 
+// Telegram's sendMessage hard limit is 4096 chars. Every field below is
+// individually clipped for readability, but interestedIn/name/email/company/
+// sourcePage are all attacker-reachable via the public estimate endpoint
+// (validateEstimate in estimate.ts bounds them by count/length, not content),
+// so an overall safety clip on the fully assembled text is the actual
+// guarantee — it alone must hold even if a future field is added or an
+// individual clip above is miscalculated.
+const TELEGRAM_TEXT_MAX = 4000
+
 export function buildRequestDetail(req: EstimateRequestDTO, opts: { saved?: boolean } = {}): BotReply {
   const langLabel = req.locale === 'en' ? 'EN' : 'UA'
   const lines = [
-    `Email: ${req.email}`,
-    `Company: ${req.company || '—'}`,
-    `Budget: ${req.budget || '—'}`,
-    `Interested in: ${req.interestedIn.length ? req.interestedIn.join(', ') : '—'}`,
+    `Email: ${clip(req.email, 200)}`,
+    `Company: ${req.company ? clip(req.company, 200) : '—'}`,
+    `Budget: ${req.budget ? clip(req.budget, 200) : '—'}`,
+    `Interested in: ${req.interestedIn.length ? clip(req.interestedIn.join(', '), 300) : '—'}`,
     `Language: ${langLabel}`,
-    `From page: ${req.sourcePage || '—'}`,
+    `From page: ${req.sourcePage ? clip(req.sourcePage, 200) : '—'}`,
     `Received: ${formatReceivedAt(req.createdAt)}`,
     '',
     clip(req.message, 1500),
@@ -421,7 +430,8 @@ export function buildRequestDetail(req: EstimateRequestDTO, opts: { saved?: bool
     .row()
     .text('⬅ Back', 'requests:back:list')
   const prefix = opts.saved ? 'Saved.\n\n' : ''
-  return { text: `${prefix}${req.name}\n${lines.join('\n')}`, keyboard: kb }
+  const text = clip(`${prefix}${clip(req.name, 200)}\n${lines.join('\n')}`, TELEGRAM_TEXT_MAX)
+  return { text, keyboard: kb }
 }
 
 const STATUS_ORDER: { key: string; label: string }[] = [
