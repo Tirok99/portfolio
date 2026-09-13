@@ -214,4 +214,27 @@ describe('dispatchRequestsCallback — config error', () => {
     expect(adminRequests.patch).not.toHaveBeenCalled()
     expect(finalCtx.reply).toHaveBeenCalledWith({ text: 'Bot is not fully configured — contact the site owner.' })
   })
+
+  it('requests:card:<id> replies with a config error and leaves the session untouched when ADMIN_SESSION_SECRET is missing', async () => {
+    const initialState: TelegramState = { screen: 'requests_detail', data: { filter: 'all', id: 'req-1' } }
+    const { deps, getState } = makeDeps(initialState)
+    const badEnv = {}
+    const ctx = makeCtx({})
+    await dispatchRequestsCallback(ctx, 'requests:card:req-1', badEnv, deps)
+
+    expect(ctx.reply).toHaveBeenCalledWith({ text: 'Bot is not fully configured — contact the site owner.' })
+    // showDetail's fetchRequests call is itself auth-gated — under a missing
+    // secret it must fail fast rather than being misread as "no such request"
+    // and resetting the session to the (data-less) filter menu.
+    expect(getState()).toEqual(initialState)
+  })
+
+  it('requests:filter:<x> replies with a config error, not "no requests match", when ADMIN_SESSION_SECRET is missing', async () => {
+    const { deps } = makeDeps()
+    const badEnv = {}
+    const ctx = makeCtx({})
+    await dispatchRequestsCallback(ctx, 'requests:filter:new', badEnv, deps)
+
+    expect(ctx.reply).toHaveBeenCalledWith({ text: 'Bot is not fully configured — contact the site owner.' })
+  })
 })

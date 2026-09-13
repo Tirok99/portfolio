@@ -45,6 +45,15 @@ async function showFilterMenu(ctx: BotCtx, env: Env, deps: RequestsDispatchDeps)
 }
 
 async function showList(ctx: BotCtx, filter: RequestFilter, env: Env, deps: RequestsDispatchDeps): Promise<void> {
+  // Same reasoning as startStatusChange's gate: fetchRequests below is itself
+  // auth-gated (it goes through handleAdminRequests's own requireSession/config
+  // check), so a missing secret must not be misreported as "no requests match
+  // this filter" — check config up front, before touching session state.
+  const cookieHeader = adminCookieHeader(env)
+  if (!cookieHeader) {
+    await ctx.reply({ text: 'Bot is not fully configured — contact the site owner.' })
+    return
+  }
   await deps.sessions.save(ctx.chatId, { screen: 'requests_list', data: { filter } }, env)
   const all = sortNewestFirst(await fetchRequests(env, deps))
   await ctx.reply(menu.buildRequestList(filter, filterByStatus(all, filter)))
@@ -53,6 +62,15 @@ async function showList(ctx: BotCtx, filter: RequestFilter, env: Env, deps: Requ
 async function showDetail(
   ctx: BotCtx, filter: RequestFilter, id: string, env: Env, deps: RequestsDispatchDeps, saved = false,
 ): Promise<void> {
+  // Same reasoning as startStatusChange's gate: a missing secret would otherwise
+  // make fetchRequests return [], which reads here as "no such request" and
+  // resets the session to the filter menu — destroying the current
+  // filter/id instead of failing fast and non-destructively.
+  const cookieHeader = adminCookieHeader(env)
+  if (!cookieHeader) {
+    await ctx.reply({ text: 'Bot is not fully configured — contact the site owner.' })
+    return
+  }
   const all = await fetchRequests(env, deps)
   const req = all.find((r) => r.id === id)
   if (!req) {
