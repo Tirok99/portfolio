@@ -12,7 +12,7 @@ export interface AdminRequestsDeps {
   remove: (id: string, env: Env) => Promise<DepResult>
 }
 
-const defaultDeps: AdminRequestsDeps = {
+export const defaultAdminRequestsDeps: AdminRequestsDeps = {
   list: async (env) => {
     const c = getSupabaseAdmin(env)
     if (!c) return { rows: [], error: 'not_configured' }
@@ -40,7 +40,7 @@ const ok = (): HandlerResult => ({ status: 200, body: { ok: true } })
 export async function handleAdminRequests(
   input: { method: string; cookieHeader: string | undefined; body: unknown },
   env: Env,
-  deps: AdminRequestsDeps = defaultDeps,
+  deps: AdminRequestsDeps = defaultAdminRequestsDeps,
 ): Promise<HandlerResult> {
   if (!requireSession(input.cookieHeader, env)) return { status: 401, body: { error: 'unauthorized' } }
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) return { status: 500, body: { error: 'not_configured' } }

@@ -6,6 +6,7 @@ import type { TelegramSessionsDeps, TelegramState } from './telegramSessions'
 import type { TelegramContentDeps, SectionRecord, SeoRecord } from './telegramContent'
 import type { AdminContentDeps } from './adminContentHandler'
 import type { CardsDispatchDeps } from './telegramCardsDispatch'
+import type { RequestsDispatchDeps } from './telegramRequestsDispatch'
 
 const ENV = {
   TELEGRAM_ADMIN_IDS: '111',
@@ -103,7 +104,11 @@ function makeDeps(initialState: TelegramState = { screen: 'main_menu' }) {
     adminUpload: { put: vi.fn(async () => ({ url: '', path: '', error: null })), del: vi.fn(async () => ({ error: null })) },
     sessions,
   }
-  const deps: DispatchDeps = { admins, sessions, content, adminContent, cardsDispatch }
+  const requestsDispatch: RequestsDispatchDeps = {
+    adminRequests: { list: vi.fn(async () => ({ rows: [], error: null })), patch: vi.fn(async () => ({ error: null })), remove: vi.fn(async () => ({ error: null })) },
+    sessions,
+  }
+  const deps: DispatchDeps = { admins, sessions, content, adminContent, cardsDispatch, requestsDispatch }
   return {
     deps, admins, sessions, content, adminContent,
     getState: () => state,
@@ -583,5 +588,36 @@ describe('dispatch — photo delegation', () => {
     const ctx = makeCtx({ fromId: 77, isPhotoMessage: true })
     await dispatch(ctx, ENV, deps)
     expect(ctx.reply).toHaveBeenCalledWith({ text: "You don't have access to this bot." })
+  })
+})
+
+describe('dispatch — requests delegation', () => {
+  it('requests:list is reachable by a sales_manager and shows the filter menu', async () => {
+    const { deps, setManagers } = makeDeps()
+    setManagers([SALES])
+    const ctx = makeCtx({ fromId: 77, callbackData: 'requests:list' })
+    await dispatch(ctx, ENV, deps)
+    const reply = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    expect(reply.text).toBe('Requests — filter by status:')
+  })
+
+  it('requests:list is blocked for a content_manager', async () => {
+    const { deps, setManagers } = makeDeps()
+    setManagers([MANAGER])
+    const ctx = makeCtx({ fromId: 42, callbackData: 'requests:list' })
+    await dispatch(ctx, ENV, deps)
+    expect(ctx.reply).toHaveBeenCalledWith({ text: "You don't have access to this bot." })
+  })
+
+  it('stub:requests no longer fires — the main menu now routes Requests to requests:list', async () => {
+    const { deps, setManagers } = makeDeps()
+    setManagers([SALES])
+    const ctx = makeCtx({ fromId: 77, text: '/start' })
+    await dispatch(ctx, ENV, deps)
+    const reply = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    const requestsButton = (reply.keyboard.inline_keyboard as { text: string; callback_data?: string }[][])
+      .flat()
+      .find((b) => b.text === 'Requests')
+    expect(requestsButton?.callback_data).toBe('requests:list')
   })
 })

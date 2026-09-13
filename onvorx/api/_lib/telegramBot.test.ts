@@ -90,6 +90,17 @@ describe('getBot', () => {
         load: vi.fn().mockResolvedValue({ screen: 'main_menu' }),
         save: vi.fn().mockResolvedValue(undefined),
       },
+      requestsDispatch: {
+        adminRequests: {
+          list: vi.fn().mockResolvedValue({ rows: [], error: null }),
+          patch: vi.fn().mockResolvedValue({ error: null }),
+          remove: vi.fn().mockResolvedValue({ error: null }),
+        },
+        sessions: {
+          load: vi.fn().mockResolvedValue({ screen: 'main_menu' }),
+          save: vi.fn().mockResolvedValue(undefined),
+        },
+      },
       content: {
         getSection: vi.fn().mockResolvedValue(null),
         getSeo: vi.fn().mockResolvedValue(null),
@@ -185,6 +196,17 @@ describe('getBot', () => {
       sessions: {
         load: vi.fn().mockResolvedValue({ screen: 'main_menu' }),
         save: vi.fn().mockResolvedValue(undefined),
+      },
+      requestsDispatch: {
+        adminRequests: {
+          list: vi.fn().mockResolvedValue({ rows: [], error: null }),
+          patch: vi.fn().mockResolvedValue({ error: null }),
+          remove: vi.fn().mockResolvedValue({ error: null }),
+        },
+        sessions: {
+          load: vi.fn().mockResolvedValue({ screen: 'main_menu' }),
+          save: vi.fn().mockResolvedValue(undefined),
+        },
       },
       content: {
         getSection: vi.fn().mockResolvedValue(null),
@@ -297,6 +319,17 @@ describe('getBot', () => {
         load: vi.fn().mockResolvedValue({ screen: 'main_menu' }),
         save: vi.fn().mockResolvedValue(undefined),
       },
+      requestsDispatch: {
+        adminRequests: {
+          list: vi.fn().mockResolvedValue({ rows: [], error: null }),
+          patch: vi.fn().mockResolvedValue({ error: null }),
+          remove: vi.fn().mockResolvedValue({ error: null }),
+        },
+        sessions: {
+          load: vi.fn().mockResolvedValue({ screen: 'main_menu' }),
+          save: vi.fn().mockResolvedValue(undefined),
+        },
+      },
       content: {
         getSection: vi.fn().mockResolvedValue(null),
         getSeo: vi.fn().mockResolvedValue(null),
@@ -401,6 +434,17 @@ describe('getBot', () => {
       sessions: {
         load: vi.fn().mockResolvedValue({ screen: 'main_menu' }),
         save: vi.fn().mockResolvedValue(undefined),
+      },
+      requestsDispatch: {
+        adminRequests: {
+          list: vi.fn().mockResolvedValue({ rows: [], error: null }),
+          patch: vi.fn().mockResolvedValue({ error: null }),
+          remove: vi.fn().mockResolvedValue({ error: null }),
+        },
+        sessions: {
+          load: vi.fn().mockResolvedValue({ screen: 'main_menu' }),
+          save: vi.fn().mockResolvedValue(undefined),
+        },
       },
       content: {
         getSection: vi.fn().mockResolvedValue(null),
@@ -510,6 +554,17 @@ describe('getBot', () => {
       sessions: {
         load: vi.fn().mockResolvedValue({ screen: 'main_menu' }),
         save: vi.fn().mockResolvedValue(undefined),
+      },
+      requestsDispatch: {
+        adminRequests: {
+          list: vi.fn().mockResolvedValue({ rows: [], error: null }),
+          patch: vi.fn().mockResolvedValue({ error: null }),
+          remove: vi.fn().mockResolvedValue({ error: null }),
+        },
+        sessions: {
+          load: vi.fn().mockResolvedValue({ screen: 'main_menu' }),
+          save: vi.fn().mockResolvedValue(undefined),
+        },
       },
       content: {
         getSection: vi.fn().mockResolvedValue(null),

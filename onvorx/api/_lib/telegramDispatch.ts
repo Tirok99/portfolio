@@ -28,6 +28,12 @@ import {
   defaultCardsDispatchDeps,
   type CardsDispatchDeps,
 } from './telegramCardsDispatch'
+import {
+  dispatchRequestsCallback,
+  dispatchRequestsText,
+  defaultRequestsDispatchDeps,
+  type RequestsDispatchDeps,
+} from './telegramRequestsDispatch'
 
 export interface BotCtx {
   chatId: number
@@ -53,6 +59,7 @@ export interface DispatchDeps {
   content: TelegramContentDeps
   adminContent: AdminContentDeps
   cardsDispatch: CardsDispatchDeps
+  requestsDispatch: RequestsDispatchDeps
 }
 
 export const defaultDispatchDeps: DispatchDeps = {
@@ -61,6 +68,7 @@ export const defaultDispatchDeps: DispatchDeps = {
   content: defaultTelegramContentDeps,
   adminContent: defaultAdminContentDeps,
   cardsDispatch: defaultCardsDispatchDeps,
+  requestsDispatch: defaultRequestsDispatchDeps,
 }
 
 type Env = TelegramEnv & SupabaseAdminEnv & AuthEnv
@@ -165,6 +173,15 @@ async function handleCallback(
       return
     }
     await dispatchCardsCallback(ctx, data, env, deps.cardsDispatch)
+    return
+  }
+
+  if (data.startsWith('requests:')) {
+    if (!menu.canAccessSection(role, 'requests')) {
+      await ctx.reply(menu.buildNoAccessReply())
+      return
+    }
+    await dispatchRequestsCallback(ctx, data, env, deps.requestsDispatch)
     return
   }
 
@@ -457,6 +474,15 @@ async function handleText(
       return
     }
     await dispatchCardsText(ctx, text, env, deps.cardsDispatch)
+    return
+  }
+
+  if (state.screen === 'requests_note_value') {
+    if (!menu.canAccessSection(role, 'requests')) {
+      await ctx.reply(TEXT_FALLBACK_REPLY)
+      return
+    }
+    await dispatchRequestsText(ctx, text, env, deps.requestsDispatch)
     return
   }
 
