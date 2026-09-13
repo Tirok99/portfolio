@@ -60,6 +60,13 @@ export function Hero() {
               loading="eager"
               decoding="async"
             />
+            <img
+              className="hero__central-decor"
+              src="/assets/hero/central-decor.png"
+              alt={t("hero.visualAlt")}
+              loading="lazy"
+              decoding="async"
+            />
 
             <ul className="hero__cards">
               {cards.map((card, i) => (

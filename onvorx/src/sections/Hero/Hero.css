@@ -104,6 +104,13 @@
   user-select: none;
 }
 
+/* laptop/tablet-only stand-in for .hero__radar (Figma's "central_decor",
+   the same compact hub graphic used in Services) — hidden by default,
+   shown instead of the radar starting at the 1200px breakpoint below. */
+.hero__central-decor {
+  display: none;
+}
+
 .hero__cards {
   position: relative;
   z-index: 2;
@@ -203,14 +210,32 @@
 
 /* ================= Responsive ================= */
 
-/* radar crowds the cards — fade it back a little */
+/* radar crowds the cards — swap it for the more compact central_decor hub
+   graphic instead of just shrinking it back, per Figma's laptop/tablet
+   variant (continues to apply at the 1024px tier below too, since
+   nothing there overrides .hero__radar's display or .hero__central-decor). */
 @media (max-width: 1200px) {
   .hero__cards {
     width: clamp(240px, 40%, 300px);
   }
   .hero__radar {
-    left: 16%;
-    opacity: 0.9;
+    display: none;
+  }
+  .hero__central-decor {
+    display: block;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: min(60vw, 480px);
+    max-width: none;
+    transform: translate(-50%, -50%);
+    z-index: 0;
+    pointer-events: none;
+    user-select: none;
+  }
+  /* push the wave 30px lower than its default position at this tier */
+  .hero__wave--left {
+    bottom: calc(min(-180px, -20.7vw) - 30px);
   }
 }
 
@@ -269,9 +294,19 @@
   .hero__radar {
     display: none;
   }
+  /* no central decor at mobile either — otherwise it'd inherit
+     display:block from the 1200px breakpoint above */
+  .hero__central-decor {
+    display: none;
+  }
+  /* mobile's own bottom offset (unrelated to the vw-based base formula)
+     pushed 20px further, from -20px to -40px, per feedback asking for
+     "20px more than laptop's 30px push" — check this looks right, since
+     mobile and laptop use two different position formulas, not one
+     shared value the two pushes cleanly stack on top of. */
   .hero__wave--left {
     left: 0;
-    bottom: -20px;
+    bottom: -40px;
     width: 100vw;
     opacity: 0.35;
   }
