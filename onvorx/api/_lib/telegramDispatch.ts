@@ -21,13 +21,20 @@ import {
 import { handleAdminContent, defaultAdminContentDeps, type AdminContentDeps } from './adminContentHandler'
 import { signToken } from './session'
 import * as menu from './telegramMenu'
-import { dispatchCardsCallback, dispatchCardsText, defaultCardsDispatchDeps, type CardsDispatchDeps } from './telegramCardsDispatch'
+import {
+  dispatchCardsCallback,
+  dispatchCardsText,
+  dispatchCardsPhoto,
+  defaultCardsDispatchDeps,
+  type CardsDispatchDeps,
+} from './telegramCardsDispatch'
 
 export interface BotCtx {
   chatId: number
   fromId: number
   text?: string
   callbackData?: string
+  photoDataUrl?: string
   reply: (r: menu.BotReply) => Promise<void>
   answerCallback: () => Promise<void>
 }
@@ -76,6 +83,15 @@ export async function dispatch(
   if (ctx.text === '/start') {
     await deps.sessions.save(ctx.chatId, MAIN_MENU_STATE, env)
     await ctx.reply(menu.buildMainMenu(role))
+    return
+  }
+
+  if (ctx.photoDataUrl) {
+    if (!menu.canAccessSection(role, 'projects')) {
+      await ctx.reply(menu.buildNoAccessReply())
+      return
+    }
+    await dispatchCardsPhoto(ctx, env, deps.cardsDispatch)
     return
   }
 

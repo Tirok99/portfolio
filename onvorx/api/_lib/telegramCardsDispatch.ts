@@ -9,7 +9,7 @@ import {
   type ServiceField,
 } from './telegramCards'
 import { handleAdminCards, defaultAdminCardsDeps, type AdminCardsDeps } from './adminCardsHandler'
-import { defaultAdminUploadDeps, type AdminUploadDeps } from './adminUploadHandler'
+import { handleAdminUpload, defaultAdminUploadDeps, type AdminUploadDeps } from './adminUploadHandler'
 import { defaultTelegramSessionsDeps, type TelegramSessionsDeps, type TelegramState } from './telegramSessions'
 import * as menu from './telegramMenu'
 
@@ -295,6 +295,100 @@ async function confirmDelete(
   await showList(ctx, type, list, env, deps)
 }
 
+// ---- image replace / remove ----
+
+const FOLDER_FOR_TYPE: Record<CardType, 'projects' | 'services'> = { projects: 'projects', services: 'services' }
+
+async function startImageReplace(
+  ctx: BotCtx, type: CardType, list: CardList, id: string, env: Env, deps: CardsDispatchDeps,
+): Promise<void> {
+  await deps.sessions.save(ctx.chatId, { screen: 'cards_photo_wait', data: { type, list, id } }, env)
+  await ctx.reply(menu.buildPhotoPrompt(`cards:card:${id}`))
+}
+
+async function removeImage(
+  ctx: BotCtx, type: CardType, list: CardList, id: string, env: Env, deps: CardsDispatchDeps,
+): Promise<void> {
+  const cookieHeader = adminCookieHeader(env)
+  if (!cookieHeader) {
+    await ctx.reply({ text: 'Bot is not fully configured — contact the site owner.' })
+    return
+  }
+  const card = type === 'projects' ? await deps.cards.getProject(list, id, env) : await deps.cards.getService(list, id, env)
+  if (!card) {
+    await ctx.reply({ text: 'Could not load that card — please try again.' })
+    await showList(ctx, type, list, env, deps)
+    return
+  }
+  const oldPath = type === 'projects' ? (card as ProjectCardRecord).imagePath : (card as ServiceCardRecord).iconPath
+  const field = type === 'projects' ? 'image' : 'icon'
+  const result = await handleAdminCards(
+    { method: 'PUT', cookieHeader, query: { type: singularType(type) }, body: { list, id, patch: { [field]: { src: '' } } } },
+    env,
+    deps.adminCards,
+  )
+  if (result.status !== 200) {
+    await ctx.reply(menu.buildCardSaveFailed(`cards:card:${id}`))
+    return
+  }
+  if (oldPath) await deps.adminUpload.del(oldPath, env).catch(() => ({ error: 'ignored' }))
+  await showDetail(ctx, type, list, id, env, deps, true)
+}
+
+export async function dispatchCardsPhoto(
+  ctx: BotCtx, env: Env, deps: CardsDispatchDeps = defaultCardsDispatchDeps,
+): Promise<void> {
+  const state = await loadState(ctx, env, deps)
+  const type = state.data?.type as CardType | undefined
+  const list = state.data?.list as CardList | undefined
+  const id = state.data?.id as string | undefined
+  if (!type || !list || !id || !ctx.photoDataUrl) return
+
+  const cookieHeader = adminCookieHeader(env)
+  if (!cookieHeader) {
+    await ctx.reply({ text: 'Bot is not fully configured — contact the site owner.' })
+    return
+  }
+  const card = type === 'projects' ? await deps.cards.getProject(list, id, env) : await deps.cards.getService(list, id, env)
+  if (!card) {
+    await ctx.reply({ text: 'Could not load that card — please try again.' })
+    await showList(ctx, type, list, env, deps)
+    return
+  }
+  const oldPath = type === 'projects' ? (card as ProjectCardRecord).imagePath : (card as ServiceCardRecord).iconPath
+
+  const uploadResult = await handleAdminUpload(
+    { method: 'POST', cookieHeader, body: { dataUrl: ctx.photoDataUrl, fileName: `${id}.jpg`, folder: FOLDER_FOR_TYPE[type] } },
+    env,
+    deps.adminUpload,
+  )
+  if (uploadResult.status !== 200) {
+    await ctx.reply(menu.buildCardSaveFailed(`cards:card:${id}`))
+    return
+  }
+  const { url, path } = uploadResult.body as { url: string; path: string }
+
+  const field = type === 'projects' ? 'image' : 'icon'
+  const saveResult = await handleAdminCards(
+    {
+      method: 'PUT',
+      cookieHeader,
+      query: { type: singularType(type) },
+      body: { list, id, patch: { [field]: { src: url, path } } },
+    },
+    env,
+    deps.adminCards,
+  )
+  if (saveResult.status !== 200) {
+    await ctx.reply(menu.buildCardSaveFailed(`cards:card:${id}`))
+    return
+  }
+  if (oldPath && oldPath !== path) {
+    await deps.adminUpload.del(oldPath, env).catch(() => ({ error: 'ignored' }))
+  }
+  await showDetail(ctx, type, list, id, env, deps, true)
+}
+
 // ---- callback entry point ----
 
 export async function dispatchCardsCallback(
@@ -388,10 +482,22 @@ export async function dispatchCardsCallback(
     await showDetail(ctx, type, list, id, env, deps)
     return
   }
-  // cards:image:* is handled in Task 4 (photo capability) — this task does not
-  // add those branches yet, so an image:* tap here would fall through to no
-  // reply. That is fine: Task 4 lands in the same PR-series before this branch
-  // ships to production, and its own tests cover cards:image:*.
+  if (data === 'cards:image:replace') {
+    if (!type || !list || !id) {
+      await ctx.reply({ text: 'Session out of sync — please /start and try again.' })
+      return
+    }
+    await startImageReplace(ctx, type, list, id, env, deps)
+    return
+  }
+  if (data === 'cards:image:remove') {
+    if (!type || !list || !id) {
+      await ctx.reply({ text: 'Session out of sync — please /start and try again.' })
+      return
+    }
+    await removeImage(ctx, type, list, id, env, deps)
+    return
+  }
 }
 
 // ---- text entry point (field values, tags) ----
@@ -420,6 +526,10 @@ export async function dispatchCardsText(
       return
     }
     await saveTags(ctx, list, id, text, env, deps)
+    return
+  }
+  if (state.screen === 'cards_photo_wait') {
+    await ctx.reply({ text: 'Please send a photo, or /start to cancel.' })
     return
   }
 }

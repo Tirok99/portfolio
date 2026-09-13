@@ -530,3 +530,20 @@ describe('dispatch — cards delegation', () => {
     expect(projectsButton?.callback_data).toBe('cards:projects:list')
   })
 })
+
+describe('dispatch — photo delegation', () => {
+  it('a photo message from an unauthorized id gets "no access"', async () => {
+    const { deps } = makeDeps()
+    const ctx = makeCtx({ fromId: 999, photoDataUrl: 'data:image/jpeg;base64,AAAA' })
+    await dispatch(ctx, ENV, deps)
+    expect(ctx.reply).toHaveBeenCalledWith({ text: "You don't have access to this bot." })
+  })
+
+  it('a photo message from a sales_manager gets "no access" (cards is content_manager-only)', async () => {
+    const { deps, setManagers } = makeDeps()
+    setManagers([SALES])
+    const ctx = makeCtx({ fromId: 77, photoDataUrl: 'data:image/jpeg;base64,AAAA' })
+    await dispatch(ctx, ENV, deps)
+    expect(ctx.reply).toHaveBeenCalledWith({ text: "You don't have access to this bot." })
+  })
+})
