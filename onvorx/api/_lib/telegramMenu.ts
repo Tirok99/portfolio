@@ -303,8 +303,6 @@ export function buildServiceDetail(
   kb.text('▲ Move up', 'cards:move:up')
     .text('▼ Move down', 'cards:move:down')
     .row()
-    .text('🗑 Delete card', 'cards:delete')
-    .row()
     .text('⬅ Back', 'cards:back:list')
   const prefix = opts.saved ? 'Saved.\n\n' : ''
   return {

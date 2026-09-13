@@ -262,6 +262,15 @@ describe('dispatchCardsCallback — delete', () => {
     const reply = (cancelCtx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0]
     expect(reply.text).toContain('Alpha')
   })
+
+  it('cards:delete on a service is rejected, leaves the record and session state untouched', async () => {
+    const { deps, getServices, getState } = makeDeps({ screen: 'cards_detail', data: { type: 'services', list: 'home', id: 's1' } })
+    const ctx = makeCtx({})
+    await dispatchCardsCallback(ctx, 'cards:delete', ENV, deps)
+    expect(ctx.reply).toHaveBeenCalledWith({ text: "Services cards can't be deleted through the bot." })
+    expect(getServices().find((s) => s.id === 's1')).toBeDefined()
+    expect(getState()).toEqual({ screen: 'cards_detail', data: { type: 'services', list: 'home', id: 's1' } })
+  })
 })
 
 describe('dispatchCardsCallback — save failure', () => {

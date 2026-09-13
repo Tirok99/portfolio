@@ -405,7 +405,7 @@ describe('buildProjectDetail', () => {
 })
 
 describe('buildServiceDetail', () => {
-  it('services show Title/Text/image/published/featured/move/delete/back, no tags or image-alt', () => {
+  it('services show Title/Text/image/published/featured/move/back, no tags, image-alt, or delete', () => {
     const r = buildServiceDetail(SERVICE_A, { index: 0, total: 1 })
     const buttons = readButtons(r)
     expect(buttons).toEqual([
@@ -417,7 +417,6 @@ describe('buildServiceDetail', () => {
       { text: '⭐ Featured (tap to unfeature)', data: 'cards:toggle:featured' },
       { text: '▲ Move up', data: 'cards:move:up' },
       { text: '▼ Move down', data: 'cards:move:down' },
-      { text: '🗑 Delete card', data: 'cards:delete' },
       { text: '⬅ Back', data: 'cards:back:list' },
     ])
   })

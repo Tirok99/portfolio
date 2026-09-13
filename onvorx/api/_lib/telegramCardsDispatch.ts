@@ -266,6 +266,10 @@ async function moveCard(
 async function startDelete(
   ctx: BotCtx, type: CardType, list: CardList, id: string, env: Env, deps: CardsDispatchDeps,
 ): Promise<void> {
+  if (type !== 'projects') {
+    await ctx.reply({ text: "Services cards can't be deleted through the bot." })
+    return
+  }
   const card = type === 'projects' ? await deps.cards.getProject(list, id, env) : await deps.cards.getService(list, id, env)
   if (!card) {
     await ctx.reply({ text: 'Could not load that card — please try again.' })
