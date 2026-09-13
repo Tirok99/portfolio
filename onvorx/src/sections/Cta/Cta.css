@@ -31,11 +31,11 @@
   mix-blend-mode: screen;
 }
 
-/* wave_red_01 — lower-right of the card */
+/* cta__decor-wave-right — upper-right of the card, per Figma layout-en-vscode */
 .cta__wave-red {
   position: absolute;
-  right: clamp(-140px, -9vw, -70px);
-  bottom: clamp(-100px, -7vw, -50px);
+  right: clamp(-150px, -10vw, -75px);
+  top: clamp(-90px, -5vw, -40px);
   width: clamp(420px, 48vw, 720px);
   max-width: none;
   opacity: 0.7;
