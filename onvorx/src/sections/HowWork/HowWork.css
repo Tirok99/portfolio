@@ -16,18 +16,19 @@
 
 /* ---- wave (below the timeline) ---- */
 /* Sits ABOVE the content above it by design (unlike every other section's
-   decor, which sits behind) so the crest can cross over the step cards'
-   bottom edge instead of being hidden underneath it. */
+   decor, which sits behind) and is tall enough that its crest actually
+   reaches up to cross over the step cards' bottom edge — a shorter band
+   leaves nothing for the raised z-index to visibly show. */
 .how-work__wave {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  height: clamp(160px, 17vw, 230px);
+  height: clamp(160px, 17vw, 340px);
   z-index: 2;
   pointer-events: none;
   overflow: clip;
-  opacity: 0.3;
+  opacity: 0.2;
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
   mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
 }

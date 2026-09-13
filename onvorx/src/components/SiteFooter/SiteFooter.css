@@ -7,17 +7,18 @@
 
 /* particle wave — its own band below the columns, gap above, copyright below.
    Sits ABOVE the content above it by design (unlike every other section's
-   decor, which sits behind) so the crest can cross over the nav columns'
-   bottom edge instead of being hidden underneath it. */
+   decor, which sits behind) and is tall enough that its crest actually
+   reaches up to cross over the nav columns' bottom edge — a shorter band
+   leaves nothing for the raised z-index to visibly show. */
 .site-footer__decor {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 62px;
-  height: clamp(150px, 16vw, 210px);
+  height: clamp(150px, 16vw, 310px);
   z-index: 2;
   pointer-events: none;
-  opacity: 0.3;
+  opacity: 0.2;
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
   mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
 }
