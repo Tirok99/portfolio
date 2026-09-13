@@ -83,6 +83,15 @@ describe('RequestsPage', () => {
     ).toBeInTheDocument()
   })
 
+  it('closes the open request via Cancel', async () => {
+    const user = userEvent.setup()
+    wrap()
+    await user.click(await screen.findByRole('button', { name: /Olena Kravets/i }))
+    const detail = screen.getByRole('region', { name: /request detail/i })
+    await user.click(within(detail).getByRole('button', { name: /^cancel$/i }))
+    expect(screen.queryByRole('region', { name: /request detail/i })).not.toBeInTheDocument()
+  })
+
   it('deletes a request after confirmation', async () => {
     const user = userEvent.setup()
     wrap()

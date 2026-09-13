@@ -16,9 +16,10 @@ interface DetailProps {
   req: EstimateRequest
   setStatus: (id: string, status: RequestStatus) => Promise<void>
   remove: (id: string) => Promise<void>
+  close: () => void
 }
 
-function Detail({ req, setStatus, remove }: DetailProps) {
+function Detail({ req, setStatus, remove, close }: DetailProps) {
   const { confirm, dialog } = useConfirm()
   const toast = useToast()
   const { notes, error: notesError, addNote } = useRequestNotes(req.id)
@@ -111,6 +112,9 @@ function Detail({ req, setStatus, remove }: DetailProps) {
       </div>
 
       <div className="admin-detail__actions">
+        <button type="button" className="admin-btn" onClick={close}>
+          Cancel
+        </button>
         <button type="button" className="admin-btn admin-btn--danger" onClick={del}>
           Delete
         </button>
@@ -211,6 +215,7 @@ export function RequestsPage() {
           req={open}
           setStatus={setStatus}
           remove={remove}
+          close={() => setOpenId(null)}
         />
       )}
     </section>
