@@ -5,6 +5,7 @@ import type { TelegramAdminsDeps, ManagerRecord } from './telegramAdmins'
 import type { TelegramSessionsDeps, TelegramState } from './telegramSessions'
 import type { TelegramContentDeps, SectionRecord, SeoRecord } from './telegramContent'
 import type { AdminContentDeps } from './adminContentHandler'
+import type { CardsDispatchDeps } from './telegramCardsDispatch'
 
 const ENV = {
   TELEGRAM_ADMIN_IDS: '111',
@@ -96,7 +97,13 @@ function makeDeps(initialState: TelegramState = { screen: 'main_menu' }) {
     }),
     resetAll: vi.fn(async () => ({ error: null })),
   }
-  const deps: DispatchDeps = { admins, sessions, content, adminContent }
+  const cardsDispatch: CardsDispatchDeps = {
+    cards: { listProjects: vi.fn(async () => []), getProject: vi.fn(async () => null), listServices: vi.fn(async () => []), getService: vi.fn(async () => null) },
+    adminCards: { create: vi.fn(async () => ({ error: null })), update: vi.fn(async () => ({ error: null })), remove: vi.fn(async () => ({ error: null })), reorder: vi.fn(async () => ({ error: null })) },
+    adminUpload: { put: vi.fn(async () => ({ url: '', path: '', error: null })), del: vi.fn(async () => ({ error: null })) },
+    sessions,
+  }
+  const deps: DispatchDeps = { admins, sessions, content, adminContent, cardsDispatch }
   return {
     deps, admins, sessions, content, adminContent,
     getState: () => state,
@@ -491,5 +498,90 @@ describe('dispatch — SEO, owner + content_manager', () => {
       text: 'Could not save — please try again.',
       keyboard: expect.anything(),
     })
+  })
+})
+
+describe('dispatch — cards delegation', () => {
+  it('cards:projects:list is reachable by a content_manager and shows the tab choice', async () => {
+    const { deps, setManagers } = makeDeps()
+    setManagers([MANAGER])
+    const ctx = makeCtx({ fromId: 42, callbackData: 'cards:projects:list' })
+    await dispatch(ctx, ENV, deps)
+    const reply = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    expect(reply.text).toBe('Projects — choose a list:')
+  })
+
+  it('cards:services:list is blocked for a sales_manager', async () => {
+    const { deps, setManagers } = makeDeps()
+    setManagers([SALES])
+    const ctx = makeCtx({ fromId: 77, callbackData: 'cards:services:list' })
+    await dispatch(ctx, ENV, deps)
+    expect(ctx.reply).toHaveBeenCalledWith({ text: "You don't have access to this bot." })
+  })
+
+  it('text sent while awaiting a photo (cards_photo_wait) is delegated to dispatchCardsText, not the generic fallback', async () => {
+    const { deps, setManagers } = makeDeps({
+      screen: 'cards_photo_wait',
+      data: { type: 'projects', list: 'home', id: 'a' },
+    })
+    setManagers([MANAGER])
+    const ctx = makeCtx({ fromId: 42, text: 'oops, wrong message' })
+    await dispatch(ctx, ENV, deps)
+    expect(ctx.reply).toHaveBeenCalledWith({ text: 'Please send a photo, or /start to cancel.' })
+  })
+
+  it('stub:projects no longer fires — the main menu now routes Projects to cards:projects:list', async () => {
+    const { deps } = makeDeps()
+    const ctx = makeCtx({ text: '/start' })
+    await dispatch(ctx, ENV, deps)
+    const reply = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    const projectsButton = (reply.keyboard.inline_keyboard as { text: string; callback_data?: string }[][])
+      .flat()
+      .find((b) => b.text === 'Projects')
+    expect(projectsButton?.callback_data).toBe('cards:projects:list')
+  })
+})
+
+describe('dispatch — photo delegation', () => {
+  it('a photo message from an unauthorized id gets "no access"', async () => {
+    const { deps } = makeDeps()
+    const ctx = makeCtx({ fromId: 999, photoDataUrl: 'data:image/jpeg;base64,AAAA' })
+    await dispatch(ctx, ENV, deps)
+    expect(ctx.reply).toHaveBeenCalledWith({ text: "You don't have access to this bot." })
+  })
+
+  it('a photo message from a sales_manager gets "no access" (cards is content_manager-only)', async () => {
+    const { deps, setManagers } = makeDeps()
+    setManagers([SALES])
+    const ctx = makeCtx({ fromId: 77, photoDataUrl: 'data:image/jpeg;base64,AAAA' })
+    await dispatch(ctx, ENV, deps)
+    expect(ctx.reply).toHaveBeenCalledWith({ text: "You don't have access to this bot." })
+  })
+
+  it('a photo message whose download failed (isPhotoMessage true, no photoDataUrl) gets a clear reply, not silence', async () => {
+    const { deps, sessions } = makeDeps({
+      screen: 'cards_photo_wait',
+      data: { type: 'projects', list: 'home', id: 'a' },
+    })
+    const ctx = makeCtx({ isPhotoMessage: true })
+    await dispatch(ctx, ENV, deps)
+    expect(ctx.reply).toHaveBeenCalledWith({ text: 'Could not process that photo — please try again.' })
+    // session state is left untouched so a retry still lands on the same step
+    expect(sessions.save).not.toHaveBeenCalled()
+  })
+
+  it('a failed-download photo message from an unauthorized id still gets the standard "no access" reply, not the photo-specific one', async () => {
+    const { deps } = makeDeps()
+    const ctx = makeCtx({ fromId: 999, isPhotoMessage: true })
+    await dispatch(ctx, ENV, deps)
+    expect(ctx.reply).toHaveBeenCalledWith({ text: "You don't have access to this bot." })
+  })
+
+  it('a failed-download photo message from a sales_manager gets "no access", not the photo-specific reply', async () => {
+    const { deps, setManagers } = makeDeps()
+    setManagers([SALES])
+    const ctx = makeCtx({ fromId: 77, isPhotoMessage: true })
+    await dispatch(ctx, ENV, deps)
+    expect(ctx.reply).toHaveBeenCalledWith({ text: "You don't have access to this bot." })
   })
 })

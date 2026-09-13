@@ -21,12 +21,28 @@ import {
 import { handleAdminContent, defaultAdminContentDeps, type AdminContentDeps } from './adminContentHandler'
 import { signToken } from './session'
 import * as menu from './telegramMenu'
+import {
+  dispatchCardsCallback,
+  dispatchCardsText,
+  dispatchCardsPhoto,
+  defaultCardsDispatchDeps,
+  type CardsDispatchDeps,
+} from './telegramCardsDispatch'
 
 export interface BotCtx {
   chatId: number
   fromId: number
   text?: string
   callbackData?: string
+  photoDataUrl?: string
+  /**
+   * True whenever the incoming update WAS a photo message, regardless of
+   * whether downloading its bytes succeeded — independent of `photoDataUrl`,
+   * which is only ever set on a successful download. This lets `dispatch()`
+   * tell "not a photo" apart from "a photo that failed to download" so a
+   * flaky download can reply with a clear message instead of going silent.
+   */
+  isPhotoMessage?: boolean
   reply: (r: menu.BotReply) => Promise<void>
   answerCallback: () => Promise<void>
 }
@@ -36,6 +52,7 @@ export interface DispatchDeps {
   sessions: TelegramSessionsDeps
   content: TelegramContentDeps
   adminContent: AdminContentDeps
+  cardsDispatch: CardsDispatchDeps
 }
 
 export const defaultDispatchDeps: DispatchDeps = {
@@ -43,11 +60,12 @@ export const defaultDispatchDeps: DispatchDeps = {
   sessions: defaultTelegramSessionsDeps,
   content: defaultTelegramContentDeps,
   adminContent: defaultAdminContentDeps,
+  cardsDispatch: defaultCardsDispatchDeps,
 }
 
 type Env = TelegramEnv & SupabaseAdminEnv & AuthEnv
 
-function adminCookieHeader(env: Env): string | null {
+export function adminCookieHeader(env: Env): string | null {
   if (!env.ADMIN_SESSION_SECRET) return null
   return `admin_session=${signToken(env.ADMIN_SESSION_SECRET)}`
 }
@@ -73,6 +91,24 @@ export async function dispatch(
   if (ctx.text === '/start') {
     await deps.sessions.save(ctx.chatId, MAIN_MENU_STATE, env)
     await ctx.reply(menu.buildMainMenu(role))
+    return
+  }
+
+  if (ctx.photoDataUrl || ctx.isPhotoMessage) {
+    if (!menu.canAccessSection(role, 'projects')) {
+      await ctx.reply(menu.buildNoAccessReply())
+      return
+    }
+    if (!ctx.photoDataUrl) {
+      // The update was a photo message, but toBotCtx couldn't download its
+      // bytes (a flaky network call to Telegram's file server, an expired
+      // file_path, etc.) — tell the user instead of silently doing nothing.
+      // Session state is left untouched so a retry (send the photo again)
+      // still lands on the same cards_photo_wait step.
+      await ctx.reply({ text: 'Could not process that photo — please try again.' })
+      return
+    }
+    await dispatchCardsPhoto(ctx, env, deps.cardsDispatch)
     return
   }
 
@@ -115,6 +151,20 @@ async function handleCallback(
       return
     }
     await handleSeoCallback(ctx, data, env, deps)
+    return
+  }
+
+  if (data.startsWith('cards:')) {
+    // Projects and Services currently share the exact same role requirement
+    // in MENU_ITEMS (['owner', 'content_manager']) — checking either key's
+    // access is equivalent to checking both, so one gate covers this whole
+    // prefix regardless of which type a deeper callback concerns. If a future
+    // plan gives the two types different roles, this gate must be split.
+    if (!menu.canAccessSection(role, 'projects')) {
+      await ctx.reply(menu.buildNoAccessReply())
+      return
+    }
+    await dispatchCardsCallback(ctx, data, env, deps.cardsDispatch)
     return
   }
 
@@ -398,6 +448,15 @@ async function handleText(
     }
     const { pageKey, field, lang } = state.data as { pageKey: string; field: SeoField; lang: 'en' | 'uk' }
     await saveSeoField(ctx, env, deps, pageKey, field, lang, text)
+    return
+  }
+
+  if (state.screen === 'cards_value' || state.screen === 'cards_tags_value' || state.screen === 'cards_photo_wait') {
+    if (!menu.canAccessSection(role, 'projects')) {
+      await ctx.reply(TEXT_FALLBACK_REPLY)
+      return
+    }
+    await dispatchCardsText(ctx, text, env, deps.cardsDispatch)
     return
   }
 

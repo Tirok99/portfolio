@@ -57,7 +57,7 @@ export const reorderCardsDefault: AdminCardsDeps['reorder'] = async (type, list,
   return { error: null }
 }
 
-const defaultDeps: AdminCardsDeps = {
+export const defaultAdminCardsDeps: AdminCardsDeps = {
   create: createCardDefault,
   reorder: reorderCardsDefault,
   update: async (type, list, id, row, env) => {
@@ -89,7 +89,7 @@ const ok = (): HandlerResult => ({ status: 200, body: { ok: true } })
 export async function handleAdminCards(
   input: { method: string; cookieHeader: string | undefined; query: Record<string, string | undefined>; body: unknown },
   env: Env,
-  deps: AdminCardsDeps = defaultDeps,
+  deps: AdminCardsDeps = defaultAdminCardsDeps,
 ): Promise<HandlerResult> {
   if (!requireSession(input.cookieHeader, env)) return { status: 401, body: { error: 'unauthorized' } }
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) return { status: 500, body: { error: 'not_configured' } }
@@ -107,7 +107,7 @@ export async function handleAdminCards(
   if (input.method === 'POST') {
     const card = (body.card ?? {}) as Record<string, unknown>
     if (typeof card.id !== 'string' || !card.id) return bad()
-    // `sort` is server-derived on create (see defaultDeps.create) — never trust
+    // `sort` is server-derived on create (see defaultAdminCardsDeps.create) — never trust
     // the client-supplied index, so strip it from the mapped row here.
     const { sort: _sort, ...mapped } = rowFor(type, card)
     const row = { ...mapped, id: card.id, list }
