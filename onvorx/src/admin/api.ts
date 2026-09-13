@@ -1,6 +1,6 @@
 import type {
   SectionKey, SeoPageKey, SectionText, SeoEntry, ProjectCard, ServiceCard,
-  RequestStatus, EstimateRequest,
+  RequestStatus, EstimateRequest, RequestNote,
 } from './types'
 import type { SiteContent } from '../content/mappers'
 
@@ -43,7 +43,9 @@ export const adminApi = {
   listRequests: () => call<{ requests: EstimateRequest[] }>('/api/admin/requests', 'GET').then((r) => r.requests),
   setRequestStatus: (id: string, status: RequestStatus) =>
     call<void>('/api/admin/requests', 'PATCH', { id, status }),
-  setRequestNote: (id: string, note: string) =>
-    call<void>('/api/admin/requests', 'PATCH', { id, note }),
   deleteRequest: (id: string) => call<void>('/api/admin/requests', 'DELETE', { id }),
+  listRequestNotes: (requestId: string) =>
+    call<{ notes: RequestNote[] }>(`/api/admin/request-notes?requestId=${requestId}`, 'GET').then((r) => r.notes),
+  addRequestNote: (requestId: string, body: string) =>
+    call<void>('/api/admin/request-notes', 'POST', { requestId, author: 'Admin (web)', body }),
 }

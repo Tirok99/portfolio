@@ -6,6 +6,7 @@ import { EmptyState } from '../components/EmptyState'
 import { useToast } from '../components/Toast'
 import { useConfirm } from '../components/ConfirmDialog'
 import { useAdminTitle } from '../useAdminTitle'
+import { useRequestNotes } from '../hooks/useRequestNotes'
 
 const STATUSES: RequestStatus[] = ['new', 'in_progress', 'done', 'archived']
 const fmtDate = (iso: string) =>
@@ -14,14 +15,14 @@ const fmtDate = (iso: string) =>
 interface DetailProps {
   req: EstimateRequest
   setStatus: (id: string, status: RequestStatus) => Promise<void>
-  setNote: (id: string, note: string) => Promise<void>
   remove: (id: string) => Promise<void>
 }
 
-function Detail({ req, setStatus, setNote, remove }: DetailProps) {
+function Detail({ req, setStatus, remove }: DetailProps) {
   const { confirm, dialog } = useConfirm()
   const toast = useToast()
-  const [note, setNoteText] = useState(req.note ?? '')
+  const { notes, addNote } = useRequestNotes(req.id)
+  const [draft, setDraft] = useState('')
 
   const del = async () => {
     const ok = await confirm({
@@ -35,6 +36,17 @@ function Detail({ req, setStatus, setNote, remove }: DetailProps) {
         .then(() => toast('Request deleted'))
         .catch(() => toast('Save failed', 'error'))
     }
+  }
+
+  const submitNote = () => {
+    const body = draft.trim()
+    if (!body) return
+    addNote(body)
+      .then(() => {
+        setDraft('')
+        toast('Note added')
+      })
+      .catch(() => toast('Save failed', 'error'))
   }
 
   return (
@@ -68,26 +80,35 @@ function Detail({ req, setStatus, setNote, remove }: DetailProps) {
         </select>
       </label>
 
-      <label className="admin-field">
-        <span className="admin-field__label">Internal note</span>
+      <div className="admin-field">
+        <span className="admin-field__label">Notes</span>
+        {notes === null ? (
+          <p className="admin-page__hint">Loading notes…</p>
+        ) : notes.length === 0 ? (
+          <p className="admin-page__hint">No notes yet.</p>
+        ) : (
+          <ul className="admin-notes">
+            {notes.map((n) => (
+              <li key={n.id} className="admin-notes__item">
+                <span className="admin-notes__meta">{fmtDate(n.createdAt)} — {n.author}</span>
+                <p className="admin-notes__body">{n.body}</p>
+              </li>
+            ))}
+          </ul>
+        )}
         <textarea
           className="admin-textarea"
-          value={note}
-          onChange={(e) => setNoteText(e.target.value)}
+          value={draft}
+          maxLength={500}
+          placeholder="Add a note…"
+          onChange={(e) => setDraft(e.target.value)}
         />
-      </label>
-      <div className="admin-detail__actions">
-        <button
-          type="button"
-          className="admin-btn admin-btn--primary"
-          onClick={() => {
-            setNote(req.id, note)
-              .then(() => toast('Note saved'))
-              .catch(() => toast('Save failed', 'error'))
-          }}
-        >
-          Save note
+        <button type="button" className="admin-btn admin-btn--primary" onClick={submitNote}>
+          Add note
         </button>
+      </div>
+
+      <div className="admin-detail__actions">
         <button type="button" className="admin-btn admin-btn--danger" onClick={del}>
           Delete
         </button>
@@ -99,7 +120,7 @@ function Detail({ req, setStatus, setNote, remove }: DetailProps) {
 
 export function RequestsPage() {
   useAdminTitle('Requests')
-  const { requests, error, setStatus, setNote, remove } = useRequests()
+  const { requests, error, setStatus, remove } = useRequests()
   const [status, setStatusFilter] = useState<'all' | RequestStatus>('all')
   const [lang, setLang] = useState<'all' | 'en' | 'uk'>('all')
   const [q, setQ] = useState('')
@@ -187,7 +208,6 @@ export function RequestsPage() {
           key={open.id}
           req={open}
           setStatus={setStatus}
-          setNote={setNote}
           remove={remove}
         />
       )}

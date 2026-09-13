@@ -4,13 +4,15 @@ import userEvent from '@testing-library/user-event'
 import { I18nProvider } from '../../i18n/i18n'
 import { ToastProvider } from '../components/Toast'
 import { mockRequests } from '../mock/requests'
+import { mockRequestNotes } from '../mock/requestNotes'
 import { RequestsPage } from './RequestsPage'
 
 vi.mock('../api', () => ({
   adminApi: {
     listRequests: vi.fn(),
     setRequestStatus: vi.fn().mockResolvedValue(undefined),
-    setRequestNote: vi.fn().mockResolvedValue(undefined),
+    listRequestNotes: vi.fn(),
+    addRequestNote: vi.fn().mockResolvedValue(undefined),
     deleteRequest: vi.fn().mockResolvedValue(undefined),
   },
 }))
@@ -23,7 +25,10 @@ beforeEach(() => {
     mockRequests.map((r) => ({ ...r })),
   )
   vi.mocked(adminApi.setRequestStatus).mockResolvedValue(undefined)
-  vi.mocked(adminApi.setRequestNote).mockResolvedValue(undefined)
+  vi.mocked(adminApi.listRequestNotes).mockImplementation(async (requestId: string) =>
+    (mockRequestNotes[requestId] ?? []).map((n) => ({ ...n })),
+  )
+  vi.mocked(adminApi.addRequestNote).mockResolvedValue(undefined)
   vi.mocked(adminApi.deleteRequest).mockResolvedValue(undefined)
 })
 
@@ -89,5 +94,23 @@ describe('RequestsPage', () => {
     )
     expect(adminApi.deleteRequest).toHaveBeenCalledWith('req_0001')
     expect(screen.queryByText('Olena Kravets')).not.toBeInTheDocument()
+  })
+
+  it('shows no notes for a request with none yet', async () => {
+    wrap()
+    await userEvent.setup().click(await screen.findByRole('button', { name: /Olena Kravets/i }))
+    const detail = screen.getByRole('region', { name: /request detail/i })
+    expect(await within(detail).findByText(/no notes yet/i)).toBeInTheDocument()
+  })
+
+  it('shows existing notes and adds a new one without touching the old ones', async () => {
+    const user = userEvent.setup()
+    wrap()
+    await user.click(await screen.findByRole('button', { name: /Iryna Bondar/i }))
+    const detail = screen.getByRole('region', { name: /request detail/i })
+    expect(await within(detail).findByText(/Sent intro call link/i)).toBeInTheDocument()
+    await user.type(within(detail).getByPlaceholderText(/add a note/i), 'Called back today.')
+    await user.click(within(detail).getByRole('button', { name: /add note/i }))
+    expect(adminApi.addRequestNote).toHaveBeenCalledWith('req_0003', 'Called back today.')
   })
 })

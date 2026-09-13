@@ -41,7 +41,6 @@ export const mockRequests: EstimateRequest[] = [
       'Small logistics company, we want to clarify our order process before commissioning any software. Where do we start?',
     locale: 'uk',
     sourcePage: '/',
-    note: 'Sent intro call link, waiting for a slot.',
   },
   {
     id: 'req_0004',
@@ -69,7 +68,6 @@ export const mockRequests: EstimateRequest[] = [
     message: 'Seasonal campaign landing page and Google Ads refresh.',
     locale: 'uk',
     sourcePage: '/services',
-    note: 'Delivered 2026-09-06. Invoice sent.',
   },
   {
     id: 'req_0006',
@@ -94,6 +92,5 @@ export const mockRequests: EstimateRequest[] = [
     message: 'Asked for a partnership, not a project. Redirected by email.',
     locale: 'en',
     sourcePage: '/',
-    note: 'Not a fit — archived.',
   },
 ]

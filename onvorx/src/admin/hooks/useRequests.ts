@@ -37,11 +37,6 @@ export function useRequests() {
       optimistic((r) => ({ ...r, status }), id, () => adminApi.setRequestStatus(id, status)),
     [optimistic],
   )
-  const setNote = useCallback(
-    (id: string, note: string) =>
-      optimistic((r) => ({ ...r, note }), id, () => adminApi.setRequestNote(id, note)),
-    [optimistic],
-  )
   const remove = useCallback(
     async (id: string) => {
       setRequests((rs) => rs?.filter((r) => r.id !== id) ?? rs)
@@ -55,5 +50,5 @@ export function useRequests() {
     [reload],
   )
 
-  return { requests, error, reload, setStatus, setNote, remove }
+  return { requests, error, reload, setStatus, remove }
 }

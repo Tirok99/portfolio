@@ -92,12 +92,18 @@ export interface EstimateRequest {
   message: string
   locale: Locale
   sourcePage?: string
-  note?: string
+}
+
+export interface RequestNote {
+  id: string
+  createdAt: string
+  author: string
+  body: string
 }
 
 export type NewRequestInput = Omit<
   EstimateRequest,
-  'id' | 'createdAt' | 'status' | 'note'
+  'id' | 'createdAt' | 'status'
 >
 
 export interface AdminData {
