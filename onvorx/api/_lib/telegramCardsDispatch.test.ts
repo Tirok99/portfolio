@@ -299,7 +299,9 @@ describe('dispatchCardsPhoto — replace flow', () => {
     const ctx = makeCtx({})
     await dispatchCardsCallback(ctx, 'cards:image:replace', ENV, deps)
     const reply = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0]
-    expect(reply.text).toBe('Send a new photo for this card.')
+    expect(reply.text).toBe(
+      'Send a new photo for this card. For an icon with a transparent background, send it as a file (not a photo) to keep the transparency.',
+    )
   })
 
   it('a real photo uploads, updates the card, and best-effort deletes the old object', async () => {

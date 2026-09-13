@@ -336,7 +336,10 @@ export function buildTagsPrompt(currentTags: string[]): BotReply {
 
 export function buildPhotoPrompt(backCallback: string): BotReply {
   const kb = new InlineKeyboard().text('⬅ Back', backCallback)
-  return { text: 'Send a new photo for this card.', keyboard: kb }
+  return {
+    text: 'Send a new photo for this card. For an icon with a transparent background, send it as a file (not a photo) to keep the transparency.',
+    keyboard: kb,
+  }
 }
 
 export function buildCardDeleteConfirm(title: string, kind: 'project' | 'service'): BotReply {

@@ -475,6 +475,12 @@ describe('buildPhotoPrompt', () => {
     const r = buildPhotoPrompt('cards:card:encryptia-cloud')
     expect(readButtons(r)).toEqual([{ text: '⬅ Back', data: 'cards:card:encryptia-cloud' }])
   })
+  it('mentions sending as a file to preserve transparency', () => {
+    const r = buildPhotoPrompt('cards:card:encryptia-cloud')
+    expect(r.text).toBe(
+      'Send a new photo for this card. For an icon with a transparent background, send it as a file (not a photo) to keep the transparency.',
+    )
+  })
 })
 
 describe('buildCardDeleteConfirm', () => {

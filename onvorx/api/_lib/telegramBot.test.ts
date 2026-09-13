@@ -358,4 +358,224 @@ describe('getBot', () => {
     expect(sentTexts).toContain('Could not process that photo — please try again.')
     expect(put).not.toHaveBeenCalled()
   })
+
+  it('a document message with an accepted MIME type is downloaded and passed through with its real MIME type, not JPEG', async () => {
+    const calls: string[] = []
+    // grammY's own API calls (getMe during bot.init(), getFile, sendMessage, ...)
+    // go through this fake — the same `client: { fetch }` seam the photo tests use.
+    const grammyFetch = vi.fn(async (url: unknown) => {
+      const u = String(url)
+      calls.push(u)
+      if (u.includes('getMe')) return { json: async () => ({ ok: true, result: FAKE_ME }) } as Response
+      if (u.includes('getFile')) {
+        return {
+          json: async () => ({ ok: true, result: { file_id: 'd1', file_unique_id: 'du1', file_path: 'documents/d1.png' } }),
+        } as Response
+      }
+      return { json: async () => ({ ok: true, result: true }) } as Response
+    })
+
+    // toBotCtx's raw byte-download call uses the plain GLOBAL fetch, not grammY's
+    // client.fetch override — grammY never sees this URL, so it needs its own stub.
+    const rawDownloadCalls: string[] = []
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: unknown) => {
+        rawDownloadCalls.push(String(url))
+        return { ok: true, arrayBuffer: async () => new Uint8Array([4, 5, 6]).buffer } as unknown as Response
+      }),
+    )
+
+    let capturedPhotoDataUrl: string | undefined
+    const put = vi.fn(async (_folder: string, _key: string, bytes: Buffer) => {
+      capturedPhotoDataUrl = `data:image/png;base64,${bytes.toString('base64')}`
+      return { url: 'https://x/new.png', path: 'projects/new.png', error: null }
+    })
+    const deps: DispatchDeps = {
+      admins: {
+        findManager: vi.fn().mockResolvedValue(null),
+        listManagers: vi.fn().mockResolvedValue([]),
+        addManager: vi.fn().mockResolvedValue({ error: null }),
+        removeManager: vi.fn().mockResolvedValue({ error: null }),
+      },
+      sessions: {
+        load: vi.fn().mockResolvedValue({ screen: 'main_menu' }),
+        save: vi.fn().mockResolvedValue(undefined),
+      },
+      content: {
+        getSection: vi.fn().mockResolvedValue(null),
+        getSeo: vi.fn().mockResolvedValue(null),
+      },
+      adminContent: {
+        updateSection: vi.fn().mockResolvedValue({ error: null }),
+        updateSeo: vi.fn().mockResolvedValue({ error: null }),
+        resetAll: vi.fn().mockResolvedValue({ error: null }),
+      },
+      cardsDispatch: {
+        cards: {
+          listProjects: vi.fn().mockResolvedValue([{
+            list: 'home', id: 'a', sort: 0, published: true,
+            title: { en: 'A', uk: 'А' }, tags: [], description: { en: '', uk: '' },
+            imageUrl: null, imagePath: null, imageAlt: { en: '', uk: '' },
+          }]),
+          getProject: vi.fn().mockResolvedValue({
+            list: 'home', id: 'a', sort: 0, published: true,
+            title: { en: 'A', uk: 'А' }, tags: [], description: { en: '', uk: '' },
+            imageUrl: null, imagePath: null, imageAlt: { en: '', uk: '' },
+          }),
+          listServices: vi.fn().mockResolvedValue([]),
+          getService: vi.fn().mockResolvedValue(null),
+        },
+        adminCards: {
+          create: vi.fn().mockResolvedValue({ error: null }),
+          update: vi.fn().mockResolvedValue({ error: null }),
+          remove: vi.fn().mockResolvedValue({ error: null }),
+          reorder: vi.fn().mockResolvedValue({ error: null }),
+        },
+        adminUpload: {
+          put,
+          del: vi.fn().mockResolvedValue({ error: null }),
+        },
+        sessions: {
+          load: vi.fn().mockResolvedValue({
+            screen: 'cards_photo_wait',
+            data: { type: 'projects', list: 'home', id: 'a' },
+          }),
+          save: vi.fn().mockResolvedValue(undefined),
+        },
+      },
+    }
+
+    const bot = await getBot(
+      {
+        TELEGRAM_BOT_TOKEN: '777:ggg',
+        TELEGRAM_ADMIN_IDS: '111',
+        ADMIN_SESSION_SECRET: 'a-long-enough-test-secret-value',
+        SUPABASE_URL: 'https://example.supabase.co',
+        SUPABASE_SERVICE_ROLE_KEY: 'test-service-role-key',
+      },
+      deps,
+      { fetch: grammyFetch as unknown as typeof fetch },
+    )
+    await bot.handleUpdate({
+      update_id: 1,
+      message: {
+        message_id: 1,
+        date: 0,
+        chat: { id: 1, type: 'private' as const, first_name: 'Owner' },
+        from: { id: 111, is_bot: false, first_name: 'Owner' },
+        document: {
+          file_id: 'd1',
+          file_unique_id: 'du1',
+          mime_type: 'image/png',
+          file_name: 'icon.png',
+        },
+      },
+    })
+
+    expect(rawDownloadCalls.some((u) => u.startsWith('https://api.telegram.org/file/bot777:ggg/documents/d1.png'))).toBe(true)
+    expect(put).toHaveBeenCalled()
+    // The key behavioral difference from the photo path: a document keeps its
+    // own real MIME type (image/png here) instead of being hardcoded to
+    // image/jpeg — this is what preserves a PNG icon's transparency.
+    expect(capturedPhotoDataUrl).toMatch(/^data:image\/png;base64,/)
+    expect(capturedPhotoDataUrl).toBe(`data:image/png;base64,${Buffer.from([4, 5, 6]).toString('base64')}`)
+  })
+
+  it('a document message with a rejected MIME type never attempts a download and gets the "could not process" reply', async () => {
+    const sentTexts: string[] = []
+    const grammyFetch = vi.fn(async (url: unknown, init?: RequestInit) => {
+      const u = String(url)
+      if (u.includes('getMe')) return { json: async () => ({ ok: true, result: FAKE_ME }) } as Response
+      if (u.includes('sendMessage') && typeof init?.body === 'string') {
+        const body = JSON.parse(init.body) as { text?: string }
+        if (typeof body.text === 'string') sentTexts.push(body.text)
+      }
+      return { json: async () => ({ ok: true, result: true }) } as Response
+    })
+
+    // A rejected MIME type must short-circuit before any getFile/download call
+    // — this raw global fetch stub should never be invoked.
+    const rawFetch = vi.fn(async () => ({ ok: true, arrayBuffer: async () => new ArrayBuffer(0) }) as unknown as Response)
+    vi.stubGlobal('fetch', rawFetch)
+
+    const put = vi.fn()
+    const deps: DispatchDeps = {
+      admins: {
+        findManager: vi.fn().mockResolvedValue(null),
+        listManagers: vi.fn().mockResolvedValue([]),
+        addManager: vi.fn().mockResolvedValue({ error: null }),
+        removeManager: vi.fn().mockResolvedValue({ error: null }),
+      },
+      sessions: {
+        load: vi.fn().mockResolvedValue({ screen: 'main_menu' }),
+        save: vi.fn().mockResolvedValue(undefined),
+      },
+      content: {
+        getSection: vi.fn().mockResolvedValue(null),
+        getSeo: vi.fn().mockResolvedValue(null),
+      },
+      adminContent: {
+        updateSection: vi.fn().mockResolvedValue({ error: null }),
+        updateSeo: vi.fn().mockResolvedValue({ error: null }),
+        resetAll: vi.fn().mockResolvedValue({ error: null }),
+      },
+      cardsDispatch: {
+        cards: {
+          listProjects: vi.fn().mockResolvedValue([]),
+          getProject: vi.fn().mockResolvedValue(null),
+          listServices: vi.fn().mockResolvedValue([]),
+          getService: vi.fn().mockResolvedValue(null),
+        },
+        adminCards: {
+          create: vi.fn().mockResolvedValue({ error: null }),
+          update: vi.fn().mockResolvedValue({ error: null }),
+          remove: vi.fn().mockResolvedValue({ error: null }),
+          reorder: vi.fn().mockResolvedValue({ error: null }),
+        },
+        adminUpload: {
+          put,
+          del: vi.fn().mockResolvedValue({ error: null }),
+        },
+        sessions: {
+          load: vi.fn().mockResolvedValue({
+            screen: 'cards_photo_wait',
+            data: { type: 'projects', list: 'home', id: 'a' },
+          }),
+          save: vi.fn().mockResolvedValue(undefined),
+        },
+      },
+    }
+
+    const bot = await getBot(
+      {
+        TELEGRAM_BOT_TOKEN: '888:hhh',
+        TELEGRAM_ADMIN_IDS: '111',
+        ADMIN_SESSION_SECRET: 'a-long-enough-test-secret-value',
+        SUPABASE_URL: 'https://example.supabase.co',
+        SUPABASE_SERVICE_ROLE_KEY: 'test-service-role-key',
+      },
+      deps,
+      { fetch: grammyFetch as unknown as typeof fetch },
+    )
+    await bot.handleUpdate({
+      update_id: 1,
+      message: {
+        message_id: 1,
+        date: 0,
+        chat: { id: 1, type: 'private' as const, first_name: 'Owner' },
+        from: { id: 111, is_bot: false, first_name: 'Owner' },
+        document: {
+          file_id: 'd2',
+          file_unique_id: 'du2',
+          mime_type: 'application/pdf',
+          file_name: 'not-an-image.pdf',
+        },
+      },
+    })
+
+    expect(rawFetch).not.toHaveBeenCalled()
+    expect(sentTexts).toContain('Could not process that photo — please try again.')
+    expect(put).not.toHaveBeenCalled()
+  })
 })
