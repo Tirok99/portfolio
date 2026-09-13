@@ -18,24 +18,61 @@
   overflow: visible;
 }
 
-.hero__wave {
+/* Figma exports a rotated decor as an outer box sized to the ROTATED
+   bounding box, centering an inner box sized to the PRE-rotation
+   dimensions which itself carries the rotate transform — a plain
+   `transform: rotate()` on an <img> doesn't grow its own layout box, so
+   the image would spill past its intended footprint (see the identical
+   pattern already established for .cta__wave-wrap in Cta.css). */
+.hero__wave-wrap {
   position: absolute;
-  max-width: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* grey wisp — upper edge near the CTA button, lower edge crosses into services */
-.hero__wave--left {
+.hero__wave-wrap--left {
   left: clamp(-380px, -22vw, -180px);
   bottom: clamp(-230px, -13vw, -140px);
-  width: clamp(880px, 125vw, 1800px);
-  /* Figma: 70% layer opacity x 55% fill opacity = 38.5% effective */
+  width: clamp(880px, 117vw, 1878px);
+  aspect-ratio: 1878.852 / 1103.64;
+}
+
+.hero__wave-rotate--left {
+  width: 98.04%;
+  aspect-ratio: 1842.02 / 1036.687;
+  transform: rotate(2.1deg);
+}
+
+.hero__wave-wrap--right {
+  right: clamp(-280px, -11vw, -100px);
+  bottom: clamp(-150px, -7vw, -60px);
+  width: clamp(440px, 48vw, 768px);
+  aspect-ratio: 768.233 / 576.093;
+}
+
+.hero__wave-rotate--right {
+  width: 88.95%;
+  aspect-ratio: 683.042 / 384.415;
+  transform: rotate(17.94deg);
+}
+
+.hero__wave {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  max-width: none;
+}
+
+/* Figma: 70% layer opacity x 55% fill opacity = 38.5% effective */
+.hero__wave--left {
   opacity: 0.385;
 }
 
 .hero__wave--right {
-  right: clamp(-280px, -11vw, -100px);
-  bottom: clamp(-150px, -7vw, -60px);
-  width: clamp(440px, 48vw, 760px);
   opacity: 0.6;
 }
 
@@ -217,7 +254,7 @@
   .hero {
     min-height: 0;
   }
-  .hero__wave--right {
+  .hero__wave-wrap--right {
     display: none;
   }
   .hero__inner {
@@ -270,10 +307,12 @@
   .hero__radar {
     display: none;
   }
-  .hero__wave--left {
+  .hero__wave-wrap--left {
     left: 0;
     bottom: -20px;
     width: 100vw;
+  }
+  .hero__wave--left {
     opacity: 0.35;
   }
   .hero__cta {

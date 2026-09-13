@@ -22,7 +22,11 @@
   position: absolute;
   top: clamp(-110px, -7vw, -56px);
   right: clamp(-120px, -8vw, -64px);
-  width: clamp(340px, 40vw, 560px);
+  /* Figma: 333px at the 1600px reference width (~20.8% of the section) —
+     `vw` scales with the full viewport, not this card's own (max-width
+     capped) rendered width, so the max here must hold Figma's true size
+     rather than let a wide viewport push it past that on its own. */
+  width: clamp(260px, 20.8vw, 340px);
   height: auto;
   aspect-ratio: 1 / 1;
   max-width: none;
