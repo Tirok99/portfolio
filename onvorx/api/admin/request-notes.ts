@@ -4,12 +4,14 @@ import { send } from '../_lib/vercel-adapter'
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
   const query = req.query as Record<string, string | undefined>
+  const method = req.method ?? 'GET'
+  const body = method === 'POST' ? { ...(req.body ?? {}), author: 'Admin (web)' } : (req.body ?? {})
   const result = await handleAdminRequestNotes(
     {
-      method: req.method ?? 'GET',
+      method,
       cookieHeader: req.headers.cookie,
       query: { requestId: query.requestId },
-      body: req.body ?? {},
+      body,
     },
     {
       ADMIN_SESSION_SECRET: process.env.ADMIN_SESSION_SECRET,

@@ -90,12 +90,16 @@ export async function dispatchApi(
     }
     case '/api/admin/request-notes': {
       const params = new URLSearchParams(input.url.split('?')[1] ?? '')
+      const body =
+        input.method === 'POST'
+          ? { ...(input.jsonBody as Record<string, unknown> ?? {}), author: 'Admin (web)' }
+          : (input.jsonBody ?? {})
       return handleAdminRequestNotes(
         {
           method: input.method,
           cookieHeader: input.cookieHeader,
           query: { requestId: params.get('requestId') ?? undefined },
-          body: input.jsonBody ?? {},
+          body,
         },
         env,
       )
