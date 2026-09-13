@@ -25,11 +25,7 @@ export function Hero() {
   return (
     <section className="section hero" data-theme="dark" id="top">
       <div className="hero__decor" aria-hidden="true">
-        <div className="hero__wave-wrap hero__wave-wrap--left">
-          <div className="hero__wave-rotate hero__wave-rotate--left">
-            <img className="hero__wave hero__wave--left" src="/assets/decor/wave-grey-tight.png" alt="" />
-          </div>
-        </div>
+        <img className="hero__wave hero__wave--left" src="/assets/decor/wave-grey-tight.png" alt="" />
         <div className="hero__wave-wrap hero__wave-wrap--right">
           <div className="hero__wave-rotate hero__wave-rotate--right">
             <img className="hero__wave hero__wave--right" src="/assets/decor/wave-red-tight.png" alt="" />

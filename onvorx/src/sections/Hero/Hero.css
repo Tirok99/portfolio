@@ -18,39 +18,44 @@
   overflow: visible;
 }
 
+.hero__wave {
+  position: absolute;
+  max-width: none;
+}
+
+/* grey wisp — upper edge near the CTA button, lower edge crosses into services.
+   Plain positioned <img> at its own natural aspect ratio (no rotate
+   wrapper): Figma's own rotation here is only 2.1deg (barely
+   perceptible), and wrapping it in a bounding-box sized via aspect-ratio
+   made the box balloon far taller than the section on a wide screen once
+   width was let scale unbounded with vw — at that size only a thin
+   cross-section of the (still slightly rotated) image fell inside the
+   viewport at all, reading as a stray diagonal streak instead of a wave.
+   A flat img doesn't have that failure mode, and the missing 2.1deg tilt
+   isn't visible enough to be worth the fragility.
+   Figma: 70% layer opacity x 55% fill opacity = 38.5% effective. */
+.hero__wave--left {
+  left: min(-180px, -15.3vw);
+  bottom: min(-180px, -20.7vw);
+  width: max(880px, 117.4vw);
+  opacity: 0.385;
+}
+
 /* Figma exports a rotated decor as an outer box sized to the ROTATED
    bounding box, centering an inner box sized to the PRE-rotation
    dimensions which itself carries the rotate transform — a plain
    `transform: rotate()` on an <img> doesn't grow its own layout box, so
    the image would spill past its intended footprint (see the identical
-   pattern already established for .cta__wave-wrap in Cta.css). */
+   pattern already established for .cta__wave-wrap in Cta.css). Kept for
+   the right wave only: its rotation (17.94deg) is large enough to matter,
+   and its width/height stay clamp-bounded (unlike the left wave above,
+   this one never grows past a safe fixed ceiling), so it doesn't hit the
+   same oversized-box failure mode. */
 .hero__wave-wrap {
   position: absolute;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-/* grey wisp — upper edge near the CTA button, lower edge crosses into services.
-   left/bottom/width must all scale on the SAME vw basis with no upper
-   bound on width or magnitude bound on the offsets — capping any one of
-   the three independently of the others (as an earlier version of this
-   rule did to `left`) throws off the box's proportions at wide viewports,
-   since width keeps growing past the point where the offset stops. Only
-   a lower/floor bound near typical desktop widths, matching Figma's own
-   ratios (left -15.3%, bottom -20.7%, width 117.4% of the 1600px
-   reference frame) exactly so all three stay in lockstep at any size. */
-.hero__wave-wrap--left {
-  left: min(-180px, -15.3vw);
-  bottom: min(-180px, -20.7vw);
-  width: max(880px, 117.4vw);
-  aspect-ratio: 1878.852 / 1103.64;
-}
-
-.hero__wave-rotate--left {
-  width: 98.04%;
-  aspect-ratio: 1842.02 / 1036.687;
-  transform: rotate(2.1deg);
 }
 
 .hero__wave-wrap--right {
@@ -66,21 +71,11 @@
   transform: rotate(17.94deg);
 }
 
-.hero__wave {
-  position: absolute;
+.hero__wave--right {
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  max-width: none;
-}
-
-/* Figma: 70% layer opacity x 55% fill opacity = 38.5% effective */
-.hero__wave--left {
-  opacity: 0.385;
-}
-
-.hero__wave--right {
   opacity: 0.6;
 }
 
@@ -315,12 +310,10 @@
   .hero__radar {
     display: none;
   }
-  .hero__wave-wrap--left {
+  .hero__wave--left {
     left: 0;
     bottom: -20px;
     width: 100vw;
-  }
-  .hero__wave--left {
     opacity: 0.35;
   }
   .hero__cta {
