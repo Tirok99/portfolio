@@ -2,6 +2,7 @@ import { InlineKeyboard } from 'grammy'
 import type { ManagerRecord, ManagerRole, Role } from './telegramAdmins'
 import type { ContentField, SeoField, SectionRecord, SeoRecord } from './telegramContent'
 import type { ProjectCardRecord, ServiceCardRecord } from './telegramCards'
+import type { EstimateRequestDTO } from './adminRows'
 
 export interface BotReply {
   text: string
@@ -13,7 +14,7 @@ const MENU_ITEMS: { key: string; label: string; roles: Role[]; callback: string 
   { key: 'projects', label: 'Projects', roles: ['owner', 'content_manager'], callback: 'cards:projects:list' },
   { key: 'services', label: 'Services', roles: ['owner', 'content_manager'], callback: 'cards:services:list' },
   { key: 'seo', label: 'SEO', roles: ['owner', 'content_manager'], callback: 'seo:list' },
-  { key: 'requests', label: 'Requests', roles: ['owner', 'sales_manager'], callback: 'stub:requests' },
+  { key: 'requests', label: 'Requests', roles: ['owner', 'sales_manager'], callback: 'requests:list' },
   { key: 'admins', label: 'Administrators', roles: ['owner'], callback: 'menu:admins' },
 ]
 
@@ -354,4 +355,97 @@ export function buildCardDeleteConfirm(title: string, kind: 'project' | 'service
 export function buildCardSaveFailed(backCallback: string): BotReply {
   const kb = new InlineKeyboard().text('⬅ Back', backCallback)
   return { text: 'Could not save — please try again.', keyboard: kb }
+}
+
+// ---- Requests ----
+
+export type RequestFilter = 'all' | 'new' | 'in_progress' | 'done' | 'archived'
+
+const STATUS_LABEL: Record<string, string> = {
+  new: 'New',
+  in_progress: 'In Progress',
+  done: 'Done',
+  archived: 'Archived',
+}
+
+const FILTERS: { key: RequestFilter; label: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'new', label: 'New' },
+  { key: 'in_progress', label: 'In Progress' },
+  { key: 'done', label: 'Done' },
+  { key: 'archived', label: 'Archived' },
+]
+
+export function buildRequestFilterMenu(): BotReply {
+  const kb = new InlineKeyboard()
+  FILTERS.forEach((f) => kb.text(f.label, `requests:filter:${f.key}`).row())
+  kb.text('⬅ Back', 'menu:main')
+  return { text: 'Requests — filter by status:', keyboard: kb }
+}
+
+export function buildRequestList(filter: RequestFilter, requests: EstimateRequestDTO[]): BotReply {
+  const kb = new InlineKeyboard()
+  requests.forEach((r) => {
+    kb.text(`${STATUS_LABEL[r.status] ?? r.status} — ${r.name}`, `requests:card:${r.id}`).row()
+  })
+  kb.text('⬅ Back', 'requests:list')
+  if (requests.length === 0) return { text: 'No requests match this filter.', keyboard: kb }
+  return { text: `Requests — ${FILTERS.find((f) => f.key === filter)?.label ?? filter}:`, keyboard: kb }
+}
+
+const formatReceivedAt = (iso: string): string => iso.slice(0, 16).replace('T', ' ')
+
+export function buildRequestDetail(req: EstimateRequestDTO, opts: { saved?: boolean } = {}): BotReply {
+  const langLabel = req.locale === 'en' ? 'EN' : 'UA'
+  const lines = [
+    `Email: ${req.email}`,
+    `Company: ${req.company || '—'}`,
+    `Budget: ${req.budget || '—'}`,
+    `Interested in: ${req.interestedIn.length ? req.interestedIn.join(', ') : '—'}`,
+    `Language: ${langLabel}`,
+    `From page: ${req.sourcePage || '—'}`,
+    `Received: ${formatReceivedAt(req.createdAt)}`,
+    '',
+    req.message,
+    '',
+    `Note: ${req.note || '(none)'}`,
+  ]
+  const kb = new InlineKeyboard()
+    .text(`Status: ${STATUS_LABEL[req.status] ?? req.status}`, 'requests:status')
+    .row()
+    .text('✏️ Edit note', 'requests:note')
+    .row()
+    .text('🗑 Delete', 'requests:delete')
+    .row()
+    .text('⬅ Back', 'requests:back:list')
+  const prefix = opts.saved ? 'Saved.\n\n' : ''
+  return { text: `${prefix}${req.name}\n${lines.join('\n')}`, keyboard: kb }
+}
+
+const STATUS_ORDER: { key: string; label: string }[] = [
+  { key: 'new', label: 'New' },
+  { key: 'in_progress', label: 'In Progress' },
+  { key: 'done', label: 'Done' },
+  { key: 'archived', label: 'Archived' },
+]
+
+export function buildRequestStatusPrompt(current: string, backCallback: string): BotReply {
+  const kb = new InlineKeyboard()
+  STATUS_ORDER.forEach((s) => kb.text(s.label, `requests:status:${s.key}`).row())
+  kb.text('⬅ Back', backCallback)
+  return { text: `Current status: ${current}\n\nChoose a new status:`, keyboard: kb }
+}
+
+export function buildRequestNotePrompt(currentNote: string | undefined): BotReply {
+  return {
+    text: `Current note:\n${currentNote || '(none)'}\n\nSend the new note text.`,
+  }
+}
+
+export function buildRequestDeleteConfirm(name: string): BotReply {
+  const kb = new InlineKeyboard()
+    .text('Yes, delete', 'requests:delete:confirm')
+    .row()
+    .text('Cancel', 'requests:delete:cancel')
+  return { text: `Delete the request from "${name}"? It will be permanently removed.`, keyboard: kb }
 }

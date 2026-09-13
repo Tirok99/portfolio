@@ -30,10 +30,17 @@ import {
   buildPhotoPrompt,
   buildCardDeleteConfirm,
   buildCardSaveFailed,
+  buildRequestFilterMenu,
+  buildRequestList,
+  buildRequestDetail,
+  buildRequestStatusPrompt,
+  buildRequestNotePrompt,
+  buildRequestDeleteConfirm,
 } from './telegramMenu'
 import type { ManagerRecord } from './telegramAdmins'
 import type { SectionRecord, SeoRecord } from './telegramContent'
 import type { ProjectCardRecord, ServiceCardRecord } from './telegramCards'
+import type { EstimateRequestDTO } from './adminRows'
 
 const readButtons = (reply: ReturnType<typeof buildMainMenu>) =>
   reply.keyboard!.inline_keyboard.flat().map((b) => ({ text: b.text, data: (b as { callback_data?: string }).callback_data }))
@@ -57,6 +64,7 @@ describe('buildMainMenu', () => {
     expect(buttons.find((b) => b.text === 'SEO')?.data).toBe('seo:list')
     expect(buttons.find((b) => b.text === 'Projects')?.data).toBe('cards:projects:list')
     expect(buttons.find((b) => b.text === 'Services')?.data).toBe('cards:services:list')
+    expect(buttons.find((b) => b.text === 'Requests')?.data).toBe('requests:list')
   })
   it('content_manager sees only content sections, no Administrators', () => {
     const buttons = readButtons(buildMainMenu('content_manager'))
@@ -502,5 +510,134 @@ describe('buildCardSaveFailed', () => {
     const r = buildCardSaveFailed('cards:card:encryptia-cloud')
     expect(r.text).toBe('Could not save — please try again.')
     expect(readButtons(r)).toEqual([{ text: '⬅ Back', data: 'cards:card:encryptia-cloud' }])
+  })
+})
+
+const REQUEST_A: EstimateRequestDTO = {
+  id: 'req-1',
+  createdAt: '2026-09-10T14:05:00.000Z',
+  status: 'new',
+  name: 'Jane Doe',
+  email: 'jane@example.com',
+  company: 'Acme Inc',
+  budget: '3-10k',
+  interestedIn: ['web-development', 'support'],
+  message: 'We need a new website for our product launch.',
+  locale: 'en',
+  sourcePage: '/services',
+  note: undefined,
+}
+const REQUEST_B: EstimateRequestDTO = {
+  id: 'req-2',
+  createdAt: '2026-09-11T09:30:00.000Z',
+  status: 'in_progress',
+  name: 'Ivan Petrenko',
+  email: 'ivan@example.com',
+  company: undefined,
+  budget: undefined,
+  interestedIn: [],
+  message: 'Потрібен новий сайт.',
+  locale: 'uk',
+  sourcePage: undefined,
+  note: 'Called back, waiting on budget confirmation.',
+}
+
+describe('buildRequestFilterMenu', () => {
+  it('offers All + every status, then Back to menu:main', () => {
+    const buttons = readButtons(buildRequestFilterMenu())
+    expect(buttons).toEqual([
+      { text: 'All', data: 'requests:filter:all' },
+      { text: 'New', data: 'requests:filter:new' },
+      { text: 'In Progress', data: 'requests:filter:in_progress' },
+      { text: 'Done', data: 'requests:filter:done' },
+      { text: 'Archived', data: 'requests:filter:archived' },
+      { text: '⬅ Back', data: 'menu:main' },
+    ])
+  })
+})
+
+describe('buildRequestList', () => {
+  it('shows one button per request with name and status, then Back', () => {
+    const r = buildRequestList('all', [REQUEST_A, REQUEST_B])
+    const buttons = readButtons(r)
+    expect(buttons).toEqual([
+      { text: 'New — Jane Doe', data: 'requests:card:req-1' },
+      { text: 'In Progress — Ivan Petrenko', data: 'requests:card:req-2' },
+      { text: '⬅ Back', data: 'requests:list' },
+    ])
+  })
+  it('empty list still offers Back', () => {
+    const r = buildRequestList('archived', [])
+    expect(r.text).toContain('No requests')
+    expect(readButtons(r)).toEqual([{ text: '⬅ Back', data: 'requests:list' }])
+  })
+})
+
+describe('buildRequestDetail', () => {
+  it('shows every read-only field, a Status button with the current value, Edit note, Delete, Back', () => {
+    const r = buildRequestDetail(REQUEST_A)
+    expect(r.text).toContain('Jane Doe')
+    expect(r.text).toContain('jane@example.com')
+    expect(r.text).toContain('Acme Inc')
+    expect(r.text).toContain('3-10k')
+    expect(r.text).toContain('web-development, support')
+    expect(r.text).toContain('EN')
+    expect(r.text).toContain('/services')
+    expect(r.text).toContain('2026-09-10 14:05')
+    expect(r.text).toContain('We need a new website for our product launch.')
+    expect(r.text).toContain('(none)')
+    const buttons = readButtons(r)
+    expect(buttons).toEqual([
+      { text: 'Status: New', data: 'requests:status' },
+      { text: '✏️ Edit note', data: 'requests:note' },
+      { text: '🗑 Delete', data: 'requests:delete' },
+      { text: '⬅ Back', data: 'requests:back:list' },
+    ])
+  })
+  it('shows "—" for missing optional fields and "UA" for the uk locale', () => {
+    const r = buildRequestDetail(REQUEST_B)
+    expect(r.text).toContain('—')
+    expect(r.text).toContain('UA')
+    expect(r.text).toContain('Called back, waiting on budget confirmation.')
+    expect(readButtons(r).find((b) => b.data === 'requests:status')?.text).toBe('Status: In Progress')
+  })
+  it('prefixes "Saved." when opts.saved is true', () => {
+    expect(buildRequestDetail(REQUEST_A, { saved: true }).text.startsWith('Saved.\n\n')).toBe(true)
+  })
+})
+
+describe('buildRequestStatusPrompt', () => {
+  it('offers all four statuses and a Back to the given callback', () => {
+    const r = buildRequestStatusPrompt('New', 'requests:card:req-1')
+    expect(r.text).toContain('New')
+    expect(readButtons(r)).toEqual([
+      { text: 'New', data: 'requests:status:new' },
+      { text: 'In Progress', data: 'requests:status:in_progress' },
+      { text: 'Done', data: 'requests:status:done' },
+      { text: 'Archived', data: 'requests:status:archived' },
+      { text: '⬅ Back', data: 'requests:card:req-1' },
+    ])
+  })
+})
+
+describe('buildRequestNotePrompt', () => {
+  it('shows the current note and asks for the new one, no keyboard', () => {
+    const r = buildRequestNotePrompt('Called back, waiting on budget confirmation.')
+    expect(r.text).toContain('Called back, waiting on budget confirmation.')
+    expect(r.keyboard).toBeUndefined()
+  })
+  it('shows "(none)" when there is no current note', () => {
+    expect(buildRequestNotePrompt(undefined).text).toContain('(none)')
+  })
+})
+
+describe('buildRequestDeleteConfirm', () => {
+  it('names the request and offers Yes/Cancel', () => {
+    const r = buildRequestDeleteConfirm('Jane Doe')
+    expect(r.text).toContain('Jane Doe')
+    expect(readButtons(r)).toEqual([
+      { text: 'Yes, delete', data: 'requests:delete:confirm' },
+      { text: 'Cancel', data: 'requests:delete:cancel' },
+    ])
   })
 })
