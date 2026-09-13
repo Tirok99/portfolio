@@ -96,6 +96,16 @@ describe('getBot', () => {
           patch: vi.fn().mockResolvedValue({ error: null }),
           remove: vi.fn().mockResolvedValue({ error: null }),
         },
+        adminRequestNotes: {
+          list: vi.fn().mockResolvedValue({ rows: [], error: null }),
+          add: vi.fn().mockResolvedValue({ error: null }),
+        },
+        admins: {
+          findManager: vi.fn().mockResolvedValue(null),
+          listManagers: vi.fn().mockResolvedValue([]),
+          addManager: vi.fn().mockResolvedValue({ error: null }),
+          removeManager: vi.fn().mockResolvedValue({ error: null }),
+        },
         sessions: {
           load: vi.fn().mockResolvedValue({ screen: 'main_menu' }),
           save: vi.fn().mockResolvedValue(undefined),
@@ -202,6 +212,16 @@ describe('getBot', () => {
           list: vi.fn().mockResolvedValue({ rows: [], error: null }),
           patch: vi.fn().mockResolvedValue({ error: null }),
           remove: vi.fn().mockResolvedValue({ error: null }),
+        },
+        adminRequestNotes: {
+          list: vi.fn().mockResolvedValue({ rows: [], error: null }),
+          add: vi.fn().mockResolvedValue({ error: null }),
+        },
+        admins: {
+          findManager: vi.fn().mockResolvedValue(null),
+          listManagers: vi.fn().mockResolvedValue([]),
+          addManager: vi.fn().mockResolvedValue({ error: null }),
+          removeManager: vi.fn().mockResolvedValue({ error: null }),
         },
         sessions: {
           load: vi.fn().mockResolvedValue({ screen: 'main_menu' }),
@@ -325,6 +345,16 @@ describe('getBot', () => {
           patch: vi.fn().mockResolvedValue({ error: null }),
           remove: vi.fn().mockResolvedValue({ error: null }),
         },
+        adminRequestNotes: {
+          list: vi.fn().mockResolvedValue({ rows: [], error: null }),
+          add: vi.fn().mockResolvedValue({ error: null }),
+        },
+        admins: {
+          findManager: vi.fn().mockResolvedValue(null),
+          listManagers: vi.fn().mockResolvedValue([]),
+          addManager: vi.fn().mockResolvedValue({ error: null }),
+          removeManager: vi.fn().mockResolvedValue({ error: null }),
+        },
         sessions: {
           load: vi.fn().mockResolvedValue({ screen: 'main_menu' }),
           save: vi.fn().mockResolvedValue(undefined),
@@ -440,6 +470,16 @@ describe('getBot', () => {
           list: vi.fn().mockResolvedValue({ rows: [], error: null }),
           patch: vi.fn().mockResolvedValue({ error: null }),
           remove: vi.fn().mockResolvedValue({ error: null }),
+        },
+        adminRequestNotes: {
+          list: vi.fn().mockResolvedValue({ rows: [], error: null }),
+          add: vi.fn().mockResolvedValue({ error: null }),
+        },
+        admins: {
+          findManager: vi.fn().mockResolvedValue(null),
+          listManagers: vi.fn().mockResolvedValue([]),
+          addManager: vi.fn().mockResolvedValue({ error: null }),
+          removeManager: vi.fn().mockResolvedValue({ error: null }),
         },
         sessions: {
           load: vi.fn().mockResolvedValue({ screen: 'main_menu' }),
@@ -560,6 +600,16 @@ describe('getBot', () => {
           list: vi.fn().mockResolvedValue({ rows: [], error: null }),
           patch: vi.fn().mockResolvedValue({ error: null }),
           remove: vi.fn().mockResolvedValue({ error: null }),
+        },
+        adminRequestNotes: {
+          list: vi.fn().mockResolvedValue({ rows: [], error: null }),
+          add: vi.fn().mockResolvedValue({ error: null }),
+        },
+        admins: {
+          findManager: vi.fn().mockResolvedValue(null),
+          listManagers: vi.fn().mockResolvedValue([]),
+          addManager: vi.fn().mockResolvedValue({ error: null }),
+          removeManager: vi.fn().mockResolvedValue({ error: null }),
         },
         sessions: {
           load: vi.fn().mockResolvedValue({ screen: 'main_menu' }),

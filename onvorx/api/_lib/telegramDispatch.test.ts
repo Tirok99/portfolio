@@ -106,6 +106,8 @@ function makeDeps(initialState: TelegramState = { screen: 'main_menu' }) {
   }
   const requestsDispatch: RequestsDispatchDeps = {
     adminRequests: { list: vi.fn(async () => ({ rows: [], error: null })), patch: vi.fn(async () => ({ error: null })), remove: vi.fn(async () => ({ error: null })) },
+    adminRequestNotes: { list: vi.fn(async () => ({ rows: [], error: null })), add: vi.fn(async () => ({ error: null })) },
+    admins,
     sessions,
   }
   const deps: DispatchDeps = { admins, sessions, content, adminContent, cardsDispatch, requestsDispatch }

@@ -5,16 +5,24 @@ import type { EstimateRequestDTO } from './adminRows'
 import { defaultTelegramSessionsDeps, type TelegramSessionsDeps } from './telegramSessions'
 import * as menu from './telegramMenu'
 import type { RequestFilter } from './telegramMenu'
+import {
+  handleAdminRequestNotes, defaultAdminRequestNotesDeps, type AdminRequestNotesDeps, type RequestNoteDTO,
+} from './adminRequestNotesHandler'
+import { isOwner, defaultTelegramAdminsDeps, type TelegramAdminsDeps } from './telegramAdmins'
 
 type Env = TelegramEnv & SupabaseAdminEnv & AuthEnv
 
 export interface RequestsDispatchDeps {
   adminRequests: AdminRequestsDeps
+  adminRequestNotes: AdminRequestNotesDeps
+  admins: TelegramAdminsDeps
   sessions: TelegramSessionsDeps
 }
 
 export const defaultRequestsDispatchDeps: RequestsDispatchDeps = {
   adminRequests: defaultAdminRequestsDeps,
+  adminRequestNotes: defaultAdminRequestNotesDeps,
+  admins: defaultTelegramAdminsDeps,
   sessions: defaultTelegramSessionsDeps,
 }
 
@@ -28,6 +36,24 @@ async function fetchRequests(env: Env, deps: RequestsDispatchDeps): Promise<Esti
   if (result.status !== 200) return []
   const body = result.body as { requests: EstimateRequestDTO[] }
   return body.requests
+}
+
+async function fetchNotes(requestId: string, env: Env, deps: RequestsDispatchDeps): Promise<RequestNoteDTO[]> {
+  const cookieHeader = adminCookieHeader(env)
+  const result = await handleAdminRequestNotes(
+    { method: 'GET', cookieHeader: cookieHeader ?? undefined, query: { requestId }, body: undefined },
+    env,
+    deps.adminRequestNotes,
+  )
+  if (result.status !== 200) return []
+  const body = result.body as { notes: RequestNoteDTO[] }
+  return body.notes
+}
+
+async function resolveAuthorLabel(fromId: number, env: Env, deps: RequestsDispatchDeps): Promise<string> {
+  if (isOwner(fromId, env)) return 'Owner'
+  const manager = await deps.admins.findManager(fromId, env)
+  return manager?.label ? `${manager.label} (sales_manager)` : 'Sales manager'
 }
 
 function sortNewestFirst(requests: EstimateRequestDTO[]): EstimateRequestDTO[] {
@@ -78,8 +104,9 @@ async function showDetail(
     await showFilterMenu(ctx, env, deps)
     return
   }
+  const notes = await fetchNotes(id, env, deps)
   await deps.sessions.save(ctx.chatId, { screen: 'requests_detail', data: { filter, id } }, env)
-  await ctx.reply(menu.buildRequestDetail(req, { saved }))
+  await ctx.reply(menu.buildRequestDetail(req, notes, { saved }))
 }
 
 async function startStatusChange(
@@ -146,8 +173,9 @@ async function startNoteEdit(
     await showFilterMenu(ctx, env, deps)
     return
   }
+  const notes = await fetchNotes(id, env, deps)
   await deps.sessions.save(ctx.chatId, { screen: 'requests_note_value', data: { filter, id } }, env)
-  await ctx.reply(menu.buildRequestNotePrompt(req.note))
+  await ctx.reply(menu.buildRequestNotePrompt(notes[0]))
 }
 
 async function saveNote(
@@ -158,16 +186,31 @@ async function saveNote(
     await ctx.reply({ text: 'Bot is not fully configured — contact the site owner.' })
     return
   }
-  const result = await handleAdminRequests(
-    { method: 'PATCH', cookieHeader, body: { id, note: text } },
+  const author = await resolveAuthorLabel(ctx.fromId, env, deps)
+  const result = await handleAdminRequestNotes(
+    { method: 'POST', cookieHeader, body: { requestId: id, author, body: text } },
     env,
-    deps.adminRequests,
+    deps.adminRequestNotes,
   )
+  if (result.status === 400) {
+    await ctx.reply({ text: 'That note is empty or too long — please send 1-500 characters.' })
+    return
+  }
   if (result.status !== 200) {
     await ctx.reply(menu.buildCardSaveFailed(`requests:card:${id}`))
     return
   }
   await showDetail(ctx, filter, id, env, deps, true)
+}
+
+async function showHistory(ctx: BotCtx, id: string, env: Env, deps: RequestsDispatchDeps): Promise<void> {
+  const cookieHeader = adminCookieHeader(env)
+  if (!cookieHeader) {
+    await ctx.reply({ text: 'Bot is not fully configured — contact the site owner.' })
+    return
+  }
+  const notes = await fetchNotes(id, env, deps)
+  await ctx.reply(menu.buildRequestNotesHistory(notes, `requests:card:${id}`))
 }
 
 async function startDelete(
@@ -219,6 +262,10 @@ export async function dispatchRequestsCallback(
   }
   if (data.startsWith('requests:filter:')) {
     await showList(ctx, data.slice('requests:filter:'.length) as RequestFilter, env, deps)
+    return
+  }
+  if (data.startsWith('requests:notes:')) {
+    await showHistory(ctx, data.slice('requests:notes:'.length), env, deps)
     return
   }
 
