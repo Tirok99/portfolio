@@ -41,44 +41,6 @@
   opacity: 0.385;
 }
 
-/* Figma exports a rotated decor as an outer box sized to the ROTATED
-   bounding box, centering an inner box sized to the PRE-rotation
-   dimensions which itself carries the rotate transform — a plain
-   `transform: rotate()` on an <img> doesn't grow its own layout box, so
-   the image would spill past its intended footprint (see the identical
-   pattern already established for .cta__wave-wrap in Cta.css). Kept for
-   the right wave only: its rotation (17.94deg) is large enough to matter,
-   and its width/height stay clamp-bounded (unlike the left wave above,
-   this one never grows past a safe fixed ceiling), so it doesn't hit the
-   same oversized-box failure mode. */
-.hero__wave-wrap {
-  position: absolute;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.hero__wave-wrap--right {
-  right: clamp(-280px, -11vw, -100px);
-  bottom: clamp(-150px, -7vw, -60px);
-  width: clamp(440px, 48vw, 768px);
-  aspect-ratio: 768.233 / 576.093;
-}
-
-.hero__wave-rotate--right {
-  width: 88.95%;
-  aspect-ratio: 683.042 / 384.415;
-  transform: rotate(17.94deg);
-}
-
-.hero__wave--right {
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 0.6;
-}
-
 /* ---- layout ---- */
 .hero__inner {
   position: relative;
@@ -256,9 +218,6 @@
 @media (max-width: 1024px) {
   .hero {
     min-height: 0;
-  }
-  .hero__wave-wrap--right {
-    display: none;
   }
   .hero__inner {
     grid-template-columns: 1fr;

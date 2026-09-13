@@ -26,11 +26,6 @@ export function Hero() {
     <section className="section hero" data-theme="dark" id="top">
       <div className="hero__decor" aria-hidden="true">
         <img className="hero__wave hero__wave--left" src="/assets/decor/wave-grey-tight.png" alt="" />
-        <div className="hero__wave-wrap hero__wave-wrap--right">
-          <div className="hero__wave-rotate hero__wave-rotate--right">
-            <img className="hero__wave hero__wave--right" src="/assets/decor/wave-red-tight.png" alt="" />
-          </div>
-        </div>
       </div>
 
       <div className="hero__container">
