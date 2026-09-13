@@ -7,7 +7,7 @@ const ENV = { ADMIN_SESSION_SECRET: SECRET, SUPABASE_URL: 'u', SUPABASE_SERVICE_
 const cookie = `${SESSION_COOKIE}=${signToken(SECRET)}`
 const ROW = {
   id: 'r1', created_at: '2026-01-01T00:00:00Z', status: 'new', name: 'A', email: 'a@b.c',
-  company: null, budget: null, interested_in: [], message: 'hi', locale: 'en', source_page: null, note: null,
+  company: null, budget: null, interested_in: [], message: 'hi', locale: 'en', source_page: null,
 }
 const deps = () => ({
   list: vi.fn().mockResolvedValue({ rows: [ROW], error: null }),
@@ -32,10 +32,11 @@ describe('handleAdminRequests', () => {
   it('PATCH bad status → 400', async () => {
     expect((await handleAdminRequests({ method: 'PATCH', cookieHeader: cookie, body: { id: 'r1', status: 'nope' } }, ENV, deps())).status).toBe(400)
   })
-  it('PATCH note → deps.patch(id, {note})', async () => {
+  it('PATCH note (no longer supported) → 400, does not call deps.patch', async () => {
     const d = deps()
-    await handleAdminRequests({ method: 'PATCH', cookieHeader: cookie, body: { id: 'r1', note: 'called' } }, ENV, d)
-    expect(d.patch).toHaveBeenCalledWith('r1', { note: 'called' }, ENV)
+    const r = await handleAdminRequests({ method: 'PATCH', cookieHeader: cookie, body: { id: 'r1', note: 'called' } }, ENV, d)
+    expect(r.status).toBe(400)
+    expect(d.patch).not.toHaveBeenCalled()
   })
   it('DELETE → deps.remove(id)', async () => {
     const d = deps()

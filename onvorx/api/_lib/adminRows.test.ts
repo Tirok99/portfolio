@@ -79,7 +79,7 @@ describe('estimateFromRow', () => {
       id: 'r1', created_at: '2026-01-01T00:00:00Z', status: 'new',
       name: 'A', email: 'a@b.c', company: null, budget: '1-3k',
       interested_in: ['web-development'], message: 'hi', locale: 'en',
-      source_page: '/', note: null,
+      source_page: '/',
     })).toEqual({
       id: 'r1', createdAt: '2026-01-01T00:00:00Z', status: 'new',
       name: 'A', email: 'a@b.c', budget: '1-3k',

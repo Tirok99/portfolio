@@ -8,6 +8,7 @@ import { handleAdminContent } from '../api/_lib/adminContentHandler'
 import { handleAdminCards } from '../api/_lib/adminCardsHandler'
 import { handleAdminRequests } from '../api/_lib/adminRequestsHandler'
 import { handleAdminUpload } from '../api/_lib/adminUploadHandler'
+import { handleAdminRequestNotes } from '../api/_lib/adminRequestNotesHandler'
 
 export const KNOWN_API_PATHS = new Set([
   '/api/admin/login',
@@ -18,6 +19,7 @@ export const KNOWN_API_PATHS = new Set([
   '/api/admin/requests',
   '/api/admin/upload',
   '/api/admin/cards',
+  '/api/admin/request-notes',
 ])
 
 export type ApiMiddlewareDecision = 'skip' | 'dispatch-no-body' | 'dispatch-with-body'
@@ -81,6 +83,18 @@ export async function dispatchApi(
           method: input.method,
           cookieHeader: input.cookieHeader,
           query: { type: params.get('type') ?? undefined },
+          body: input.jsonBody ?? {},
+        },
+        env,
+      )
+    }
+    case '/api/admin/request-notes': {
+      const params = new URLSearchParams(input.url.split('?')[1] ?? '')
+      return handleAdminRequestNotes(
+        {
+          method: input.method,
+          cookieHeader: input.cookieHeader,
+          query: { requestId: params.get('requestId') ?? undefined },
           body: input.jsonBody ?? {},
         },
         env,

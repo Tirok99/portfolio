@@ -13,8 +13,8 @@ describe('dispatchApi', () => {
   it('KNOWN_API_PATHS lists exactly the served routes', () => {
     expect([...KNOWN_API_PATHS].sort()).toEqual([
       '/api/admin/cards', '/api/admin/content', '/api/admin/login',
-      '/api/admin/logout', '/api/admin/requests', '/api/admin/session',
-      '/api/admin/upload', '/api/estimate',
+      '/api/admin/logout', '/api/admin/request-notes', '/api/admin/requests',
+      '/api/admin/session', '/api/admin/upload', '/api/estimate',
     ])
   })
 })

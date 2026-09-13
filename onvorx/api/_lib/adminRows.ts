@@ -71,7 +71,7 @@ export function serviceRow(patch: Patch): Patch {
 export interface EstimateRequestDTO {
   id: string; createdAt: string; status: string; name: string; email: string
   company?: string; budget?: string; interestedIn: string[]; message: string
-  locale: string; sourcePage?: string; note?: string
+  locale: string; sourcePage?: string
 }
 
 export function estimateFromRow(row: Record<string, unknown>): EstimateRequestDTO {
@@ -88,6 +88,5 @@ export function estimateFromRow(row: Record<string, unknown>): EstimateRequestDT
     message: String(row.message ?? ''),
     locale: String(row.locale ?? 'en'),
     sourcePage: s(row.source_page),
-    note: s(row.note),
   }
 }

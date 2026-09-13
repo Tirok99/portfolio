@@ -58,10 +58,6 @@ export async function handleAdminRequests(
       if (!STATUSES.includes(body.status as string)) return bad()
       fields.status = body.status
     }
-    if (body.note !== undefined) {
-      if (typeof body.note !== 'string' || body.note.length > 5000) return bad()
-      fields.note = body.note
-    }
     if (Object.keys(fields).length === 0) return bad()
     const { error } = await deps.patch(body.id, fields, env)
     return error ? fail() : ok()
