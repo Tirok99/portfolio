@@ -21,6 +21,7 @@ import {
 import { handleAdminContent, defaultAdminContentDeps, type AdminContentDeps } from './adminContentHandler'
 import { signToken } from './session'
 import * as menu from './telegramMenu'
+import { dispatchCardsCallback, dispatchCardsText, defaultCardsDispatchDeps, type CardsDispatchDeps } from './telegramCardsDispatch'
 
 export interface BotCtx {
   chatId: number
@@ -36,6 +37,7 @@ export interface DispatchDeps {
   sessions: TelegramSessionsDeps
   content: TelegramContentDeps
   adminContent: AdminContentDeps
+  cardsDispatch: CardsDispatchDeps
 }
 
 export const defaultDispatchDeps: DispatchDeps = {
@@ -43,11 +45,12 @@ export const defaultDispatchDeps: DispatchDeps = {
   sessions: defaultTelegramSessionsDeps,
   content: defaultTelegramContentDeps,
   adminContent: defaultAdminContentDeps,
+  cardsDispatch: defaultCardsDispatchDeps,
 }
 
 type Env = TelegramEnv & SupabaseAdminEnv & AuthEnv
 
-function adminCookieHeader(env: Env): string | null {
+export function adminCookieHeader(env: Env): string | null {
   if (!env.ADMIN_SESSION_SECRET) return null
   return `admin_session=${signToken(env.ADMIN_SESSION_SECRET)}`
 }
@@ -115,6 +118,20 @@ async function handleCallback(
       return
     }
     await handleSeoCallback(ctx, data, env, deps)
+    return
+  }
+
+  if (data.startsWith('cards:')) {
+    // Projects and Services currently share the exact same role requirement
+    // in MENU_ITEMS (['owner', 'content_manager']) — checking either key's
+    // access is equivalent to checking both, so one gate covers this whole
+    // prefix regardless of which type a deeper callback concerns. If a future
+    // plan gives the two types different roles, this gate must be split.
+    if (!menu.canAccessSection(role, 'projects')) {
+      await ctx.reply(menu.buildNoAccessReply())
+      return
+    }
+    await dispatchCardsCallback(ctx, data, env, deps.cardsDispatch)
     return
   }
 
@@ -398,6 +415,15 @@ async function handleText(
     }
     const { pageKey, field, lang } = state.data as { pageKey: string; field: SeoField; lang: 'en' | 'uk' }
     await saveSeoField(ctx, env, deps, pageKey, field, lang, text)
+    return
+  }
+
+  if (state.screen === 'cards_value' || state.screen === 'cards_tags_value') {
+    if (!menu.canAccessSection(role, 'projects')) {
+      await ctx.reply(TEXT_FALLBACK_REPLY)
+      return
+    }
+    await dispatchCardsText(ctx, text, env, deps.cardsDispatch)
     return
   }
 

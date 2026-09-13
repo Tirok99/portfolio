@@ -25,7 +25,7 @@ export interface AdminUploadDeps {
 
 const bucket = (env: Env): string => env.SUPABASE_MEDIA_BUCKET ?? 'public-media'
 
-const defaultDeps: AdminUploadDeps = {
+export const defaultAdminUploadDeps: AdminUploadDeps = {
   put: async (_folder, key, bytes, contentType, env) => {
     const c = getSupabaseAdmin(env)
     if (!c) return { url: '', path: '', error: 'not_configured' }
@@ -54,7 +54,7 @@ const slugify = (name: string): string =>
 export async function handleAdminUpload(
   input: { method: string; cookieHeader: string | undefined; body: unknown },
   env: Env,
-  deps: AdminUploadDeps = defaultDeps,
+  deps: AdminUploadDeps = defaultAdminUploadDeps,
 ): Promise<HandlerResult> {
   if (!requireSession(input.cookieHeader, env)) return { status: 401, body: { error: 'unauthorized' } }
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) return { status: 500, body: { error: 'not_configured' } }

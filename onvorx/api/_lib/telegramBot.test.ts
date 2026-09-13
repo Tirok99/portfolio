@@ -95,6 +95,28 @@ describe('getBot', () => {
         updateSeo: vi.fn().mockResolvedValue({ error: null }),
         resetAll: vi.fn().mockResolvedValue({ error: null }),
       },
+      cardsDispatch: {
+        cards: {
+          listProjects: vi.fn().mockResolvedValue([]),
+          getProject: vi.fn().mockResolvedValue(null),
+          listServices: vi.fn().mockResolvedValue([]),
+          getService: vi.fn().mockResolvedValue(null),
+        },
+        adminCards: {
+          create: vi.fn().mockResolvedValue({ error: null }),
+          update: vi.fn().mockResolvedValue({ error: null }),
+          remove: vi.fn().mockResolvedValue({ error: null }),
+          reorder: vi.fn().mockResolvedValue({ error: null }),
+        },
+        adminUpload: {
+          put: vi.fn().mockResolvedValue({ url: '', path: '', error: null }),
+          del: vi.fn().mockResolvedValue({ error: null }),
+        },
+        sessions: {
+          load: vi.fn().mockResolvedValue({ screen: 'main_menu' }),
+          save: vi.fn().mockResolvedValue(undefined),
+        },
+      },
     }
     const bot = await getBot(
       { TELEGRAM_BOT_TOKEN: '444:ddd', TELEGRAM_ADMIN_IDS: '111' },

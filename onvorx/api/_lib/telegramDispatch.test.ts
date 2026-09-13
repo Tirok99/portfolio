@@ -5,6 +5,7 @@ import type { TelegramAdminsDeps, ManagerRecord } from './telegramAdmins'
 import type { TelegramSessionsDeps, TelegramState } from './telegramSessions'
 import type { TelegramContentDeps, SectionRecord, SeoRecord } from './telegramContent'
 import type { AdminContentDeps } from './adminContentHandler'
+import type { CardsDispatchDeps } from './telegramCardsDispatch'
 
 const ENV = {
   TELEGRAM_ADMIN_IDS: '111',
@@ -96,7 +97,13 @@ function makeDeps(initialState: TelegramState = { screen: 'main_menu' }) {
     }),
     resetAll: vi.fn(async () => ({ error: null })),
   }
-  const deps: DispatchDeps = { admins, sessions, content, adminContent }
+  const cardsDispatch: CardsDispatchDeps = {
+    cards: { listProjects: vi.fn(async () => []), getProject: vi.fn(async () => null), listServices: vi.fn(async () => []), getService: vi.fn(async () => null) },
+    adminCards: { create: vi.fn(async () => ({ error: null })), update: vi.fn(async () => ({ error: null })), remove: vi.fn(async () => ({ error: null })), reorder: vi.fn(async () => ({ error: null })) },
+    adminUpload: { put: vi.fn(async () => ({ url: '', path: '', error: null })), del: vi.fn(async () => ({ error: null })) },
+    sessions,
+  }
+  const deps: DispatchDeps = { admins, sessions, content, adminContent, cardsDispatch }
   return {
     deps, admins, sessions, content, adminContent,
     getState: () => state,
@@ -491,5 +498,35 @@ describe('dispatch — SEO, owner + content_manager', () => {
       text: 'Could not save — please try again.',
       keyboard: expect.anything(),
     })
+  })
+})
+
+describe('dispatch — cards delegation', () => {
+  it('cards:projects:list is reachable by a content_manager and shows the tab choice', async () => {
+    const { deps, setManagers } = makeDeps()
+    setManagers([MANAGER])
+    const ctx = makeCtx({ fromId: 42, callbackData: 'cards:projects:list' })
+    await dispatch(ctx, ENV, deps)
+    const reply = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    expect(reply.text).toBe('Projects — choose a list:')
+  })
+
+  it('cards:services:list is blocked for a sales_manager', async () => {
+    const { deps, setManagers } = makeDeps()
+    setManagers([SALES])
+    const ctx = makeCtx({ fromId: 77, callbackData: 'cards:services:list' })
+    await dispatch(ctx, ENV, deps)
+    expect(ctx.reply).toHaveBeenCalledWith({ text: "You don't have access to this bot." })
+  })
+
+  it('stub:projects no longer fires — the main menu now routes Projects to cards:projects:list', async () => {
+    const { deps } = makeDeps()
+    const ctx = makeCtx({ text: '/start' })
+    await dispatch(ctx, ENV, deps)
+    const reply = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    const projectsButton = (reply.keyboard.inline_keyboard as { text: string; callback_data?: string }[][])
+      .flat()
+      .find((b) => b.text === 'Projects')
+    expect(projectsButton?.callback_data).toBe('cards:projects:list')
   })
 })
