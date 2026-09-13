@@ -31,7 +31,10 @@
   mix-blend-mode: screen;
 }
 
-/* cta__decor-wave-right — upper-right of the card, per Figma layout-en-vscode */
+/* cta__decor-wave-right — upper-right of the card, per Figma layout-en-vscode.
+   The Figma layer is rotated -171.36deg and flipped on Y — reproduced here
+   verbatim rather than re-deriving an equivalent, since the two rotations
+   (asset's own tilt + the near-180deg turn) don't reduce to a clean value. */
 .cta__wave-red {
   position: absolute;
   right: clamp(-150px, -10vw, -75px);
@@ -39,6 +42,8 @@
   width: clamp(420px, 48vw, 720px);
   max-width: none;
   opacity: 0.7;
+  transform: rotate(-171.36deg) scaleY(-1);
+  transform-origin: center;
 }
 
 /* ---- content ---- */
