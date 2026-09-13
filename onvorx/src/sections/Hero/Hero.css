@@ -32,13 +32,16 @@
 }
 
 /* grey wisp — upper edge near the CTA button, lower edge crosses into services.
-   This must always cover the FULL viewport width, at any screen size — a
-   `clamp()` capped to the ~1878px value Figma's 1600px reference frame
-   implies stops growing past that point, leaving a plain gap on wider
-   screens. `max()`/`min()` (no upper/lower bound) keep it scaling with
-   the viewport at any width instead. */
+   left/bottom/width must all scale on the SAME vw basis with no upper
+   bound on width or magnitude bound on the offsets — capping any one of
+   the three independently of the others (as an earlier version of this
+   rule did to `left`) throws off the box's proportions at wide viewports,
+   since width keeps growing past the point where the offset stops. Only
+   a lower/floor bound near typical desktop widths, matching Figma's own
+   ratios (left -15.3%, bottom -20.7%, width 117.4% of the 1600px
+   reference frame) exactly so all three stay in lockstep at any size. */
 .hero__wave-wrap--left {
-  left: clamp(-380px, -22vw, -180px);
+  left: min(-180px, -15.3vw);
   bottom: min(-180px, -20.7vw);
   width: max(880px, 117.4vw);
   aspect-ratio: 1878.852 / 1103.64;
