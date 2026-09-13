@@ -110,7 +110,7 @@ function makeDeps(initialState: TelegramState = { screen: 'main_menu' }) {
   }
   const deps: DispatchDeps = { admins, sessions, content, adminContent, cardsDispatch, requestsDispatch }
   return {
-    deps, admins, sessions, content, adminContent,
+    deps, admins, sessions, content, adminContent, requestsDispatch,
     getState: () => state,
     getManagers: () => managers,
     setManagers: (m: ManagerRecord[]) => (managers = m),
@@ -172,6 +172,20 @@ describe('dispatch — stub sections', () => {
     const ctx = makeCtx({ fromId: 42, callbackData: 'stub:requests' })
     await dispatch(ctx, ENV, deps)
     expect(ctx.reply).toHaveBeenCalledWith({ text: "You don't have access to this bot." })
+  })
+})
+
+describe('dispatch — requests role gate', () => {
+  it('a content_manager who lands on requests_note_value (stale/forwarded session) gets the text fallback and never saves a note', async () => {
+    const { deps, setManagers, requestsDispatch } = makeDeps({
+      screen: 'requests_note_value',
+      data: { filter: 'all', id: 'req-1' },
+    })
+    setManagers([MANAGER]) // content_manager — has no `requests` access
+    const ctx = makeCtx({ fromId: 42, text: 'trying to sneak a note in' })
+    await dispatch(ctx, ENV, deps)
+    expect(ctx.reply).toHaveBeenCalledWith({ text: 'Use the menu buttons below, or /start to see them again.' })
+    expect(requestsDispatch.adminRequests.patch).not.toHaveBeenCalled()
   })
 })
 
