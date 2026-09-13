@@ -1,7 +1,7 @@
 import { InlineKeyboard } from 'grammy'
 import type { ManagerRecord, ManagerRole, Role } from './telegramAdmins'
 import type { ContentField, SeoField, SectionRecord, SeoRecord } from './telegramContent'
-import type { ProjectField, ServiceField, ProjectCardRecord, ServiceCardRecord } from './telegramCards'
+import type { ProjectCardRecord, ServiceCardRecord } from './telegramCards'
 
 export interface BotReply {
   text: string
@@ -204,13 +204,6 @@ export function buildSaveFailed(backCallback: string): BotReply {
 }
 
 // ---- Cards: Projects & Services ----
-
-// @ts-expect-error TS6133 - used in Task 3 dispatch logic
-const PROJECT_FIELD_LABEL: Record<ProjectField, string> = {
-  title: 'Title', description: 'Description', imageAlt: 'Image alt text', tags: 'Tags',
-}
-// @ts-expect-error TS6133 - used in Task 3 dispatch logic
-const SERVICE_FIELD_LABEL: Record<ServiceField, string> = { title: 'Title', text: 'Text' }
 
 export function buildCardTypeTabs(type: 'projects' | 'services'): BotReply {
   const pageLabel = type === 'projects' ? 'Projects page' : 'Services page'
