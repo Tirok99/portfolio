@@ -1063,7 +1063,7 @@ No placeholders remain — every test block in Task 1's Step 1 is a complete, ru
 ### Deferred (not in this plan, and not planned for this feature at all)
 
 - Language and free-text search filters for Requests via the bot — status-only filter is the deliberate v1 scope; add later only if requested.
-- Everything already deferred by Plans 1-3 (card creation, Settings/Reset content, WebP conversion) remains deferred — none of it is in scope for the bot per the spec.
+- Card creation and Settings/Reset content remain deferred, as they were never in scope for the bot per the spec. WebP conversion is a different case: it WAS in the original spec's scope (spec §8), but Plan 3 deliberately superseded that requirement — sharp's native-binary risk on the serverless runtime outweighed the benefit, given Telegram's own JPEG compression already delivers an acceptable result. That supersession stands; it is not simply "out of scope."
 
 ### Notes for the executor
 
