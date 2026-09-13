@@ -686,6 +686,11 @@ describe('buildRequestNotePrompt', () => {
     expect(r.text.length).toBeLessThan(1000)
     expect(r.text).toContain('…')
   })
+  it('stays under the safety clip even with a very long author string', () => {
+    const long: RequestNoteDTO = { id: 'n', createdAt: '2026-09-13T00:00:00.000Z', author: 'a'.repeat(4000), body: 'hi' }
+    const r = buildRequestNotePrompt(long)
+    expect(r.text.length).toBeLessThan(4096)
+  })
 })
 
 describe('buildRequestNotesHistory', () => {

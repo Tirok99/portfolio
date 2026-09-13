@@ -67,7 +67,7 @@ export async function handleAdminRequestNotes(
   if (input.method === 'POST') {
     const body = (input.body ?? {}) as Record<string, unknown>
     if (typeof body.requestId !== 'string' || !body.requestId) return bad()
-    if (typeof body.author !== 'string' || !body.author) return bad()
+    if (typeof body.author !== 'string' || !body.author || body.author.length > 100) return bad()
     if (typeof body.body !== 'string' || !body.body.trim() || body.body.length > 500) return bad()
     const { error } = await deps.add(body.requestId, body.author, body.body, env)
     return error ? fail() : ok()

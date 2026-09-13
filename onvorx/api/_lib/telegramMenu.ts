@@ -471,7 +471,7 @@ export function buildRequestNotePrompt(lastNote: RequestNoteDTO | undefined): Bo
   const preview = lastNote
     ? `Last note (${formatReceivedAt(lastNote.createdAt)} — ${lastNote.author}):\n${clip(lastNote.body, 300)}`
     : '(no notes yet)'
-  return { text: `${preview}\n\nSend the note text to add (up to 500 characters).` }
+  return { text: clip(`${preview}\n\nSend the note text to add (up to 500 characters).`, TELEGRAM_TEXT_MAX) }
 }
 
 const NOTES_HISTORY_MAX = 4000

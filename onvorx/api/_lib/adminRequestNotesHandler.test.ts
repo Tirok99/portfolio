@@ -75,6 +75,12 @@ describe('handleAdminRequestNotes', () => {
     )
     expect(r.status).toBe(400)
   })
+  it('POST author over 100 chars → 400', async () => {
+    const r = await handleAdminRequestNotes(
+      { method: 'POST', cookieHeader: cookie, body: { requestId: 'r1', author: 'a'.repeat(101), body: 'hi' } }, ENV, deps(),
+    )
+    expect(r.status).toBe(400)
+  })
   it('POST missing author → 400', async () => {
     const r = await handleAdminRequestNotes(
       { method: 'POST', cookieHeader: cookie, body: { requestId: 'r1', body: 'called' } }, ENV, deps(),
