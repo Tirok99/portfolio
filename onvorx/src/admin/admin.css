@@ -258,6 +258,10 @@
 .admin-disclosure__summary:hover { background: var(--surface-hover, #f0f0f3); }
 .admin-disclosure__body { padding: 0 1.15rem 1.15rem; border-top: 1px solid var(--border, #e8e8ec); padding-top: 1rem; }
 
+.admin-cards-block { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border, #e8e8ec); }
+.admin-cards-block h3 { font-size: 0.95rem; margin: 0 0 1rem; }
+.admin-card-editor { display: flex; flex-direction: column; gap: 0.75rem; padding: 1rem; margin-bottom: 1rem; background: var(--surface-2, #fbfbfc); border-radius: var(--radius-sm, 8px); }
+
 /* --- card screen (Projects / Services) --- */
 .admin-page--wide { max-width: 960px; }
 .admin-cardscreen { display: grid; grid-template-columns: 240px 1fr; gap: 1.5rem; align-items: start; }

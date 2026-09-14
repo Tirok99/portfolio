@@ -19,7 +19,7 @@ export function ImageUpload({
   onClear,
 }: {
   label: string
-  folder: 'projects' | 'services'
+  folder: 'projects' | 'services' | 'cards'
   value: ImageRef
   onChange: (ref: ImageRef) => Promise<void>
   onClear: () => Promise<void>

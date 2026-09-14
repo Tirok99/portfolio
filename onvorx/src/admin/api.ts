@@ -20,7 +20,7 @@ type CardKind = 'project' | 'service'
 const cardsUrl = (type: CardKind) => `/api/admin/cards?type=${type}`
 
 export const adminApi = {
-  saveSection: (key: SectionKey, patch: Partial<Pick<SectionText, 'eyebrow' | 'title' | 'body' | 'ctaLabel'>>) =>
+  saveSection: (key: SectionKey, patch: Partial<Pick<SectionText, 'eyebrow' | 'title' | 'body' | 'ctaLabel' | 'cards' | 'launch'>>) =>
     call<void>('/api/admin/content', 'PUT', { kind: 'section', key, patch }),
   saveSeo: (pageKey: SeoPageKey, patch: Partial<Pick<SeoEntry, 'title' | 'description'>>) =>
     call<void>('/api/admin/content', 'PUT', { kind: 'seo', pageKey, patch }),
@@ -36,7 +36,7 @@ export const adminApi = {
   reorderCards: (type: CardKind, list: 'home' | 'page', orderedIds: string[]) =>
     call<void>(cardsUrl(type), 'POST', { op: 'reorder', list, orderedIds }),
 
-  uploadImage: (folder: 'projects' | 'services', dataUrl: string, fileName: string) =>
+  uploadImage: (folder: 'projects' | 'services' | 'cards', dataUrl: string, fileName: string) =>
     call<{ url: string; path: string }>('/api/admin/upload', 'POST', { dataUrl, fileName, folder }),
   deleteImage: (path: string) => call<void>('/api/admin/upload', 'DELETE', { path }),
 
