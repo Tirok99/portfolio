@@ -220,6 +220,11 @@
   .hero__cards {
     width: clamp(240px, 40%, 300px);
   }
+  /* less empty space per card at this narrower width than short labels
+     like "Define outcomes" actually need */
+  .hero__card {
+    padding: 0.75rem 0.9rem;
+  }
   .hero__radar {
     display: none;
   }
@@ -269,8 +274,12 @@
     position: relative;
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: var(--space-4);
+    gap: var(--space-3);
+    /* was 100% of the whole visual column — far wider than 2 short-label
+       cards need, leaving a lot of dead space inside each one */
     width: 100%;
+    max-width: 480px;
+    margin-inline: auto;
   }
   .hero__launch {
     position: relative;

@@ -99,6 +99,23 @@
     align-items: start;
     gap: clamp(2rem, 6vw, 3rem);
   }
+  /* the first card's own left border reads as a stray line with nothing
+     to its left to divide from — every other card still gets one, since
+     it's now dividing it from the card above */
+  .about__stat:first-child {
+    border-left: none;
+  }
+}
+
+/* laptop only (not tablet): center the stack instead of hugging the left
+   edge the two-column layout was aligned to. Columns need a capped max
+   (not 1fr, which always stretches to fill) for justify-content to have
+   anything to center. */
+@media (max-width: 1080px) and (min-width: 769px) {
+  .about__stats {
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 20rem));
+    justify-content: center;
+  }
 }
 
 @media (max-width: 520px) {

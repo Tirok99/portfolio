@@ -122,6 +122,9 @@
   line-height: var(--lh-snug);
   color: color-mix(in srgb, var(--text) 82%, var(--text-2));
   max-width: 22ch;
+  /* some sub-lines wrap to one line, others to two — without a floor the
+     step-text below sits at a different height card to card */
+  min-height: 2.6em;
 }
 
 .how-work__step-text {
