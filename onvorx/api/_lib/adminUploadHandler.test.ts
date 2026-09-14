@@ -66,6 +66,33 @@ describe('handleAdminUpload', () => {
     expect((await handleAdminUpload({ method: 'POST', cookieHeader: cookie,
       body: { dataUrl: svg, fileName: 'x.svg', folder: 'cards' } }, ENV, deps())).status).toBe(400)
   })
+  it('repairs a valid svg that is missing its xmlns namespace', async () => {
+    const raw = '<svg viewBox="0 0 24 24"><rect width="10" height="10"/></svg>'
+    const svg = 'data:image/svg+xml;base64,' + Buffer.from(raw).toString('base64')
+    const d = deps()
+    const r = await handleAdminUpload({ method: 'POST', cookieHeader: cookie,
+      body: { dataUrl: svg, fileName: 'icon.svg', folder: 'cards' } }, ENV, d)
+    expect(r.status).toBe(200)
+    const stored = (d.put.mock.calls[0][2] as Buffer).toString('utf8')
+    expect(stored).toContain('xmlns="http://www.w3.org/2000/svg"')
+    expect(stored).toContain('<rect')
+  })
+  it('400 when the declared mime does not match the actual file bytes (svg content labeled as png)', async () => {
+    const smuggled = 'data:image/png;base64,' + Buffer.from('<svg onload="alert(1)"></svg>').toString('base64')
+    expect((await handleAdminUpload({ method: 'POST', cookieHeader: cookie,
+      body: { dataUrl: smuggled, fileName: 'x.png', folder: 'cards' } }, ENV, deps())).status).toBe(400)
+  })
+  it('400 when sanitizing an svg would expand it past the size limit', async () => {
+    // Bare '&' characters are valid, unescaped text in the lenient HTML
+    // parser DOMPurify sanitizes with, but must be re-encoded as `&amp;`
+    // (5x the bytes) on the way back out as XML — this raw upload is under
+    // MAX_BYTES, but what it sanitizes to is not.
+    const raw = `<svg xmlns="http://www.w3.org/2000/svg"><text>${'&'.repeat(1_900_000)}</text></svg>`
+    const svg = 'data:image/svg+xml;base64,' + Buffer.from(raw).toString('base64')
+    expect(raw.length).toBeLessThan(2_000_000)
+    expect((await handleAdminUpload({ method: 'POST', cookieHeader: cookie,
+      body: { dataUrl: svg, fileName: 'x.svg', folder: 'cards' } }, ENV, deps())).status).toBe(400)
+  })
   it('POST a valid png → deps.put with a projects/<slug>-<hex>.png key, returns {url,path}', async () => {
     const d = deps()
     const r = await handleAdminUpload({ method: 'POST', cookieHeader: cookie,

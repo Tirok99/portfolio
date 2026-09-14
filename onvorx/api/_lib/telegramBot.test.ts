@@ -182,12 +182,16 @@ describe('getBot', () => {
 
     // toBotCtx's raw byte-download call uses the plain GLOBAL fetch, not grammY's
     // client.fetch override — grammY never sees this URL, so it needs its own stub.
+    // Real JPEG magic bytes (SOI + APP0 marker start) — handleAdminUpload's
+    // upload path now verifies declared MIME against actual file signature,
+    // so a placeholder like [1,2,3] no longer passes through to `put`.
+    const JPEG_MAGIC = [0xff, 0xd8, 0xff, 0xe0]
     const rawDownloadCalls: string[] = []
     vi.stubGlobal(
       'fetch',
       vi.fn(async (url: unknown) => {
         rawDownloadCalls.push(String(url))
-        return { ok: true, arrayBuffer: async () => new Uint8Array([1, 2, 3]).buffer } as unknown as Response
+        return { ok: true, arrayBuffer: async () => new Uint8Array(JPEG_MAGIC).buffer } as unknown as Response
       }),
     )
 
@@ -297,9 +301,9 @@ describe('getBot', () => {
     expect(rawDownloadCalls.some((u) => u.startsWith('https://api.telegram.org/file/bot555:eee/photos/f1.jpg'))).toBe(true)
     expect(put).toHaveBeenCalled()
     expect(capturedPhotoDataUrl).toMatch(/^data:image\/jpeg;base64,/)
-    // Buffer.from([1,2,3]).toString('base64') === 'AQID' — confirms the exact
-    // bytes returned by the stubbed raw download reached the upload call.
-    expect(capturedPhotoDataUrl).toBe(`data:image/jpeg;base64,${Buffer.from([1, 2, 3]).toString('base64')}`)
+    // Confirms the exact bytes returned by the stubbed raw download reached
+    // the upload call unchanged.
+    expect(capturedPhotoDataUrl).toBe(`data:image/jpeg;base64,${Buffer.from(JPEG_MAGIC).toString('base64')}`)
   })
 
   it('a photo message whose raw byte download fails still gets a reply, not silence', async () => {
@@ -440,12 +444,16 @@ describe('getBot', () => {
 
     // toBotCtx's raw byte-download call uses the plain GLOBAL fetch, not grammY's
     // client.fetch override — grammY never sees this URL, so it needs its own stub.
+    // Real PNG magic bytes — see the sibling photo test above for why a
+    // placeholder byte sequence no longer survives handleAdminUpload's
+    // signature check.
+    const PNG_MAGIC = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
     const rawDownloadCalls: string[] = []
     vi.stubGlobal(
       'fetch',
       vi.fn(async (url: unknown) => {
         rawDownloadCalls.push(String(url))
-        return { ok: true, arrayBuffer: async () => new Uint8Array([4, 5, 6]).buffer } as unknown as Response
+        return { ok: true, arrayBuffer: async () => new Uint8Array(PNG_MAGIC).buffer } as unknown as Response
       }),
     )
 
@@ -563,7 +571,7 @@ describe('getBot', () => {
     // own real MIME type (image/png here) instead of being hardcoded to
     // image/jpeg — this is what preserves a PNG icon's transparency.
     expect(capturedPhotoDataUrl).toMatch(/^data:image\/png;base64,/)
-    expect(capturedPhotoDataUrl).toBe(`data:image/png;base64,${Buffer.from([4, 5, 6]).toString('base64')}`)
+    expect(capturedPhotoDataUrl).toBe(`data:image/png;base64,${Buffer.from(PNG_MAGIC).toString('base64')}`)
   })
 
   it('a document message with a rejected MIME type never attempts a download and gets the "could not process" reply', async () => {

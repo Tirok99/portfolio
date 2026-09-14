@@ -322,7 +322,7 @@ describe('dispatchCardsPhoto — replace flow', () => {
     deps.adminUpload.put = put
     deps.adminUpload.del = del
 
-    const ctx = makeCtx({ photoDataUrl: 'data:image/jpeg;base64,AAAA' })
+    const ctx = makeCtx({ photoDataUrl: 'data:image/jpeg;base64,/9j/4A==' })
     await dispatchCardsPhoto(ctx, ENV, deps)
 
     // dispatchCardsPhoto routes through handleAdminUpload (not deps.adminUpload.put
@@ -346,7 +346,7 @@ describe('dispatchCardsPhoto — replace flow', () => {
     const del = vi.fn(async () => ({ error: null }))
     deps.adminUpload.put = vi.fn(async () => ({ url: 'https://x/new.jpg', path: 'projects/new.jpg', error: null }))
     deps.adminUpload.del = del
-    const ctx = makeCtx({ photoDataUrl: 'data:image/jpeg;base64,AAAA' })
+    const ctx = makeCtx({ photoDataUrl: 'data:image/jpeg;base64,/9j/4A==' })
     await dispatchCardsPhoto(ctx, ENV, deps)
     expect(del).not.toHaveBeenCalled()
   })
@@ -355,7 +355,7 @@ describe('dispatchCardsPhoto — replace flow', () => {
     const { deps, getProjects } = makeDeps({ screen: 'cards_photo_wait', data: { type: 'projects', list: 'home', id: 'a' } })
     deps.adminUpload.put = vi.fn(async () => ({ url: 'https://x/new.jpg', path: 'projects/new.jpg', error: null }))
     deps.adminUpload.del = vi.fn(async () => ({ error: 'boom' }))
-    const ctx = makeCtx({ photoDataUrl: 'data:image/jpeg;base64,AAAA' })
+    const ctx = makeCtx({ photoDataUrl: 'data:image/jpeg;base64,/9j/4A==' })
     await dispatchCardsPhoto(ctx, ENV, deps)
     expect(getProjects().find((p) => p.id === 'a')?.imageUrl).toBe('https://x/new.jpg')
   })
@@ -364,7 +364,7 @@ describe('dispatchCardsPhoto — replace flow', () => {
     const { deps, getServices } = makeDeps({ screen: 'cards_photo_wait', data: { type: 'services', list: 'home', id: 's1' } })
     const put = vi.fn(async () => ({ url: 'https://x/new-icon.png', path: 'services/new-icon.png', error: null }))
     deps.adminUpload.put = put
-    const ctx = makeCtx({ photoDataUrl: 'data:image/png;base64,BBBB' })
+    const ctx = makeCtx({ photoDataUrl: 'data:image/png;base64,iVBORw0KGgo=' })
     await dispatchCardsPhoto(ctx, ENV, deps)
     expect(put).toHaveBeenCalledWith('services', expect.any(String), expect.any(Buffer), 'image/png', ENV)
     expect(getServices().find((s) => s.id === 's1')?.iconUrl).toBe('https://x/new-icon.png')
@@ -373,7 +373,7 @@ describe('dispatchCardsPhoto — replace flow', () => {
   it('an upload failure shows an error and does not touch the record', async () => {
     const { deps, getProjects } = makeDeps({ screen: 'cards_photo_wait', data: { type: 'projects', list: 'home', id: 'a' } })
     deps.adminUpload.put = vi.fn(async () => ({ url: '', path: '', error: 'too_large' }))
-    const ctx = makeCtx({ photoDataUrl: 'data:image/jpeg;base64,AAAA' })
+    const ctx = makeCtx({ photoDataUrl: 'data:image/jpeg;base64,/9j/4A==' })
     await dispatchCardsPhoto(ctx, ENV, deps)
     expect(getProjects().find((p) => p.id === 'a')?.imageUrl).toBe(PROJECT_A.imageUrl)
     // dispatchCardsPhoto reuses menu.buildCardSaveFailed for the upload-failure
@@ -394,7 +394,7 @@ describe('dispatchCardsPhoto — replace flow', () => {
     deps.adminUpload.put = put
     deps.adminUpload.del = del
 
-    const ctx = makeCtx({ photoDataUrl: 'data:image/jpeg;base64,AAAA' })
+    const ctx = makeCtx({ photoDataUrl: 'data:image/jpeg;base64,/9j/4A==' })
     await dispatchCardsPhoto(ctx, ENV, deps)
 
     expect(put).not.toHaveBeenCalled()

@@ -65,8 +65,21 @@ describe('ImageUpload', () => {
     expect(screen.queryByRole('button', { name: /remove/i })).not.toBeInTheDocument()
   })
 
+  it('variant="icon" adds the icon preview class; default variant does not', () => {
+    const value: ImageRef = { kind: 'asset', src: '/x.png' }
+    const { container: iconContainer } = render(
+      <ImageUpload label="Icon" folder="cards" variant="icon" value={value} onChange={vi.fn()} onClear={vi.fn()} />,
+    )
+    expect(iconContainer.querySelector('img')).toHaveClass('admin-imageupload__preview--icon')
+
+    const { container: photoContainer } = render(
+      <ImageUpload label="Image" folder="projects" value={value} onChange={vi.fn()} onClear={vi.fn()} />,
+    )
+    expect(photoContainer.querySelector('img')).not.toHaveClass('admin-imageupload__preview--icon')
+  })
+
   it('rejects a non-image file with an inline message', async () => {
-    // applyAccept:false so user-event lets the text file past the accept="image/*"
+    // applyAccept:false so user-event lets the text file past the accept list
     // filter and into the component, where fileToImageRef does the real rejecting.
     const user = userEvent.setup({ applyAccept: false })
     render(<ImageUpload label="Image" folder="projects" value={EMPTY} onChange={vi.fn()} onClear={vi.fn()} />)
