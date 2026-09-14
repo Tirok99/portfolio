@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react'
-import type { CardListKey } from '../types'
 
-export function CardScreen({
+export function CardScreen<K extends string = string>({
   title,
   hint,
   tabs,
@@ -12,9 +11,9 @@ export function CardScreen({
 }: {
   title: string
   hint: string
-  tabs: { key: CardListKey; label: string }[]
-  activeList: CardListKey
-  onActiveListChange: (l: CardListKey) => void
+  tabs?: { key: K; label: string }[]
+  activeList?: K
+  onActiveListChange?: (l: K) => void
   list: ReactNode
   editor: ReactNode
 }) {
@@ -22,7 +21,7 @@ export function CardScreen({
     <section className="admin-page admin-page--wide">
       <h1>{title}</h1>
       <p className="admin-page__hint">{hint}</p>
-      {tabs.length > 1 && (
+      {tabs && tabs.length > 1 && (
         <div className="admin-tabs" role="tablist">
           {tabs.map((t) => (
             <button
@@ -31,7 +30,7 @@ export function CardScreen({
               role="tab"
               aria-selected={t.key === activeList}
               className={`admin-tab${t.key === activeList ? ' is-active' : ''}`}
-              onClick={() => onActiveListChange(t.key)}
+              onClick={() => onActiveListChange?.(t.key)}
             >
               {t.label}
             </button>
