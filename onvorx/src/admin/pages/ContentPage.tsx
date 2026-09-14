@@ -8,43 +8,52 @@ import { useToast } from '../components/Toast'
 import { useAdminTitle } from '../useAdminTitle'
 
 function CardEditor({
+  title,
   card,
   onChange,
 }: {
+  title: string
   card: SectionCard
   onChange: (next: SectionCard) => void
 }) {
+  const summary = card.title.en.trim() ? `${title} — ${card.title.en}` : title
   return (
-    <div className="admin-card-editor">
-      <ImageUpload
-        label="Icon"
-        folder="cards"
-        value={card.icon}
-        onChange={async (icon) => onChange({ ...card, icon })}
-        onClear={async () => onChange({ ...card, icon: { kind: 'asset', src: '' } })}
-        // draft-state editor: nothing is persisted until the section's Save
-        // button, so the old Storage object must outlive an unsaved replace
-        deferDelete={true}
-      />
-      <LocalizedField
-        label="Card title"
-        value={card.title}
-        onChange={(v) => onChange({ ...card, title: v })}
-      />
-      {card.sub !== undefined && (
-        <LocalizedField
-          label="Sub"
-          value={card.sub}
-          onChange={(v) => onChange({ ...card, sub: v })}
+    <details className="admin-disclosure admin-disclosure--nested">
+      <summary className="admin-disclosure__summary">
+        <span>{summary}</span>
+      </summary>
+      <div className="admin-disclosure__body admin-card-editor">
+        <ImageUpload
+          label="Icon"
+          folder="cards"
+          variant="icon"
+          value={card.icon}
+          onChange={async (icon) => onChange({ ...card, icon })}
+          onClear={async () => onChange({ ...card, icon: { kind: 'asset', src: '' } })}
+          // draft-state editor: nothing is persisted until the section's Save
+          // button, so the old Storage object must outlive an unsaved replace
+          deferDelete={true}
         />
-      )}
-      <LocalizedField
-        label="Card text"
-        value={card.text}
-        multiline
-        onChange={(v) => onChange({ ...card, text: v })}
-      />
-    </div>
+        <LocalizedField
+          label="Card title"
+          value={card.title}
+          onChange={(v) => onChange({ ...card, title: v })}
+        />
+        {card.sub !== undefined && (
+          <LocalizedField
+            label="Sub"
+            value={card.sub}
+            onChange={(v) => onChange({ ...card, sub: v })}
+          />
+        )}
+        <LocalizedField
+          label="Card text"
+          value={card.text}
+          multiline
+          onChange={(v) => onChange({ ...card, text: v })}
+        />
+      </div>
+    </details>
   )
 }
 
@@ -150,6 +159,7 @@ function SectionEditor({ section }: { section: SectionText }) {
             {draft.cards.map((card, i) => (
               <CardEditor
                 key={i}
+                title={`Card ${i + 1}`}
                 card={card}
                 onChange={(next) =>
                   setDraft((d) => ({
@@ -163,8 +173,8 @@ function SectionEditor({ section }: { section: SectionText }) {
         )}
         {draft.launch && (
           <div className="admin-cards-block">
-            <h3>Launch card</h3>
             <CardEditor
+              title="Launch card"
               card={draft.launch}
               onChange={(next) => setDraft((d) => ({ ...d, launch: next }))}
             />

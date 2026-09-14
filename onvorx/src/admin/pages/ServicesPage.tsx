@@ -125,6 +125,7 @@ export function ServicesPage() {
         <ImageUpload
           label="Icon"
           folder="services"
+          variant="icon"
           value={selected.icon}
           onChange={(ref) => actions.setCardImage(list, selected.id, ref)}
           onClear={() =>

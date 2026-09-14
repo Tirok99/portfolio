@@ -159,6 +159,7 @@
   width: 100%; max-width: 260px; aspect-ratio: 16/10; object-fit: cover;
   border: 1px solid var(--border, #e8e8ec); border-radius: var(--radius-sm, 8px); background: var(--surface-2, #fbfbfc);
 }
+.admin-imageupload__preview--icon { max-width: 96px; aspect-ratio: 1/1; object-fit: contain; padding: 0.6rem; }
 .admin-imageupload__preview--empty { display: grid; place-items: center; color: var(--text-3, #8a8d95); font-size: 0.8rem; }
 .admin-imageupload__error { color: var(--accent, #e4202b); font-size: 0.78rem; }
 .admin-imageupload__input {
@@ -260,7 +261,15 @@
 
 .admin-cards-block { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border, #e8e8ec); }
 .admin-cards-block h3 { font-size: 0.95rem; margin: 0 0 1rem; }
-.admin-card-editor { display: flex; flex-direction: column; gap: 0.75rem; padding: 1rem; margin-bottom: 1rem; background: var(--surface-2, #fbfbfc); border-radius: var(--radius-sm, 8px); }
+.admin-card-editor { display: flex; flex-direction: column; gap: 0.75rem; }
+
+/* nested card accordion — same disclosure pattern, one size down */
+.admin-disclosure--nested {
+  margin: 0 0 0.6rem; border-color: var(--border, #e8e8ec); background: var(--surface-2, #fbfbfc);
+}
+.admin-disclosure--nested .admin-disclosure__summary { padding: 0.55rem 0.85rem; font-size: 0.85rem; font-weight: 600; }
+.admin-disclosure--nested .admin-disclosure__body { padding: 0 0.85rem 0.85rem; border-top-color: var(--border, #e8e8ec); }
+.admin-disclosure--nested:last-child { margin-bottom: 0; }
 
 /* --- card screen (Projects / Services) --- */
 .admin-page--wide { max-width: 960px; }
