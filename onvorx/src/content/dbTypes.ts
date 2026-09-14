@@ -1,4 +1,4 @@
-import type { L } from '../admin/types'
+import type { L, SectionCard } from '../admin/types'
 
 export interface DbSectionRow {
   key: string
@@ -6,6 +6,8 @@ export interface DbSectionRow {
   title: L
   body: L
   cta_label: L | null
+  cards: SectionCard[] | null
+  launch: SectionCard | null
 }
 
 export interface DbSeoRow {

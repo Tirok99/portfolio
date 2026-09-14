@@ -7,8 +7,10 @@ const L = (en: string, uk = en) => ({ en, uk })
 
 const rows: DbContentRows = {
   sections: [
-    { key: 'hero', eyebrow: L('E'), title: L('T'), body: L('B'), cta_label: L('Go') },
-    { key: 'about', eyebrow: L('AE'), title: L('AT'), body: L('AB'), cta_label: null },
+    { key: 'hero', eyebrow: L('E'), title: L('T'), body: L('B'), cta_label: L('Go'),
+      cards: [{ icon: { kind: 'asset', src: '/assets/icons/x.svg', path: null }, title: L('Card1'), text: L('t1') }],
+      launch: { icon: { kind: 'asset', src: '/assets/icons/l.svg', path: null }, title: L('Launch'), text: L('lt') } },
+    { key: 'about', eyebrow: L('AE'), title: L('AT'), body: L('AB'), cta_label: null, cards: null, launch: null },
   ],
   seo: [
     { page_key: 'home', path: '/', title: L('HT'), description: L('HD') },
@@ -83,5 +85,19 @@ describe('rowsToSiteContent', () => {
       icon: { kind: 'asset', src: '/assets/services/icon-web.png' },
     })
     expect(c.servicesPage).toEqual([])
+  })
+
+  it('maps cards and launch onto the section, defaulting to undefined when the row has none', () => {
+    const c = rowsToSiteContent(rows)
+    const hero = c.sections.find((s) => s.key === 'hero')!
+    expect(hero.cards).toEqual([
+      { icon: { kind: 'asset', src: '/assets/icons/x.svg', path: null }, title: L('Card1'), text: L('t1') },
+    ])
+    expect(hero.launch).toEqual({
+      icon: { kind: 'asset', src: '/assets/icons/l.svg', path: null }, title: L('Launch'), text: L('lt'),
+    })
+    const about = c.sections.find((s) => s.key === 'about')!
+    expect(about.cards).toBeUndefined()
+    expect(about.launch).toBeUndefined()
   })
 })

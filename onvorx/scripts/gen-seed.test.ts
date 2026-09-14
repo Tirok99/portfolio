@@ -20,8 +20,8 @@ describe('buildSeedSql', () => {
     expect(sql).not.toMatch(/^\s*commit;\s*$/im)
   })
 
-  it('inserts 6 sections, 8 seo pages', () => {
-    expect(sql.match(/insert into public\.site_sections/gi) ?? []).toHaveLength(6)
+  it('inserts 7 sections, 8 seo pages', () => {
+    expect(sql.match(/insert into public\.site_sections/gi) ?? []).toHaveLength(7)
     expect(sql.match(/insert into public\.seo_pages/gi) ?? []).toHaveLength(8)
   })
 

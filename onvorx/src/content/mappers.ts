@@ -42,6 +42,8 @@ function rowToSection(row: DbSectionRow): SectionText {
     body: asL(row.body),
   }
   if (row.cta_label) s.ctaLabel = asL(row.cta_label)
+  if (row.cards) s.cards = row.cards
+  if (row.launch) s.launch = row.launch
   return s
 }
 

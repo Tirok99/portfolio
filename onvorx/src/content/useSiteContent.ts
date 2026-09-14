@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import type { SectionKey, SeoPageKey } from '../admin/types'
+import type { SectionCard, SectionKey, SeoPageKey } from '../admin/types'
 import { useI18n } from '../i18n/i18n'
 import { useSiteContentRaw } from './SiteContentProvider'
 
@@ -23,12 +23,26 @@ export interface ResolvedServiceCard {
   iconSrc: string
 }
 
+export interface ResolvedSectionCard {
+  iconSrc: string
+  title: string
+  sub?: string
+  text: string
+}
+
 export function useSiteContent() {
   const { data, actions } = useSiteContentRaw()
   const { lang } = useI18n()
 
   return useMemo(() => {
     const pick = (l: { en: string; uk: string }) => l[lang] || l.en
+
+    const resolveCard = (c: SectionCard): ResolvedSectionCard => ({
+      iconSrc: c.icon.src,
+      title: pick(c.title),
+      text: pick(c.text),
+      ...(c.sub ? { sub: pick(c.sub) } : {}),
+    })
 
     const section = (key: SectionKey) => {
       const s = data.sections.find((x) => x.key === key)
@@ -37,6 +51,8 @@ export function useSiteContent() {
         title: s ? pick(s.title) : '',
         body: s ? pick(s.body) : '',
         ctaLabel: s?.ctaLabel ? pick(s.ctaLabel) : '',
+        cards: s?.cards ? s.cards.map(resolveCard) : [],
+        launch: s?.launch ? resolveCard(s.launch) : undefined,
       }
     }
 

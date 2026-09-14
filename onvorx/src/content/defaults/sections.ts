@@ -1,8 +1,20 @@
-import type { L, SectionText } from '../../admin/types'
+import type { L, SectionCard, SectionText } from '../../admin/types'
 import en from '../../i18n/en.json'
 import uk from '../../i18n/uk.json'
 
 const pair = (a: string, b: string): L => ({ en: a, uk: b })
+
+const cardsFrom = (
+  enCards: { title: string; text: string; sub?: string }[],
+  ukCards: { title: string; text: string; sub?: string }[],
+  iconSrcs: string[],
+): SectionCard[] =>
+  enCards.map((c, i) => ({
+    icon: { kind: 'asset', src: iconSrcs[i] },
+    title: pair(c.title, ukCards[i].title),
+    text: pair(c.text, ukCards[i].text),
+    ...(c.sub !== undefined ? { sub: pair(c.sub, ukCards[i].sub!) } : {}),
+  }))
 
 export const defaultSections: SectionText[] = [
   {
@@ -12,6 +24,17 @@ export const defaultSections: SectionText[] = [
     title: pair(en.hero.title, uk.hero.title),
     body: pair(en.hero.description, uk.hero.description),
     ctaLabel: pair(en.hero.cta, uk.hero.cta),
+    cards: cardsFrom(en.hero.cards, uk.hero.cards, [
+      '/assets/icons/hero-target-red.svg',
+      '/assets/icons/hero-users-white.svg',
+      '/assets/icons/hero-document-white.svg',
+      '/assets/icons/hero-sitemap-white.svg',
+    ]),
+    launch: {
+      icon: { kind: 'asset', src: '/assets/icons/hero-launch-check-circle-red.svg' },
+      title: pair(en.hero.launch.title, uk.hero.launch.title),
+      text: pair(en.hero.launch.text, uk.hero.launch.text),
+    },
   },
   {
     key: 'services',
@@ -33,6 +56,12 @@ export const defaultSections: SectionText[] = [
     eyebrow: pair(en.howWork.eyebrow, uk.howWork.eyebrow),
     title: pair(en.howWork.title, uk.howWork.title),
     body: pair(en.howWork.description, uk.howWork.description),
+    cards: cardsFrom(en.howWork.steps, uk.howWork.steps, [
+      '/assets/icons/howwork-doc-search-white.svg',
+      '/assets/icons/howwork-checklist-white.svg',
+      '/assets/icons/howwork-code-window-white.svg',
+      '/assets/icons/howwork-headset-white.svg',
+    ]),
   },
   {
     key: 'about',
@@ -40,6 +69,11 @@ export const defaultSections: SectionText[] = [
     eyebrow: pair(en.about.eyebrow, uk.about.eyebrow),
     title: pair(en.about.title, uk.about.title),
     body: pair(en.about.description, uk.about.description),
+    cards: cardsFrom(en.about.stats, uk.about.stats, [
+      '/assets/icons/about-calendar-red.svg',
+      '/assets/icons/about-folder-red.svg',
+      '/assets/icons/about-doc-search-red.svg',
+    ]),
   },
   {
     key: 'cta',
@@ -48,5 +82,12 @@ export const defaultSections: SectionText[] = [
     title: pair(en.cta.title, uk.cta.title),
     body: pair(en.cta.description, uk.cta.description),
     ctaLabel: pair(en.cta.button, uk.cta.button),
+  },
+  {
+    key: 'footer',
+    label: 'Footer tagline',
+    eyebrow: { en: '', uk: '' },
+    title: { en: '', uk: '' },
+    body: pair(en.footer.tagline, uk.footer.tagline),
   },
 ]

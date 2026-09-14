@@ -146,6 +146,6 @@ describe('updateSeo', () => {
 describe('resetAll', () => {
   it('returns a fresh seeded dataset', () => {
     const fresh = resetAll()
-    expect(fresh.sections).toHaveLength(6)
+    expect(fresh.sections).toHaveLength(7)
   })
 })

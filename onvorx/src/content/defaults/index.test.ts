@@ -5,7 +5,7 @@ describe('buildDefaults', () => {
   it('produces a versioned AdminData with the expected shape', () => {
     const d = buildDefaults()
     expect(d.version).toBe(DATA_VERSION)
-    expect(d.sections).toHaveLength(6)
+    expect(d.sections).toHaveLength(7)
     expect(d.sections.map((s) => s.key)).toEqual([
       'hero',
       'services',
@@ -13,6 +13,7 @@ describe('buildDefaults', () => {
       'howWork',
       'about',
       'cta',
+      'footer',
     ])
     expect(d.seo).toHaveLength(8)
   })
