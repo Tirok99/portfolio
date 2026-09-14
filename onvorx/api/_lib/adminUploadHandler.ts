@@ -4,7 +4,7 @@ import { requireSession } from './handlers'
 import { getSupabaseAdmin } from './supabaseAdmin'
 
 type Env = AuthEnv & SupabaseAdminEnv
-const FOLDERS = ['projects', 'services'] as const
+const FOLDERS = ['projects', 'services', 'cards'] as const
 const MIME_EXT: Record<string, string> = {
   'image/png': 'png',
   'image/jpeg': 'jpg',

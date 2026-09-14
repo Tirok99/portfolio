@@ -17,6 +17,15 @@ export type SectionKey =
   | 'howWork'
   | 'about'
   | 'cta'
+  | 'footer'
+
+export interface SectionCard {
+  icon: ImageRef
+  title: L
+  /** HowWork cards only */
+  sub?: L
+  text: L
+}
 
 export interface SectionText {
   key: SectionKey
@@ -28,6 +37,10 @@ export interface SectionText {
   body: L
   /** Hero + CTA only — the button text */
   ctaLabel?: L
+  /** Hero/HowWork/About only — the section's fixed-count content cards */
+  cards?: SectionCard[]
+  /** Hero only — the standalone "Launch" card */
+  launch?: SectionCard
 }
 
 export interface ProjectCard {

@@ -25,6 +25,14 @@ describe('handleAdminUpload', () => {
     expect((await handleAdminUpload({ method: 'POST', cookieHeader: cookie,
       body: { dataUrl: PNG, fileName: 'x.png', folder: 'evil' } }, ENV, deps())).status).toBe(400)
   })
+  it('accepts the cards folder for uploads', async () => {
+    const d = deps()
+    const r = await handleAdminUpload(
+      { method: 'POST', cookieHeader: cookie, body: { dataUrl: PNG, fileName: 'icon.png', folder: 'cards' } },
+      ENV, d,
+    )
+    expect(r.status).toBe(200)
+  })
   it('400 when the decoded image exceeds 2 MB', async () => {
     const big = 'data:image/png;base64,' + 'A'.repeat(3_000_000)
     expect((await handleAdminUpload({ method: 'POST', cookieHeader: cookie,

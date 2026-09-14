@@ -15,6 +15,7 @@ describe('validators', () => {
   })
   it('isSectionKey / isSeoPageKey gate the enums', () => {
     expect(isSectionKey('howWork')).toBe(true)
+    expect(isSectionKey('footer')).toBe(true)
     expect(isSectionKey('nope')).toBe(false)
     expect(isSeoPageKey('business-analysis')).toBe(true)
     expect(isSeoPageKey('nope')).toBe(false)
@@ -29,6 +30,37 @@ describe('sectionRow', () => {
   })
   it('drops non-L values', () => {
     expect(sectionRow('hero', { title: 'bad' as never, body: L('B') })).toEqual({ body: L('B') })
+  })
+})
+
+describe('sectionRow — cards and launch', () => {
+  const card = (title: string) => ({
+    icon: { kind: 'asset', src: '/assets/icons/x.svg', path: null },
+    title: L(title), text: L('text'),
+  })
+  it('keeps a valid cards array', () => {
+    expect(sectionRow('hero', { cards: [card('A'), card('B')] })).toEqual({
+      cards: [card('A'), card('B')],
+    })
+  })
+  it('keeps a valid launch object', () => {
+    expect(sectionRow('hero', { launch: card('Launch') })).toEqual({ launch: card('Launch') })
+  })
+  it('keeps a HowWork card with an extra sub field', () => {
+    const withSub = { ...card('Define'), sub: L('sub text') }
+    expect(sectionRow('howWork', { cards: [withSub] })).toEqual({ cards: [withSub] })
+  })
+  it('drops cards when any entry is missing icon/title/text', () => {
+    expect(sectionRow('hero', { cards: [card('A'), { title: L('bad') }] })).toEqual({})
+  })
+  it('drops cards when it is not an array', () => {
+    expect(sectionRow('hero', { cards: card('A') })).toEqual({})
+  })
+  it('drops a launch object missing a required field', () => {
+    expect(sectionRow('hero', { launch: { title: L('Launch') } })).toEqual({})
+  })
+  it('drops a card whose icon is not an ImageRef-shaped object', () => {
+    expect(sectionRow('hero', { cards: [{ icon: 'not-an-object', title: L('A'), text: L('t') }] })).toEqual({})
   })
 })
 

@@ -1,6 +1,6 @@
 export interface L { en: string; uk: string }
 
-const SECTION_KEYS = ['hero', 'services', 'projects', 'howWork', 'about', 'cta'] as const
+const SECTION_KEYS = ['hero', 'services', 'projects', 'howWork', 'about', 'cta', 'footer'] as const
 const SEO_KEYS = [
   'home', 'services', 'projects', 'about',
   'web-development', 'support', 'business-analysis', 'google-ads',
@@ -20,6 +20,21 @@ export const isCardType = (v: unknown): v is 'project' | 'service' => v === 'pro
 
 type Patch = Record<string, unknown>
 
+const isImageRefLike = (v: unknown): boolean =>
+  typeof v === 'object' && v !== null &&
+  typeof (v as Record<string, unknown>).kind === 'string' &&
+  typeof (v as Record<string, unknown>).src === 'string'
+
+const isCard = (v: unknown): boolean => {
+  if (typeof v !== 'object' || v === null) return false
+  const c = v as Record<string, unknown>
+  if (!isImageRefLike(c.icon)) return false
+  if (!isL(c.title)) return false
+  if (!isL(c.text)) return false
+  if (c.sub !== undefined && !isL(c.sub)) return false
+  return true
+}
+
 /** section patch → DB column subset. Only well-typed L fields survive. */
 export function sectionRow(_key: string, patch: Patch): Patch {
   const out: Patch = {}
@@ -27,6 +42,8 @@ export function sectionRow(_key: string, patch: Patch): Patch {
   if (isL(patch.title)) out.title = patch.title
   if (isL(patch.body)) out.body = patch.body
   if (isL(patch.ctaLabel)) out.cta_label = patch.ctaLabel
+  if (Array.isArray(patch.cards) && patch.cards.every(isCard)) out.cards = patch.cards
+  if (isCard(patch.launch)) out.launch = patch.launch
   return out
 }
 
