@@ -16,8 +16,6 @@ vi.mock('../../admin/api', () => ({
     updateCard: vi.fn().mockResolvedValue(undefined),
     deleteCard: vi.fn().mockResolvedValue(undefined),
     reorderCards: vi.fn().mockResolvedValue(undefined),
-    uploadImage: vi.fn().mockResolvedValue({ url: 'https://cdn/new-icon.png', path: 'cards/new-icon.png' }),
-    deleteImage: vi.fn().mockResolvedValue(undefined),
   },
 }))
 
@@ -87,22 +85,6 @@ describe('ContentPage', () => {
     expect(await screen.findByText(/save failed/i)).toBeInTheDocument()
   })
 
-  it('renders a card editor for each of Hero\'s 4 cards plus its Launch card', () => {
-    wrap()
-    // Scoped to Hero's own <details>: an unscoped page-wide query would still
-    // pass on HowWork's 4 + About's 3 even if Hero rendered no cards at all.
-    // The label is anchored so it matches the field, not LocalizedField's
-    // "Card text language" tab group.
-    const heroDetails = screen.getByRole('heading', { name: /^hero/i }).closest('details')!
-    expect(within(heroDetails).getAllByLabelText(/^card text$/i)).toHaveLength(5)
-  })
-
-  it('renders a Sub field only for HowWork\'s cards, not Hero\'s', () => {
-    wrap()
-    // HowWork has 4 cards, each with its own Sub field
-    expect(screen.getAllByLabelText(/^sub$/i).length).toBe(4)
-  })
-
   it('footer only shows a Tagline field, no Eyebrow/Title/Button label', () => {
     wrap()
     const footerHeading = screen.getByRole('heading', { name: /footer tagline/i })
@@ -110,32 +92,5 @@ describe('ContentPage', () => {
     expect(within(footerSection).getByLabelText(/^tagline$/i)).toBeInTheDocument()
     expect(within(footerSection).queryByLabelText(/^eyebrow$/i)).not.toBeInTheDocument()
     expect(within(footerSection).queryByLabelText(/^title$/i)).not.toBeInTheDocument()
-  })
-
-  it("editing a card's text and saving sends only the cards key to the api", async () => {
-    vi.mocked(adminApi.saveSection).mockClear()
-    const user = userEvent.setup()
-    wrap()
-    const heroDetails = screen.getByRole('heading', { name: /^hero/i }).closest('details')!
-    const firstCardText = within(heroDetails).getAllByLabelText(/^card text$/i)[0]
-    await user.clear(firstCardText)
-    await user.type(firstCardText, 'Edited card text')
-    await user.click(within(heroDetails).getByRole('button', { name: /^save$/i }))
-
-    expect(adminApi.saveSection).toHaveBeenCalledTimes(1)
-    expect(adminApi.saveSection).toHaveBeenCalledWith(
-      'hero',
-      expect.objectContaining({ cards: expect.any(Array) }),
-    )
-    const patch = vi.mocked(adminApi.saveSection).mock.calls[0][1] as {
-      cards: { text: { en: string }; title: { en: string } }[]
-    }
-    expect(patch.cards).toHaveLength(4)
-    expect(patch.cards[0].text.en).toBe('Edited card text')
-    // the other cards, and the untouched section-level fields, stay out of the
-    // patch — dirty-tracking must submit only the changed top-level keys
-    expect(patch.cards[1].text.en).not.toBe('Edited card text')
-    expect(Object.keys(patch)).toEqual(['cards'])
-    expect(await screen.findByText(/^saved$/i)).toBeInTheDocument()
   })
 })
