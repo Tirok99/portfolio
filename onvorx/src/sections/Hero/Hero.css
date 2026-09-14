@@ -289,7 +289,11 @@
     flex-direction: row;
     justify-content: center;
     gap: var(--space-3);
+    /* match the cards block's own width above it, instead of the full
+       (much wider) visual column */
     width: 100%;
+    max-width: 480px;
+    margin-inline: auto;
     margin-top: var(--space-4);
     text-align: left;
   }
@@ -328,5 +332,10 @@
   .hero__card {
     padding-top: 10px;
     padding-bottom: 10px;
+  }
+  /* left-align icon/title/text instead of the laptop/tablet tier's
+     centered row */
+  .hero__launch {
+    justify-content: flex-start;
   }
 }

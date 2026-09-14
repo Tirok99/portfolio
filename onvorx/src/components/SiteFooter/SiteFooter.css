@@ -167,7 +167,7 @@
     max-width: 44ch;
     flex-direction: row;
     align-items: center;
-    column-gap: var(--space-4);
+    column-gap: 2em;
   }
   .site-footer__contact-divider {
     display: none;
@@ -177,6 +177,11 @@
 @media (max-width: 560px) {
   .site-footer__top {
     grid-template-columns: 1fr;
+  }
+  /* row (set at the 1100px tier above) looks bad this narrow — back to a
+     stacked logo + tagline */
+  .site-footer__brand {
+    flex-direction: column;
   }
   .site-footer__decor {
     height: 150px;
