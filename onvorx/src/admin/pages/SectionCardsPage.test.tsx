@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { I18nProvider } from '../../i18n/i18n'
 import { SiteContentProvider } from '../../content/SiteContentProvider'
@@ -115,6 +115,19 @@ describe('SectionCardsPage', () => {
     }
     expect(patch.launch.text.en).toBe('Edited launch text')
     expect(Object.keys(patch)).toEqual(['launch'])
+  })
+
+  it('Discard reverts the draft to the last-saved value without saving', async () => {
+    const user = userEvent.setup()
+    wrapHero()
+    await user.click(screen.getByText(/1 —/))
+    const text = screen.getByLabelText(/^card text$/i)
+    const original = (text as HTMLTextAreaElement).value
+    await user.clear(text)
+    await user.type(text, 'Unsaved draft text')
+    expect(screen.getByLabelText(/^card text$/i)).toHaveValue('Unsaved draft text')
+    await user.click(screen.getByRole('button', { name: /^discard$/i }))
+    expect(screen.getByLabelText(/^card text$/i)).toHaveValue(original)
   })
 
   it('Cancel returns to the empty state without saving', async () => {

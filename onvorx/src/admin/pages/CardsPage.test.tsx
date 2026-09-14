@@ -65,4 +65,26 @@ describe('CardsPage', () => {
     expect(screen.getByRole('tab', { name: 'Projects' })).toHaveAttribute('aria-selected', 'true')
     expect(screen.getByRole('tab', { name: 'Hero' })).toHaveAttribute('aria-selected', 'false')
   })
+
+  it('resets the selected card when switching away and back to a section type', async () => {
+    const user = userEvent.setup()
+    wrap()
+    await user.click(screen.getByText(/1 —/))
+    expect(screen.getByLabelText(/^card title$/i)).toBeInTheDocument()
+    await user.click(screen.getByRole('tab', { name: 'About' }))
+    await user.click(screen.getByRole('tab', { name: 'Hero' }))
+    expect(screen.getByText(/no card selected/i)).toBeInTheDocument()
+  })
+
+  it('resets the selected project card when switching away and back', async () => {
+    const user = userEvent.setup()
+    wrap()
+    await user.click(screen.getByRole('tab', { name: 'Projects' }))
+    await user.click(screen.getByText('Relax Ahill'))
+    expect(screen.getAllByLabelText('Title')[0]).toBeInTheDocument()
+    await user.click(screen.getByRole('tab', { name: 'Hero' }))
+    await user.click(screen.getByRole('tab', { name: 'Projects' }))
+    expect(screen.queryByLabelText('Title')).not.toBeInTheDocument()
+    expect(screen.getByText(/no card selected/i)).toBeInTheDocument()
+  })
 })
