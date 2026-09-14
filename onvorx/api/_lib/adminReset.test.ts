@@ -2,9 +2,13 @@ import { describe, it, expect, vi } from 'vitest'
 import { resetContent } from './adminReset'
 
 const L = (s: string) => ({ en: s, uk: s })
+const card = (title: string) => ({
+  icon: { kind: 'asset', src: '/assets/icons/x.svg' }, title: L(title), text: L('t'),
+})
 const content = {
   sections: [
-    { key: 'hero', title: L('T'), eyebrow: L('E'), body: L('B'), ctaLabel: L('Go') },
+    { key: 'hero', title: L('T'), eyebrow: L('E'), body: L('B'), ctaLabel: L('Go'),
+      cards: [card('C1'), card('C2')], launch: card('Launch') },
     { key: 'about', title: L('A2') },
   ],
   seo: [{ pageKey: 'home', title: L('HT'), description: L('HD') }],
@@ -31,6 +35,19 @@ describe('resetContent', () => {
       expect.objectContaining({ table: 'projects', list: 'home', id: 'p1', sort: 0, published: true, image_url: '/a.png' }),
       expect.objectContaining({ table: 'services', list: 'home', id: 's1', sort: 0, featured: true }),
     ]))
+  })
+  it('carries section cards/launch through to the rpc, and omits the keys where absent', async () => {
+    // the reset_content function (supabase/migration-2026-09-14-*.sql) writes
+    // these columns only when the section entry has the key at all
+    const rpc = vi.fn().mockResolvedValue({ error: null })
+    await resetContent({ rpc } as never, content)
+    const p = rpc.mock.calls[0][1].payload
+    const hero = p.sections.find((s: { key: string }) => s.key === 'hero')
+    expect(hero.cards).toEqual([card('C1'), card('C2')])
+    expect(hero.launch).toEqual(card('Launch'))
+    const about = p.sections.find((s: { key: string }) => s.key === 'about')
+    expect('cards' in about).toBe(false)
+    expect('launch' in about).toBe(false)
   })
   it('surfaces an rpc error', async () => {
     const rpc = vi.fn().mockResolvedValue({ error: { message: 'boom' } })
