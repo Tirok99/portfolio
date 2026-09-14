@@ -164,7 +164,11 @@
   }
   .site-footer__brand {
     grid-column: 1 / -1;
-    max-width: 44ch;
+    /* no max-width here — the grid area already spans the full container,
+       but the old 44ch cap (meant for the stacked desktop column) kept
+       the row from visually filling it */
+    max-width: none;
+    width: 100%;
     flex-direction: row;
     align-items: center;
     column-gap: 2em;
