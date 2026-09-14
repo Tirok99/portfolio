@@ -32,6 +32,13 @@ export function CardsPage() {
           </button>
         ))}
       </div>
+      {/* Five separate conditional slots, deliberately not a map/lookup: each
+          type must occupy its own fixed position in this children array so
+          switching `active` genuinely unmounts the old slot and mounts a
+          fresh instance at the new one, resetting that instance's own
+          selection state. Collapsing this into one persistent element whose
+          prop just changes would silently break that reset — see
+          CardsPage.test.tsx's "resets the selected card..." tests. */}
       {active === 'hero' && (
         <SectionCardsPage
           sectionKey="hero"
