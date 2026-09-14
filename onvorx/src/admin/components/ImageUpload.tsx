@@ -4,7 +4,7 @@ import { fileToImageRef } from '../lib/image'
 import { adminApi } from '../api'
 
 const MESSAGES: Record<string, string> = {
-  'unsupported-type': "That file isn't an image. Choose a JPG, PNG, or WebP.",
+  'unsupported-type': "That file isn't an image. Choose a JPG, PNG, WebP, or SVG.",
   'too-large': 'That image is too large (max ~1.5 MB) — try a smaller one.',
   'upload-failed': 'Upload failed — check your connection and try again.',
   'save-failed': 'Could not save the image. Please try again.',
@@ -18,6 +18,7 @@ export function ImageUpload({
   onChange,
   onClear,
   deferDelete = false,
+  variant = 'photo',
 }: {
   label: string
   folder: 'projects' | 'services' | 'cards'
@@ -34,6 +35,13 @@ export function ImageUpload({
    * right away, because the DB has already moved off the old path by then.
    */
   deferDelete?: boolean
+  /**
+   * `'photo'` (default) previews as a wide, cropped rectangle — right for
+   * Projects' landscape images. `'icon'` previews as a small square with the
+   * whole image visible (no cropping) — for square-ish icons (Services' own
+   * icon field, and every Hero/HowWork/About card icon).
+   */
+  variant?: 'photo' | 'icon'
 }) {
   const id = useId()
   const [error, setError] = useState('')
@@ -85,15 +93,16 @@ export function ImageUpload({
     }
   }
 
+  const previewClass =
+    variant === 'icon' ? 'admin-imageupload__preview admin-imageupload__preview--icon' : 'admin-imageupload__preview'
+
   return (
     <div className="admin-field admin-imageupload">
       <span className="admin-field__label">{label}</span>
       {value.src ? (
-        <img className="admin-imageupload__preview" src={value.src} alt="" />
+        <img className={previewClass} src={value.src} alt="" />
       ) : (
-        <span className="admin-imageupload__preview admin-imageupload__preview--empty">
-          No image
-        </span>
+        <span className={`${previewClass} admin-imageupload__preview--empty`}>No image</span>
       )}
       <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
         <label className="admin-btn" htmlFor={id}>
@@ -102,7 +111,7 @@ export function ImageUpload({
         <input
           id={id}
           type="file"
-          accept="image/*"
+          accept="image/png,image/jpeg,image/webp,image/svg+xml"
           className="admin-imageupload__input"
           onChange={(e) => void onFile(e.target.files?.[0])}
         />

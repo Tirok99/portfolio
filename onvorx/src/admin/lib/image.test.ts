@@ -95,6 +95,30 @@ describe('image helpers', () => {
       }
     })
 
+    it('passes an svg through unchanged, skipping the rasterizing downscale step', async () => {
+      const svg = '<svg xmlns="http://www.w3.org/2000/svg"><circle cx="1" cy="1" r="1"/></svg>'
+      const file = new File([svg], 'icon.svg', { type: 'image/svg+xml' })
+      let imgCreated = false
+      const originalSrcDescriptor = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src')
+      Object.defineProperty(HTMLImageElement.prototype, 'src', {
+        set() {
+          imgCreated = true
+        },
+        configurable: true,
+      })
+      try {
+        const ref = await fileToImageRef(file)
+        expect(ref.kind).toBe('upload')
+        expect(ref.src.startsWith('data:image/svg+xml')).toBe(true)
+        // downscale() would construct an <img> to decode it onto a canvas —
+        // for svg that step must be skipped entirely, so the setter above
+        // (which would otherwise fire) must never have been touched.
+        expect(imgCreated).toBe(false)
+      } finally {
+        if (originalSrcDescriptor) Object.defineProperty(HTMLImageElement.prototype, 'src', originalSrcDescriptor)
+      }
+    })
+
     it('falls back to raw data URL when downscale fails', async () => {
       const file = dataUrlToFile(tinyPngDataUrl, 'pixel.png', 'image/png')
       // Mock img element to trigger onerror (simulating decode failure)

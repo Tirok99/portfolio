@@ -48,10 +48,15 @@ export async function fileToImageRef(
   if (!file.type.startsWith('image/')) throw new Error('unsupported-type')
   const raw = await readAsDataUrl(file)
   let out = raw
-  try {
-    out = await downscale(raw, opts.maxDimension ?? 1600)
-  } catch {
-    out = raw
+  // Downscaling rasterizes onto a <canvas> and re-encodes as JPEG — correct
+  // for photos, but it would destroy an SVG's vector data and defeat the
+  // point of uploading one. The server sanitizes and size-checks SVGs itself.
+  if (file.type !== 'image/svg+xml') {
+    try {
+      out = await downscale(raw, opts.maxDimension ?? 1600)
+    } catch {
+      out = raw
+    }
   }
   if (dataUrlBytes(out) > MAX_IMAGE_BYTES) throw new Error('too-large')
   return { kind: 'upload', src: out, fileName: file.name }

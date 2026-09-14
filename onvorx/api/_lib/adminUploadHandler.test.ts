@@ -38,10 +38,33 @@ describe('handleAdminUpload', () => {
     expect((await handleAdminUpload({ method: 'POST', cookieHeader: cookie,
       body: { dataUrl: big, fileName: 'x.png', folder: 'projects' } }, ENV, deps())).status).toBe(400)
   })
-  it('400 on an svg data URL (svg not allowed for uploads)', async () => {
-    const svg = 'data:image/svg+xml;base64,' + Buffer.from('<svg/>').toString('base64')
+  it('accepts a clean svg and stores it as-is', async () => {
+    const raw = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>'
+    const svg = 'data:image/svg+xml;base64,' + Buffer.from(raw).toString('base64')
+    const d = deps()
+    const r = await handleAdminUpload({ method: 'POST', cookieHeader: cookie,
+      body: { dataUrl: svg, fileName: 'x.svg', folder: 'cards' } }, ENV, d)
+    expect(r.status).toBe(200)
+    expect(r.body).toEqual({ url: expect.any(String), path: expect.stringMatching(/^cards\/x-[0-9a-f]{8}\.svg$/) })
+    const stored = (d.put.mock.calls[0][2] as Buffer).toString('utf8')
+    expect(stored).toContain('<circle')
+  })
+  it('strips a <script> and an onload handler from an uploaded svg instead of storing them', async () => {
+    const raw = '<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"><script>alert(2)</script><rect width="10" height="10"/></svg>'
+    const svg = 'data:image/svg+xml;base64,' + Buffer.from(raw).toString('base64')
+    const d = deps()
+    const r = await handleAdminUpload({ method: 'POST', cookieHeader: cookie,
+      body: { dataUrl: svg, fileName: 'evil.svg', folder: 'cards' } }, ENV, d)
+    expect(r.status).toBe(200)
+    const stored = (d.put.mock.calls[0][2] as Buffer).toString('utf8')
+    expect(stored).not.toContain('<script')
+    expect(stored).not.toContain('onload')
+    expect(stored).toContain('<rect')
+  })
+  it('400 on an svg that sanitizes down to nothing usable', async () => {
+    const svg = 'data:image/svg+xml;base64,' + Buffer.from('<script>alert(1)</script>').toString('base64')
     expect((await handleAdminUpload({ method: 'POST', cookieHeader: cookie,
-      body: { dataUrl: svg, fileName: 'x.svg', folder: 'services' } }, ENV, deps())).status).toBe(400)
+      body: { dataUrl: svg, fileName: 'x.svg', folder: 'cards' } }, ENV, deps())).status).toBe(400)
   })
   it('POST a valid png → deps.put with a projects/<slug>-<hex>.png key, returns {url,path}', async () => {
     const d = deps()

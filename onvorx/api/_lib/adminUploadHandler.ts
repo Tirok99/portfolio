@@ -1,4 +1,6 @@
 import { randomBytes } from 'node:crypto'
+import { JSDOM } from 'jsdom'
+import createDOMPurify from 'dompurify'
 import type { HandlerResult, AuthEnv, SupabaseAdminEnv } from './types'
 import { requireSession } from './handlers'
 import { getSupabaseAdmin } from './supabaseAdmin'
@@ -9,8 +11,29 @@ const MIME_EXT: Record<string, string> = {
   'image/png': 'png',
   'image/jpeg': 'jpg',
   'image/webp': 'webp',
+  'image/svg+xml': 'svg',
 }
 const MAX_BYTES = 2_000_000
+
+// A single DOMPurify instance backed by a blank jsdom window, reused across
+// requests (Fluid Compute keeps the module warm) rather than rebuilt per call.
+const svgSanitizer = createDOMPurify(new JSDOM('').window)
+
+/**
+ * Strips scripts, event-handler attributes, and other executable content
+ * from an uploaded SVG before it's stored — an SVG is XML, and browsers will
+ * run a <script> or an onload="" attribute inside one rendered via <img> in
+ * some contexts, so this can't be treated as inert image data like a PNG.
+ * Returns null if sanitizing destroyed the document entirely (garbage input,
+ * or nothing survived that could plausibly be a real icon).
+ */
+function sanitizeSvg(bytes: Buffer): Buffer | null {
+  const clean = svgSanitizer.sanitize(bytes.toString('utf8'), {
+    USE_PROFILES: { svg: true, svgFilters: true },
+  })
+  if (!/<svg[\s>]/i.test(clean)) return null
+  return Buffer.from(clean, 'utf8')
+}
 
 export interface AdminUploadDeps {
   put: (
@@ -75,8 +98,13 @@ export async function handleAdminUpload(
     const mime = m[1]
     const ext = MIME_EXT[mime]
     if (!ext) return bad()
-    const bytes = Buffer.from(m[2], 'base64')
+    let bytes: Buffer = Buffer.from(m[2], 'base64')
     if (bytes.length === 0 || bytes.length > MAX_BYTES) return bad()
+    if (mime === 'image/svg+xml') {
+      const clean = sanitizeSvg(bytes)
+      if (!clean) return bad()
+      bytes = clean
+    }
     const key = `${folder as string}/${slugify(fileName)}-${randomBytes(4).toString('hex')}.${ext}`
     const { url, error } = await deps.put(folder as string, key, bytes, mime, env)
     if (error) return { status: 500, body: { error: 'upload_failed' } }
