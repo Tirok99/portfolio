@@ -28,7 +28,7 @@ export function About() {
                 delay={70 * i}
               >
                 <span className="about__stat-icon">
-                  <img src={stat.iconSrc} alt="" width={26} height={26} />
+                  {stat.iconSrc && <img src={stat.iconSrc} alt="" width={26} height={26} />}
                 </span>
                 <div className="about__stat-body">
                   <span className="about__stat-index">{String(i + 1).padStart(2, '0')}</span>

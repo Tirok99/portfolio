@@ -1,6 +1,7 @@
 import type {
   L,
   ProjectCard,
+  SectionCard,
   SectionKey,
   SectionText,
   SeoEntry,
@@ -33,6 +34,45 @@ const SEO_META = new Map(defaultSeo.map((s) => [s.pageKey, { label: s.label, pat
 
 const asL = (v: L | null | undefined): L => ({ en: v?.en ?? '', uk: v?.uk ?? '' })
 
+const isLLike = (v: unknown): v is L =>
+  typeof v === 'object' && v !== null &&
+  typeof (v as Record<string, unknown>).en === 'string' &&
+  typeof (v as Record<string, unknown>).uk === 'string'
+
+/**
+ * `cards`/`launch` arrive as raw JSONB, so — unlike every other column here —
+ * their shape is not guaranteed: `sectionRow()` validates admin writes, but a
+ * row hand-edited in the Supabase SQL editor (how this project's migrations
+ * and seeds are applied) can hold a card with no `title`/`text`. `pick()` in
+ * `useSiteContent` would throw on that, and there is no error boundary, so one
+ * bad row would white-screen the whole public page. Mirror the shape check
+ * `api/_lib/adminRows.ts` applies server-side — duplicated deliberately, so
+ * this client-bundle module keeps no dependency on `api/_lib`.
+ */
+const asCard = (v: unknown): SectionCard | undefined => {
+  if (typeof v !== 'object' || v === null || Array.isArray(v)) return undefined
+  const c = v as Record<string, unknown>
+  if (!isLLike(c.title) || !isLLike(c.text)) return undefined
+  const icon = (typeof c.icon === 'object' && c.icon !== null ? c.icon : {}) as Record<string, unknown>
+  const card: SectionCard = {
+    icon: {
+      kind: icon.kind === 'upload' ? 'upload' : 'asset',
+      src: typeof icon.src === 'string' ? icon.src : '',
+    },
+    title: asL(c.title),
+    text: asL(c.text),
+  }
+  if (typeof icon.path === 'string' && icon.path) card.icon.path = icon.path
+  if (isLLike(c.sub)) card.sub = asL(c.sub)
+  return card
+}
+
+/** Non-array → `undefined`; otherwise every entry that fails `asCard` is dropped. */
+const asCards = (v: unknown): SectionCard[] | undefined =>
+  Array.isArray(v)
+    ? v.map(asCard).filter((c): c is SectionCard => c !== undefined)
+    : undefined
+
 function rowToSection(row: DbSectionRow): SectionText {
   const s: SectionText = {
     key: row.key as SectionKey,
@@ -42,8 +82,10 @@ function rowToSection(row: DbSectionRow): SectionText {
     body: asL(row.body),
   }
   if (row.cta_label) s.ctaLabel = asL(row.cta_label)
-  if (row.cards) s.cards = row.cards
-  if (row.launch) s.launch = row.launch
+  const cards = asCards(row.cards)
+  if (cards) s.cards = cards
+  const launch = asCard(row.launch)
+  if (launch) s.launch = launch
   return s
 }
 

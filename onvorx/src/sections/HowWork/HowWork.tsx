@@ -29,7 +29,7 @@ export function HowWork() {
               >
                 <span className="how-work__number">{String(i + 1).padStart(2, '0')}</span>
                 <span className="how-work__marker">
-                  <img src={step.iconSrc} alt="" width={34} height={34} />
+                  {step.iconSrc && <img src={step.iconSrc} alt="" width={34} height={34} />}
                 </span>
                 <h3 className="how-work__step-title">{step.title}</h3>
                 <p className="how-work__step-sub">{step.sub}</p>

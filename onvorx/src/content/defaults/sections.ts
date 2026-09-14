@@ -9,12 +9,19 @@ const cardsFrom = (
   ukCards: { title: string; text: string; sub?: string }[],
   iconSrcs: string[],
 ): SectionCard[] =>
-  enCards.map((c, i) => ({
-    icon: { kind: 'asset', src: iconSrcs[i] },
-    title: pair(c.title, ukCards[i].title),
-    text: pair(c.text, ukCards[i].text),
-    ...(c.sub !== undefined ? { sub: pair(c.sub, ukCards[i].sub!) } : {}),
-  }))
+  enCards.map((c, i) => {
+    // This module runs at import time on the Supabase-unavailable fallback
+    // path, so an uk.json array that is shorter than en.json's (or missing a
+    // `sub`) must not throw — that would break the whole site, not just
+    // degrade it. Fall back to the EN item's own text.
+    const u = ukCards[i] ?? c
+    return {
+      icon: { kind: 'asset', src: iconSrcs[i] ?? '' },
+      title: pair(c.title, u.title ?? c.title),
+      text: pair(c.text, u.text ?? c.text),
+      ...(c.sub !== undefined ? { sub: pair(c.sub, u.sub ?? c.sub) } : {}),
+    }
+  })
 
 export const defaultSections: SectionText[] = [
   {

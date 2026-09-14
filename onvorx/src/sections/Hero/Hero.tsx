@@ -64,14 +64,16 @@ export function Hero() {
               {cards.map((card, i) => (
                 <Reveal
                   as="li"
-                  key={card.title}
+                  // position-stable, fixed-length, never reordered — and card
+                  // titles are operator-editable, so they can collide
+                  key={i}
                   className="hero__card-cell"
                   variant="left"
                   delay={70 * i}
                 >
                   <div className="hero__card">
                     <span className="hero__card-icon">
-                      <img src={card.iconSrc} alt="" width={22} height={22} />
+                      {card.iconSrc && <img src={card.iconSrc} alt="" width={22} height={22} />}
                     </span>
                     <span className="hero__card-body">
                       <span className="hero__card-title">{card.title}</span>
@@ -84,7 +86,7 @@ export function Hero() {
 
             <Reveal className="hero__launch" variant="right" delay={260}>
               <span className="hero__launch-icon">
-                {launch && <img src={launch.iconSrc} alt="" width={22} height={22} />}
+                {launch?.iconSrc && <img src={launch.iconSrc} alt="" width={22} height={22} />}
               </span>
               <span className="hero__launch-title">{launch?.title}</span>
               <span className="hero__launch-text">{launch?.text}</span>

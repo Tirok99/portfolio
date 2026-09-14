@@ -30,6 +30,9 @@ const rows: DbContentRows = {
   ],
 }
 
+/** `rows` with only its `sections` swapped, for the malformed-JSONB cases below. */
+const withSections = (sections: DbContentRows['sections']): DbContentRows => ({ ...rows, sections })
+
 describe('rowsToSiteContent', () => {
   it('maps sections, attaching the code-owned label and ctaLabel only when present', () => {
     const c = rowsToSiteContent(rows)
@@ -90,14 +93,71 @@ describe('rowsToSiteContent', () => {
   it('maps cards and launch onto the section, defaulting to undefined when the row has none', () => {
     const c = rowsToSiteContent(rows)
     const hero = c.sections.find((s) => s.key === 'hero')!
+    // `path: null` is normalized away, same as ImageRef.path on project/service rows
     expect(hero.cards).toEqual([
-      { icon: { kind: 'asset', src: '/assets/icons/x.svg', path: null }, title: L('Card1'), text: L('t1') },
+      { icon: { kind: 'asset', src: '/assets/icons/x.svg' }, title: L('Card1'), text: L('t1') },
     ])
     expect(hero.launch).toEqual({
-      icon: { kind: 'asset', src: '/assets/icons/l.svg', path: null }, title: L('Launch'), text: L('lt'),
+      icon: { kind: 'asset', src: '/assets/icons/l.svg' }, title: L('Launch'), text: L('lt'),
     })
     const about = c.sections.find((s) => s.key === 'about')!
     expect(about.cards).toBeUndefined()
     expect(about.launch).toBeUndefined()
+  })
+
+  it('keeps a valid card icon path and a HowWork-style sub field', () => {
+    const c = rowsToSiteContent(withSections([
+      { key: 'howWork', eyebrow: L('E'), title: L('T'), body: L('B'), cta_label: null,
+        cards: [{ icon: { kind: 'upload', src: 'https://cdn/i.png', path: 'cards/i.png' },
+          title: L('Define'), sub: L('s'), text: L('t') }] as never, launch: null },
+    ]))
+    expect(c.sections.find((s) => s.key === 'howWork')!.cards).toEqual([
+      { icon: { kind: 'upload', src: 'https://cdn/i.png', path: 'cards/i.png' },
+        title: L('Define'), sub: L('s'), text: L('t') },
+    ])
+  })
+
+  it('drops malformed cards instead of letting them reach the page', () => {
+    // a hand-edited Supabase row: missing title, non-L text, a non-object entry
+    const c = rowsToSiteContent(withSections([
+      { key: 'hero', eyebrow: L('E'), title: L('T'), body: L('B'), cta_label: null,
+        cards: [
+          { icon: { kind: 'asset', src: '/a.svg' }, text: L('no title') },
+          { icon: { kind: 'asset', src: '/b.svg' }, title: L('bad text'), text: 'oops' },
+          'not-a-card',
+          null,
+          { icon: { kind: 'asset', src: '/ok.svg' }, title: L('Good'), text: L('t') },
+        ] as never,
+        launch: null },
+    ]))
+    expect(c.sections.find((s) => s.key === 'hero')!.cards).toEqual([
+      { icon: { kind: 'asset', src: '/ok.svg' }, title: L('Good'), text: L('t') },
+    ])
+  })
+
+  it('substitutes an empty iconSrc when icon is missing or not string-shaped', () => {
+    const c = rowsToSiteContent(withSections([
+      { key: 'hero', eyebrow: L('E'), title: L('T'), body: L('B'), cta_label: null,
+        cards: [
+          { title: L('No icon'), text: L('t') },
+          { icon: { kind: 'asset', src: 42 }, title: L('Bad src'), text: L('t') },
+        ] as never,
+        launch: null },
+    ]))
+    expect(c.sections.find((s) => s.key === 'hero')!.cards).toEqual([
+      { icon: { kind: 'asset', src: '' }, title: L('No icon'), text: L('t') },
+      { icon: { kind: 'asset', src: '' }, title: L('Bad src'), text: L('t') },
+    ])
+  })
+
+  it('treats a non-array cards value and a malformed launch as absent', () => {
+    const c = rowsToSiteContent(withSections([
+      { key: 'hero', eyebrow: L('E'), title: L('T'), body: L('B'), cta_label: null,
+        cards: { title: L('x') } as never,
+        launch: { icon: { kind: 'asset', src: '/l.svg' } } as never },
+    ]))
+    const hero = c.sections.find((s) => s.key === 'hero')!
+    expect(hero.cards).toBeUndefined()
+    expect(hero.launch).toBeUndefined()
   })
 })
