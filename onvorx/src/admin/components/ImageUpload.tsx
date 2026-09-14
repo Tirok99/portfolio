@@ -17,12 +17,23 @@ export function ImageUpload({
   value,
   onChange,
   onClear,
+  deferDelete = false,
 }: {
   label: string
   folder: 'projects' | 'services' | 'cards'
   value: ImageRef
   onChange: (ref: ImageRef) => Promise<void>
   onClear: () => Promise<void>
+  /**
+   * Skip deleting the previously-uploaded Storage object when the image is
+   * replaced or cleared. Set this when `onChange`/`onClear` only mutate
+   * unsaved draft state: deleting immediately would break the still-live DB
+   * row if the operator then discards, the save fails, or they navigate away.
+   * The old object is knowingly left behind as an orphan instead. Default
+   * `false` — callers that persist on `onChange` (Projects/Services) delete
+   * right away, because the DB has already moved off the old path by then.
+   */
+  deferDelete?: boolean
 }) {
   const id = useId()
   const [error, setError] = useState('')
@@ -48,7 +59,7 @@ export function ImageUpload({
         setError(MESSAGES['save-failed'])
         return
       }
-      if (old && old !== uploaded.path) void adminApi.deleteImage(old).catch(() => {})
+      if (!deferDelete && old && old !== uploaded.path) void adminApi.deleteImage(old).catch(() => {})
     } catch (e) {
       const key = e instanceof Error ? e.message : ''
       setError(MESSAGES[key] ?? 'Could not read that file.')
@@ -68,7 +79,7 @@ export function ImageUpload({
         setError(MESSAGES['clear-failed'])
         return
       }
-      if (old) void adminApi.deleteImage(old).catch(() => {})
+      if (!deferDelete && old) void adminApi.deleteImage(old).catch(() => {})
     } finally {
       setBusy(false)
     }

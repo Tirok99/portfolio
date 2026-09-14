@@ -176,6 +176,46 @@ describe('ImageUpload', () => {
     expect(adminApi.deleteImage).not.toHaveBeenCalled()
   })
 
+  it('deferDelete: on replace, calls onChange but never deletes the old object', async () => {
+    vi.mocked(adminApi.uploadImage).mockResolvedValueOnce({ url: 'U2', path: 'cards/new-x.png' })
+    const user = userEvent.setup()
+    const onChange = vi.fn().mockResolvedValue(undefined)
+    render(
+      <ImageUpload
+        label="Icon"
+        folder="cards"
+        value={{ kind: 'upload', src: 'U', path: 'cards/old-x.png' }}
+        onChange={onChange}
+        onClear={vi.fn().mockResolvedValue(undefined)}
+        deferDelete={true}
+      />,
+    )
+    const png = new File([Uint8Array.from([137, 80, 78, 71])], 'x.png', { type: 'image/png' })
+    await user.upload(screen.getByLabelText(/choose file/i), png)
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith({ kind: 'upload', src: 'U2', path: 'cards/new-x.png' }))
+    // the caller only mutated draft state — the live row still points at the
+    // old object, so it must survive until (and whether or not) they save
+    expect(adminApi.deleteImage).not.toHaveBeenCalled()
+  })
+
+  it('deferDelete: on Remove, calls onClear but never deletes the old object', async () => {
+    const user = userEvent.setup()
+    const onClear = vi.fn().mockResolvedValue(undefined)
+    render(
+      <ImageUpload
+        label="Icon"
+        folder="cards"
+        value={{ kind: 'upload', src: 'U', path: 'cards/old-x.png' }}
+        onChange={vi.fn().mockResolvedValue(undefined)}
+        onClear={onClear}
+        deferDelete={true}
+      />,
+    )
+    await user.click(screen.getByRole('button', { name: /remove/i }))
+    await waitFor(() => expect(onClear).toHaveBeenCalled())
+    expect(adminApi.deleteImage).not.toHaveBeenCalled()
+  })
+
   it('on Remove without a stored path: calls onClear only', async () => {
     const user = userEvent.setup()
     const onClear = vi.fn().mockResolvedValue(undefined)

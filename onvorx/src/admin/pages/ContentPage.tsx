@@ -22,6 +22,9 @@ function CardEditor({
         value={card.icon}
         onChange={async (icon) => onChange({ ...card, icon })}
         onClear={async () => onChange({ ...card, icon: { kind: 'asset', src: '' } })}
+        // draft-state editor: nothing is persisted until the section's Save
+        // button, so the old Storage object must outlive an unsaved replace
+        deferDelete={true}
       />
       <LocalizedField
         label="Card title"
