@@ -89,12 +89,12 @@ describe('ContentPage', () => {
 
   it('renders a card editor for each of Hero\'s 4 cards plus its Launch card', () => {
     wrap()
-    // Hero has 4 stat cards + 1 launch card = 5 card-shaped title fields,
-    // on top of the section-level Title field already covered by the
-    // existing "editing a title" test — assert via the card text fields,
-    // which are unique to cards (the section itself has no field called
-    // "Card text").
-    expect(screen.getAllByLabelText(/card text/i).length).toBeGreaterThanOrEqual(5)
+    // Scoped to Hero's own <details>: an unscoped page-wide query would still
+    // pass on HowWork's 4 + About's 3 even if Hero rendered no cards at all.
+    // The label is anchored so it matches the field, not LocalizedField's
+    // "Card text language" tab group.
+    const heroDetails = screen.getByRole('heading', { name: /^hero/i }).closest('details')!
+    expect(within(heroDetails).getAllByLabelText(/^card text$/i)).toHaveLength(5)
   })
 
   it('renders a Sub field only for HowWork\'s cards, not Hero\'s', () => {
@@ -112,16 +112,30 @@ describe('ContentPage', () => {
     expect(within(footerSection).queryByLabelText(/^title$/i)).not.toBeInTheDocument()
   })
 
-  it('uploading a new icon for a card and saving updates the store', async () => {
+  it("editing a card's text and saving sends only the cards key to the api", async () => {
+    vi.mocked(adminApi.saveSection).mockClear()
     const user = userEvent.setup()
     wrap()
-    const heroHeading = screen.getByRole('heading', { name: /^hero/i })
-    const heroDetails = heroHeading.closest('details')!
-    await user.click(within(heroDetails).getAllByText(/choose file/i)[0])
-    // ImageUpload's onChange fires from a real file input change event in
-    // its own test file — here, just verify uploadImage was reachable by
-    // asserting the upload button rendered inside a card block at all;
-    // full upload-flow coverage already exists in ImageUpload.test.tsx.
-    expect(within(heroDetails).getAllByText(/choose file/i).length).toBeGreaterThan(0)
+    const heroDetails = screen.getByRole('heading', { name: /^hero/i }).closest('details')!
+    const firstCardText = within(heroDetails).getAllByLabelText(/^card text$/i)[0]
+    await user.clear(firstCardText)
+    await user.type(firstCardText, 'Edited card text')
+    await user.click(within(heroDetails).getByRole('button', { name: /^save$/i }))
+
+    expect(adminApi.saveSection).toHaveBeenCalledTimes(1)
+    expect(adminApi.saveSection).toHaveBeenCalledWith(
+      'hero',
+      expect.objectContaining({ cards: expect.any(Array) }),
+    )
+    const patch = vi.mocked(adminApi.saveSection).mock.calls[0][1] as {
+      cards: { text: { en: string }; title: { en: string } }[]
+    }
+    expect(patch.cards).toHaveLength(4)
+    expect(patch.cards[0].text.en).toBe('Edited card text')
+    // the other cards, and the untouched section-level fields, stay out of the
+    // patch — dirty-tracking must submit only the changed top-level keys
+    expect(patch.cards[1].text.en).not.toBe('Edited card text')
+    expect(Object.keys(patch)).toEqual(['cards'])
+    expect(await screen.findByText(/^saved$/i)).toBeInTheDocument()
   })
 })
