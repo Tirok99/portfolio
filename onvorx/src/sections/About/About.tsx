@@ -1,22 +1,11 @@
-import { useI18n } from "../../i18n/i18n";
 import { useSiteContent } from "../../content/useSiteContent";
-import { Icon, type IconName } from "../../components/Icon/Icon";
 import { Reveal } from "../../components/Reveal/Reveal";
 import "./About.css";
 
-interface Stat {
-  index: string;
-  title: string;
-  text: string;
-}
-
-const STAT_ICONS: IconName[] = ["calendar", "folder", "doc-search"];
-
 export function About() {
-  const { tx } = useI18n();
   const { section } = useSiteContent();
   const about = section("about");
-  const stats = tx<Stat[]>("about.stats");
+  const stats = about.cards ?? [];
 
   return (
     <section className="section about" data-theme="light" id="about">
@@ -33,16 +22,16 @@ export function About() {
             {stats.map((stat, i) => (
               <Reveal
                 as="li"
-                key={stat.index}
+                key={i}
                 className="about__stat"
                 variant="up"
                 delay={70 * i}
               >
                 <span className="about__stat-icon">
-                  <Icon name={STAT_ICONS[i]} size={26} />
+                  <img src={stat.iconSrc} alt="" width={26} height={26} />
                 </span>
                 <div className="about__stat-body">
-                  <span className="about__stat-index">{stat.index}</span>
+                  <span className="about__stat-index">{String(i + 1).padStart(2, '0')}</span>
                   <h3 className="about__stat-title">{stat.title}</h3>
                   <p className="about__stat-text">{stat.text}</p>
                 </div>

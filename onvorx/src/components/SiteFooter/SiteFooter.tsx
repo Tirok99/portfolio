@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useI18n } from "../../i18n/i18n";
+import { useSiteContent } from "../../content/useSiteContent";
 import { Logo } from "../Logo/Logo";
 import { Icon } from "../Icon/Icon";
 import "./SiteFooter.css";
@@ -11,6 +12,8 @@ interface FooterLink {
 
 export function SiteFooter() {
   const { t, tx } = useI18n();
+  const { section } = useSiteContent();
+  const footer = section("footer");
   const navLinks = tx<FooterLink[]>("footer.nav");
   const serviceLinks = tx<FooterLink[]>("footer.services");
 
@@ -42,7 +45,7 @@ export function SiteFooter() {
               <Link to="/" aria-label="ONVORX — home">
                 <Logo />
               </Link>
-              <p className="site-footer__tagline">{t("footer.tagline")}</p>
+              <p className="site-footer__tagline">{footer.body}</p>
             </div>
 
             <nav className="site-footer__col" aria-label={t("footer.navTitle")}>

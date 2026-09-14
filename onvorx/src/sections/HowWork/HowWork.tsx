@@ -1,23 +1,11 @@
-import { useI18n } from "../../i18n/i18n";
 import { useSiteContent } from "../../content/useSiteContent";
-import { Icon, type IconName } from "../../components/Icon/Icon";
 import { Reveal } from "../../components/Reveal/Reveal";
 import "./HowWork.css";
 
-interface Step {
-  index: string;
-  title: string;
-  sub: string;
-  text: string;
-}
-
-const STEP_ICONS: IconName[] = ["doc-search", "checklist", "code-window", "headset"];
-
 export function HowWork() {
-  const { tx } = useI18n();
   const { section } = useSiteContent();
   const howWork = section("howWork");
-  const steps = tx<Step[]>("howWork.steps");
+  const steps = howWork.cards ?? [];
 
   return (
     <section className="section how-work" data-theme="dark" id="how-we-work">
@@ -34,14 +22,14 @@ export function HowWork() {
             {steps.map((step, i) => (
               <Reveal
                 as="li"
-                key={step.index}
+                key={i}
                 className="how-work__step"
                 variant="up"
                 delay={70 * i}
               >
-                <span className="how-work__number">{step.index}</span>
+                <span className="how-work__number">{String(i + 1).padStart(2, '0')}</span>
                 <span className="how-work__marker">
-                  <Icon name={STEP_ICONS[i]} size={34} />
+                  <img src={step.iconSrc} alt="" width={34} height={34} />
                 </span>
                 <h3 className="how-work__step-title">{step.title}</h3>
                 <p className="how-work__step-sub">{step.sub}</p>

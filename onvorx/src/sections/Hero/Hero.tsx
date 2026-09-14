@@ -2,25 +2,17 @@ import { useLocation } from "react-router-dom";
 import { useI18n } from "../../i18n/i18n";
 import { useSiteContent } from "../../content/useSiteContent";
 import { useEstimateForm } from "../../components/EstimateForm/useEstimateForm";
-import { Icon, type IconName } from "../../components/Icon/Icon";
 import { Reveal } from "../../components/Reveal/Reveal";
 import "./Hero.css";
 
-interface HeroCard {
-  title: string;
-  text: string;
-}
-
-const CARD_ICONS: IconName[] = ["target", "users", "document", "sitemap"];
-
 export function Hero() {
-  const { t, tx } = useI18n();
+  const { t } = useI18n();
   const { section } = useSiteContent();
   const { open } = useEstimateForm();
   const { pathname } = useLocation();
   const hero = section("hero");
-  const cards = tx<HeroCard[]>("hero.cards");
-  const launch = tx<HeroCard>("hero.launch");
+  const cards = hero.cards;
+  const launch = hero.launch;
 
   return (
     <section className="section hero" data-theme="dark" id="top">
@@ -79,7 +71,7 @@ export function Hero() {
                 >
                   <div className="hero__card">
                     <span className="hero__card-icon">
-                      <Icon name={CARD_ICONS[i]} size={22} />
+                      <img src={card.iconSrc} alt="" width={22} height={22} />
                     </span>
                     <span className="hero__card-body">
                       <span className="hero__card-title">{card.title}</span>
@@ -92,10 +84,10 @@ export function Hero() {
 
             <Reveal className="hero__launch" variant="right" delay={260}>
               <span className="hero__launch-icon">
-                <Icon name="check-circle" size={22} />
+                {launch && <img src={launch.iconSrc} alt="" width={22} height={22} />}
               </span>
-              <span className="hero__launch-title">{launch.title}</span>
-              <span className="hero__launch-text">{launch.text}</span>
+              <span className="hero__launch-title">{launch?.title}</span>
+              <span className="hero__launch-text">{launch?.text}</span>
             </Reveal>
           </div>
         </div>
