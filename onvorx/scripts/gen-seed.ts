@@ -2,10 +2,17 @@ import { writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { buildDefaults } from '../src/content/defaults/index'
-import type { L, ProjectCard, ServiceCard } from '../src/admin/types'
+import type { L, ProjectCard, SectionCard, ServiceCard } from '../src/admin/types'
 
 export const q = (s: string) => `'${s.replace(/'/g, "''")}'`
 export const jsonb = (v: L) => q(JSON.stringify({ en: v.en ?? '', uk: v.uk ?? '' }))
+/**
+ * `jsonb()` normalizes an `L` (both locales, never undefined), so it can't
+ * carry arbitrary JSON. This sibling emits any JSON-serializable value as a
+ * jsonb literal — or SQL `null` when the section has no cards/launch at all.
+ */
+export const jsonbAny = (v: SectionCard[] | SectionCard | null | undefined) =>
+  v === null || v === undefined ? 'null' : `${q(JSON.stringify(v))}::jsonb`
 const textArr = (a: string[]) => `array[${a.map(q).join(',')}]::text[]`
 const bool = (b: boolean) => (b ? 'true' : 'false')
 const nullable = (s: string | null | undefined) => (s ? q(s) : 'null')
@@ -44,9 +51,9 @@ export function buildSeedSql(): string {
 
   for (const s of d.sections) {
     lines.push(
-      `insert into public.site_sections (key,eyebrow,title,body,cta_label) values (` +
+      `insert into public.site_sections (key,eyebrow,title,body,cta_label,cards,launch) values (` +
       `${q(s.key)},${jsonb(s.eyebrow)},${jsonb(s.title)},${jsonb(s.body)},` +
-      `${s.ctaLabel ? jsonb(s.ctaLabel) : 'null'});`,
+      `${s.ctaLabel ? jsonb(s.ctaLabel) : 'null'},${jsonbAny(s.cards)},${jsonbAny(s.launch)});`,
     )
   }
   lines.push('')

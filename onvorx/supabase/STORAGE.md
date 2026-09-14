@@ -7,6 +7,8 @@ functions (`api/admin/upload`) using the service-role key.
 public-media/
   projects/   project card images   projects/<id>-<8hex>.<ext>
   services/   service card icons    services/<id>-<8hex>.<ext>
+  cards/      hero/howWork/about   cards/<id>-<8hex>.<ext>
+              card icons
 ```
 
 - Size limit 2 MB; MIME `image/png, image/jpeg, image/webp`.

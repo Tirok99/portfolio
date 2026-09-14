@@ -3,6 +3,11 @@
 --  Then run supabase/migration-2026-09-10-plan4.sql (Plan 4: sort trigger, unique(list,sort), reset_content).
 --  Then run supabase/migration-2026-09-12-telegram-sessions.sql (Telegram bot admin: dialog-state table).
 --  Then run supabase/migration-2026-09-12-telegram-admins.sql (Telegram bot admin: manager roles table).
+--  Then run supabase/migration-2026-09-13-request-notes.sql (request notes history).
+--  Then run supabase/migration-2026-09-14-hero-howwork-about-cards.sql — its
+--    schema half is already folded into this file (site_sections.cards/launch,
+--    the 'footer' key), but it is still REQUIRED on a fresh project for the
+--    reset_content update that restores those two columns.
 --  Translatable fields are jsonb: {"en": "...", "uk": "..."}.
 --
 --  ⚠  THIS FILE IS FOR A FRESH SUPABASE PROJECT.
@@ -47,11 +52,18 @@ end $$;
 -- ---- 1. section texts ------------------------------------------------------
 create table if not exists public.site_sections (
   key        text primary key
-             check (key in ('hero','services','projects','howWork','about','cta')),
+             check (key in ('hero','services','projects','howWork','about','cta','footer')),
   eyebrow    jsonb not null default '{"en":"","uk":""}',
   title      jsonb not null default '{"en":"","uk":""}',
   body       jsonb not null default '{"en":"","uk":""}',
   cta_label  jsonb,
+  -- fixed-count content cards for hero/howWork/about (null for every other
+  -- key); `launch` is the hero row's single standalone card. Added live by
+  -- migration-2026-09-14-hero-howwork-about-cards.sql — declared here too so
+  -- a FRESH project provisioned from this file alone already has the
+  -- post-migration shape (and so seed.sql, which writes both, loads cleanly).
+  cards      jsonb,
+  launch     jsonb,
   updated_at timestamptz not null default now()
 );
 

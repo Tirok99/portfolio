@@ -9,6 +9,9 @@
 --  through /admin would silently overwrite those edits back to the
 --  original static content — run this file, in full, exactly once,
 --  before anyone edits these four pieces of content through /admin.
+--  Section 4 at the bottom re-creates `reset_content` (first defined in
+--  migration-2026-09-10-plan4.sql) so the "Reset to defaults" RPC also
+--  restores the new `cards`/`launch` columns; that part is idempotent.
 -- ============================================================================
 
 -- ---- 1. schema: two new nullable JSONB columns ----------------------------
@@ -86,3 +89,89 @@ where key = 'about';
 update public.site_sections
 set body = '{"en":"Web solutions built around your business requirements. From idea to implementation and beyond.","uk":"Web solutions built around your business requirements. From idea to implementation and beyond."}'::jsonb
 where key = 'footer';
+
+-- ---- 4. teach reset_content about the two new columns ---------------------
+-- Unchanged from migration-2026-09-10-plan4.sql apart from the two new
+-- `cards`/`launch` assignments in the sections loop. Without this, clicking
+-- "Reset to defaults" in /admin would restore section text but silently drop
+-- the cards/launch half of the payload `sectionRow()` now sends, so the
+-- optimistic UI would show defaults and then snap back to the stale DB rows
+-- on the next background refetch.
+--
+-- payload = { sections: [{key,eyebrow,title,body,cta_label,cards?,launch?}...],
+--             seo: [{page_key,title,description}...],
+--             cards: [{table:'projects'|'services', list, id, ...row}...] }
+-- All snake_case, already row-shaped by the caller. Runs in one transaction.
+create or replace function public.reset_content(payload jsonb) returns void
+  language plpgsql
+  set search_path = ''
+as $$
+declare
+  s jsonb;
+  e jsonb;
+  card jsonb;
+begin
+  -- Guard: the two `delete from` below run before the insert loop, so a null or
+  -- malformed payload would wipe the card tables and re-insert nothing.
+  if payload is null
+     or jsonb_typeof(payload -> 'cards') <> 'array'
+     or jsonb_typeof(payload -> 'sections') <> 'array'
+     or jsonb_typeof(payload -> 'seo') <> 'array' then
+    raise exception 'reset_content: payload must have array keys sections, seo, cards';
+  end if;
+
+  for s in select * from jsonb_array_elements(payload -> 'sections') loop
+    update public.site_sections set
+      eyebrow   = coalesce(s -> 'eyebrow',   eyebrow),
+      title     = coalesce(s -> 'title',     title),
+      body      = coalesce(s -> 'body',      body),
+      cta_label = case when s -> 'cta_label' = 'null'::jsonb or s -> 'cta_label' is null then null else s -> 'cta_label' end,
+      -- key absent (e.g. the `services` section) → leave the column as-is;
+      -- key present → write it, mapping an explicit JSON null to SQL NULL.
+      cards     = case when s ? 'cards'  then nullif(s -> 'cards',  'null'::jsonb) else cards  end,
+      launch    = case when s ? 'launch' then nullif(s -> 'launch', 'null'::jsonb) else launch end
+    where key = s ->> 'key';
+  end loop;
+
+  for e in select * from jsonb_array_elements(payload -> 'seo') loop
+    update public.seo_pages set
+      title       = coalesce(e -> 'title',       title),
+      description  = coalesce(e -> 'description', description)
+    where page_key = e ->> 'page_key';
+  end loop;
+
+  -- `where true`: Supabase's pg-safeupdate guard rejects a bare DELETE
+  -- (no WHERE clause) even inside a function body.
+  delete from public.projects where true;
+  delete from public.services where true;
+
+  for card in select * from jsonb_array_elements(payload -> 'cards') loop
+    if card ->> 'table' = 'projects' then
+      insert into public.projects (list, id, sort, published, title, tags, description, image_url, image_path, image_alt)
+      values (
+        card ->> 'list', card ->> 'id', (card ->> 'sort')::int,
+        coalesce((card ->> 'published')::boolean, false),
+        coalesce(card -> 'title', '{"en":"","uk":""}'::jsonb),
+        coalesce((select array_agg(x) from jsonb_array_elements_text(card -> 'tags') x), '{}'),
+        coalesce(card -> 'description', '{"en":"","uk":""}'::jsonb),
+        card ->> 'image_url', card ->> 'image_path',
+        coalesce(card -> 'image_alt', '{"en":"","uk":""}'::jsonb)
+      );
+    else
+      insert into public.services (list, id, sort, published, featured, title, text, icon_url, icon_path)
+      values (
+        card ->> 'list', card ->> 'id', (card ->> 'sort')::int,
+        coalesce((card ->> 'published')::boolean, false),
+        coalesce((card ->> 'featured')::boolean, false),
+        coalesce(card -> 'title', '{"en":"","uk":""}'::jsonb),
+        coalesce(card -> 'text', '{"en":"","uk":""}'::jsonb),
+        card ->> 'icon_url', card ->> 'icon_path'
+      );
+    end if;
+  end loop;
+end $$;
+
+-- CREATE FUNCTION grants EXECUTE to PUBLIC by default, which would make
+-- POST /rest/v1/rpc/reset_content callable with the anon key (browser bundle).
+-- service_role — which getSupabaseAdmin uses — keeps its grant via Supabase defaults.
+revoke execute on function public.reset_content(jsonb) from anon, authenticated;
