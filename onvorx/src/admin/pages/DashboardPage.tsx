@@ -59,7 +59,7 @@ export function DashboardPage() {
 
       <p style={{ marginTop: '1.5rem' }}>
         <Link to="/admin/content">Edit texts</Link> ·{' '}
-        <Link to="/admin/projects">Projects</Link> ·{' '}
+        <Link to="/admin/cards">Cards</Link> ·{' '}
         <Link to="/admin/seo">SEO</Link>
       </p>
     </section>

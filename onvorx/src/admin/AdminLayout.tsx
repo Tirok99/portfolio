@@ -7,8 +7,7 @@ import './admin.css'
 const NAV: { to: string; label: string }[] = [
   { to: '/admin', label: 'Dashboard' },
   { to: '/admin/content', label: 'Content' },
-  { to: '/admin/projects', label: 'Projects' },
-  { to: '/admin/services', label: 'Services' },
+  { to: '/admin/cards', label: 'Cards' },
   { to: '/admin/seo', label: 'SEO' },
   { to: '/admin/requests', label: 'Requests' },
   { to: '/admin/settings', label: 'Settings' },

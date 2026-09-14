@@ -5,8 +5,7 @@ import { LoginPage } from './auth/LoginPage'
 import { AdminLayout } from './AdminLayout'
 import { DashboardPage } from './pages/DashboardPage'
 import { ContentPage } from './pages/ContentPage'
-import { ProjectsPage } from './pages/ProjectsPage'
-import { ServicesPage } from './pages/ServicesPage'
+import { CardsPage } from './pages/CardsPage'
 import { SeoPage } from './pages/SeoPage'
 import { RequestsPage } from './pages/RequestsPage'
 import { SettingsPage } from './pages/SettingsPage'
@@ -27,8 +26,7 @@ export default function AdminApp() {
           >
             <Route index element={<DashboardPage />} />
             <Route path="content" element={<ContentPage />} />
-            <Route path="projects" element={<ProjectsPage />} />
-            <Route path="services" element={<ServicesPage />} />
+            <Route path="cards" element={<CardsPage />} />
             <Route path="seo" element={<SeoPage />} />
             <Route path="requests" element={<RequestsPage />} />
             <Route path="settings" element={<SettingsPage />} />

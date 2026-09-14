@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { I18nProvider } from '../i18n/i18n'
 import { SiteContentProvider } from '../content/SiteContentProvider'
@@ -45,7 +45,17 @@ describe('AdminApp', () => {
     await waitFor(() =>
       expect(screen.getByRole('navigation', { name: /admin/i })).toBeInTheDocument(),
     )
-    expect(screen.getByRole('link', { name: /content/i })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /requests/i })).toBeInTheDocument()
+    const nav = screen.getByRole('navigation', { name: /admin/i })
+    expect(within(nav).getByRole('link', { name: /content/i })).toBeInTheDocument()
+    expect(within(nav).getByRole('link', { name: /requests/i })).toBeInTheDocument()
+    expect(within(nav).getByRole('link', { name: /^cards$/i })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /^projects$/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /^services$/i })).not.toBeInTheDocument()
+  })
+
+  it('renders CardsPage at /admin/cards', async () => {
+    vi.stubGlobal('fetch', fetchAuthed(true))
+    wrap('/admin/cards')
+    expect(await screen.findByRole('tab', { name: 'Hero' })).toBeInTheDocument()
   })
 })
