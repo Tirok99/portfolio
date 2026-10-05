@@ -2,16 +2,16 @@ import { writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { buildDefaults } from '../src/content/defaults/index'
-import type { L, ProjectCard, SectionCard, ServiceCard } from '../src/admin/types'
+import type { L, ProjectCard, SectionText, ServiceCard } from '../src/admin/types'
 
 export const q = (s: string) => `'${s.replace(/'/g, "''")}'`
 export const jsonb = (v: L) => q(JSON.stringify({ en: v.en ?? '', uk: v.uk ?? '' }))
 /**
  * `jsonb()` normalizes an `L` (both locales, never undefined), so it can't
  * carry arbitrary JSON. This sibling emits any JSON-serializable value as a
- * jsonb literal — or SQL `null` when the section has no cards/launch at all.
+ * jsonb literal — or SQL `null` when the section has no such value.
  */
-export const jsonbAny = (v: SectionCard[] | SectionCard | null | undefined) =>
+export const jsonbAny = (v: unknown) =>
   v === null || v === undefined ? 'null' : `${q(JSON.stringify(v))}::jsonb`
 const textArr = (a: string[]) => `array[${a.map(q).join(',')}]::text[]`
 const bool = (b: boolean) => (b ? 'true' : 'false')
@@ -36,6 +36,24 @@ function serviceRows(list: 'home' | 'page', cards: ServiceCard[]): string[] {
   )
 }
 
+/** One `site_sections` insert, without the trailing `;`. */
+export const sectionInsertSql = (s: SectionText): string =>
+  `insert into public.site_sections (key,eyebrow,title,body,cta_label,cards,launch,texts,media) values (` +
+  `${q(s.key)},${jsonb(s.eyebrow)},${jsonb(s.title)},${jsonb(s.body)},` +
+  `${s.ctaLabel ? jsonb(s.ctaLabel) : 'null'},${jsonbAny(s.cards)},${jsonbAny(s.launch)},` +
+  `${jsonbAny(s.texts)},${jsonbAny(s.media)})`
+
+/**
+ * The /services rows for `supabase/migration-2026-10-05-services-page.sql` —
+ * `on conflict do nothing`, so re-running it never overwrites admin edits.
+ */
+export function buildServicesMigrationInserts(): string {
+  return buildDefaults()
+    .sections.filter((s) => s.key.startsWith('svc'))
+    .map((s) => `${sectionInsertSql(s)} on conflict (key) do nothing;`)
+    .join('\n') + '\n'
+}
+
 export function buildSeedSql(): string {
   const d = buildDefaults()
   const lines: string[] = [
@@ -50,11 +68,7 @@ export function buildSeedSql(): string {
   ]
 
   for (const s of d.sections) {
-    lines.push(
-      `insert into public.site_sections (key,eyebrow,title,body,cta_label,cards,launch) values (` +
-      `${q(s.key)},${jsonb(s.eyebrow)},${jsonb(s.title)},${jsonb(s.body)},` +
-      `${s.ctaLabel ? jsonb(s.ctaLabel) : 'null'},${jsonbAny(s.cards)},${jsonbAny(s.launch)});`,
-    )
+    lines.push(`${sectionInsertSql(s)};`)
   }
   lines.push('')
   for (const e of d.seo) {
