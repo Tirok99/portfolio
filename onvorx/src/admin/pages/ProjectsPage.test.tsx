@@ -40,23 +40,10 @@ const wrap = () =>
   )
 
 describe('ProjectsPage', () => {
-  it('lists the seeded home projects and switches tabs', async () => {
-    const user = userEvent.setup()
+  it('lists the home projects only — the Projects-page list waits for /projects', () => {
     wrap()
     expect(screen.getByText('Relax Ahill')).toBeInTheDocument()
-    await user.click(screen.getByRole('tab', { name: /projects page/i }))
-    // the Projects-page list is seeded with the same 2 items
-    expect(screen.getByText('Encryptia Cloud')).toBeInTheDocument()
-  })
-
-  it('clears the selection when switching tabs', async () => {
-    const user = userEvent.setup()
-    wrap()
-    await user.click(screen.getByText('Relax Ahill'))
-    expect(screen.getAllByLabelText('Title')[0]).toBeInTheDocument()
-    await user.click(screen.getByRole('tab', { name: /projects page/i }))
-    expect(screen.queryByLabelText('Title')).not.toBeInTheDocument()
-    expect(screen.getByText(/no card selected/i)).toBeInTheDocument()
+    expect(screen.queryByRole('tab', { name: /projects page/i })).not.toBeInTheDocument()
   })
 
   it('adds a new card (unpublished) via the list', async () => {

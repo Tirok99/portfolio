@@ -188,12 +188,17 @@ All three areas follow the same pattern: a tab strip on top (existing
   add, remove, move up / down. Used for tags and the AI Build stack.
 - Tabs for About / Projects are added when those pages exist.
 
-### 6.2 Cards — `Services → Page` becomes the `/services` editor
+### 6.2 Cards — two levels: page, then block
 
-The top-level type tabs (Hero, How it works, About, Projects, Services) and the
-Services sub-tabs (Home / Page) stay. **Page** no longer shows the old 4-card
-`services` list; it renders a new `ServicesPageCards` screen: a group list on the
-left, the selected group's editor on the right (same layout as `CardScreen`).
+*Revised 2026-10-05 after the first build (user decision):* Cards is organised by
+page, like Content and SEO.
+
+- **Home** → block tabs **Hero | How it works | About | Projects | Services**. Projects
+  and Services show only their home-page lists; the Projects-page list returns as its
+  own tab when `/projects` exists, and the old `services` `list='page'` rows are no
+  longer shown at all.
+- **Services** → the new `ServicesPageCards` screen: a group list on the left, the
+  selected group's editor on the right (same layout as `CardScreen`).
 
 | Group | Editor |
 |---|---|

@@ -37,11 +37,30 @@ const wrap = () =>
   )
 
 describe('SeoPage', () => {
-  it('lists all 8 pages', () => {
+  it('groups the 8 entries in tabs; Home is the default', async () => {
+    const user = userEvent.setup()
     wrap()
+    expect(screen.getByRole('tab', { name: 'Home' })).toHaveAttribute('aria-selected', 'true')
     expect(screen.getByRole('heading', { name: /^Home$/ })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: /web development/i })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: /web development/i })).not.toBeInTheDocument()
     expect(screen.getAllByText(/\/ 60$/).length).toBeGreaterThan(0) // char counters
+
+    await user.click(screen.getByRole('tab', { name: 'Services' }))
+    expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(5)
+    expect(screen.getByText('Web Development → /services#web-development')).toBeInTheDocument()
+    expect(screen.getByText('Google Ads → /services#paid-search')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('tab', { name: 'Projects' }))
+    expect(screen.getByRole('heading', { name: /^Projects$/ })).toBeInTheDocument()
+    await user.click(screen.getByRole('tab', { name: 'About' }))
+    expect(screen.getByRole('heading', { name: /^About$/ })).toBeInTheDocument()
+  })
+
+  it('the SERP preview of a block entry shows its real address', async () => {
+    const user = userEvent.setup()
+    wrap()
+    await user.click(screen.getByRole('tab', { name: 'Services' }))
+    expect(screen.getByText('onvorx.com/services#paid-search')).toBeInTheDocument()
   })
 
   it('edits the Home SEO title and saves', async () => {

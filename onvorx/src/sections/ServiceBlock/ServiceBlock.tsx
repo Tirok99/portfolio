@@ -1,73 +1,53 @@
 import { useLocation } from "react-router-dom";
 import { useI18n } from "../../i18n/i18n";
+import { useSiteContent, type ResolvedSvcCard } from "../../content/useSiteContent";
 import { useEstimateForm } from "../../components/EstimateForm/useEstimateForm";
 import { Reveal } from "../../components/Reveal/Reveal";
 import type { ServiceBlockConfig } from "../../data/servicesPage";
 import "./ServiceBlock.css";
 
-interface Feature {
-  title: string;
-  text: string;
-}
-
-interface Track {
-  label: string;
-  title: string;
-  features: Feature[];
-}
-
-interface ServiceContent {
-  title: string;
-  body: string;
-  tags: string[];
-  cta: string;
-  pictureAlt?: string;
-  features?: Feature[];
-  tracks?: Track[];
-  get?: { title: string; text: string };
-}
-
-interface FeatureListProps {
-  features: Feature[];
-  icons: string[];
-  /** index of this list's first feature in the block-wide icon list */
-  iconOffset: number;
+function FeatureList({
+  features,
+  headingLevel: Heading,
+}: {
+  features: ResolvedSvcCard[];
   headingLevel: "h3" | "h4";
-}
-
-function FeatureList({ features, icons, iconOffset, headingLevel: Heading }: FeatureListProps) {
+}) {
   return (
     <ul className="service-block__features">
-      {features.map((feature, i) => {
-        const icon = icons[iconOffset + i];
-        return (
-          <Reveal as="li" key={i} className="service-block__feature" variant="up" delay={50 * i}>
-            <span className="service-block__feature-icon" aria-hidden="true">
-              {icon && <img src={icon} alt="" />}
-            </span>
-            <div className="service-block__feature-body">
-              <Heading className="service-block__feature-title">{feature.title}</Heading>
-              <p className="service-block__feature-text">{feature.text}</p>
-            </div>
-          </Reveal>
-        );
-      })}
+      {features.map((feature, i) => (
+        <Reveal as="li" key={i} className="service-block__feature" variant="up" delay={50 * i}>
+          <span className="service-block__feature-icon" aria-hidden="true">
+            {feature.iconSrc && <img src={feature.iconSrc} alt="" />}
+          </span>
+          <div className="service-block__feature-body">
+            <Heading className="service-block__feature-title">{feature.title}</Heading>
+            <p className="service-block__feature-text">{feature.text}</p>
+          </div>
+        </Reveal>
+      ))}
     </ul>
   );
 }
 
 export function ServiceBlock({ config }: { config: ServiceBlockConfig }) {
   const { t, tx } = useI18n();
+  const { svcSection } = useSiteContent();
   const { open } = useEstimateForm();
   const { pathname } = useLocation();
-  const content = tx<ServiceContent>(`servicesPage.${config.contentKey}`);
-  const { id, theme, picture } = config;
+  const content = svcSection(config.sectionKey);
+  const { id, theme } = config;
   const titleId = `${id}-title`;
-
-  // each track continues the block-wide icon list where the previous one ended
-  const trackOffsets = (content.tracks ?? []).map((_, i, tracks) =>
-    tracks.slice(0, i).reduce((sum, tr) => sum + tr.features.length, 0),
-  );
+  const badgeSrc = content.images.badge;
+  const pictureSrc = content.images.picture;
+  // only the built-in illustration has known dimensions; an upload keeps CSS sizing
+  const pictureSize = config.picture && config.picture.src === pictureSrc ? config.picture : undefined;
+  const pictureAlt = tx<string | undefined>(`servicesPage.${config.contentKey}.pictureAlt`) ?? "";
+  // items are grouped by their own `track`, not by array position
+  const tracks = content.tracks.map((head, i) => ({
+    ...head,
+    features: content.cards.filter((c) => c.track === i),
+  }));
 
   return (
     <section
@@ -77,18 +57,20 @@ export function ServiceBlock({ config }: { config: ServiceBlockConfig }) {
       aria-labelledby={titleId}
     >
       <div className={`${id}__container`}>
-        <div className={`service-block__inner${picture ? "" : " service-block__inner--no-picture"}`}>
+        <div className={`service-block__inner${pictureSrc ? "" : " service-block__inner--no-picture"}`}>
           <Reveal className="service-block__intro" variant="up">
             <div className="service-block__head">
-              <img
-                className="service-block__badge"
-                src={config.badge}
-                alt=""
-                width={64}
-                height={64}
-                loading="lazy"
-                decoding="async"
-              />
+              {badgeSrc && (
+                <img
+                  className="service-block__badge"
+                  src={badgeSrc}
+                  alt=""
+                  width={64}
+                  height={64}
+                  loading="lazy"
+                  decoding="async"
+                />
+              )}
               <span className="service-block__label">
                 {config.number} / {t("servicesPage.serviceLabel")}
               </span>
@@ -97,15 +79,17 @@ export function ServiceBlock({ config }: { config: ServiceBlockConfig }) {
               {content.title}
             </h2>
             <p className="service-block__description">{content.body}</p>
-            <ul className="service-block__tags">
-              {content.tags.map((tag) => (
-                <li key={tag} className="service-block__tag">
-                  {tag}
-                </li>
-              ))}
-            </ul>
+            {content.tags.length > 0 && (
+              <ul className="service-block__tags">
+                {content.tags.map((tag, i) => (
+                  <li key={i} className="service-block__tag">
+                    {tag}
+                  </li>
+                ))}
+              </ul>
+            )}
             <button type="button" className="service-block__cta" onClick={() => open(pathname)}>
-              {content.cta}
+              {content.ctaLabel}
               <img
                 className="service-block__cta-arrow"
                 src="/assets/services-page/icons/btn-arrow.svg"
@@ -114,13 +98,12 @@ export function ServiceBlock({ config }: { config: ServiceBlockConfig }) {
             </button>
           </Reveal>
 
-          {picture && (
+          {pictureSrc && (
             <Reveal className="service-block__picture" variant="fade" delay={120}>
               <img
-                src={picture.src}
-                alt={content.pictureAlt ?? ""}
-                width={picture.width}
-                height={picture.height}
+                src={pictureSrc}
+                alt={pictureAlt}
+                {...(pictureSize ? { width: pictureSize.width, height: pictureSize.height } : {})}
                 loading="lazy"
                 decoding="async"
               />
@@ -128,30 +111,20 @@ export function ServiceBlock({ config }: { config: ServiceBlockConfig }) {
           )}
 
           <div className="service-block__body">
-            {content.tracks ? (
+            {tracks.length > 0 ? (
               <div className="service-block__tracks">
-                {content.tracks.map((track, i) => (
+                {tracks.map((track, i) => (
                   <div className="service-block__track" key={i}>
                     <h3 className="service-block__track-head">
                       <span className="service-block__track-label">{track.label}</span>
                       <span className="service-block__track-title">{track.title}</span>
                     </h3>
-                    <FeatureList
-                      features={track.features}
-                      icons={config.featureIcons}
-                      iconOffset={trackOffsets[i]}
-                      headingLevel="h4"
-                    />
+                    <FeatureList features={track.features} headingLevel="h4" />
                   </div>
                 ))}
               </div>
             ) : (
-              <FeatureList
-                features={content.features ?? []}
-                icons={config.featureIcons}
-                iconOffset={0}
-                headingLevel="h3"
-              />
+              <FeatureList features={content.cards} headingLevel="h3" />
             )}
 
             {content.get && (

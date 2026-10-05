@@ -1,6 +1,7 @@
 import type { L, SectionCard, SectionText } from '../../admin/types'
 import en from '../../i18n/en.json'
 import uk from '../../i18n/uk.json'
+import { defaultServicesSections } from './servicesPage'
 
 const pair = (a: string, b: string): L => ({ en: a, uk: b })
 
@@ -23,7 +24,7 @@ const cardsFrom = (
     }
   })
 
-export const defaultSections: SectionText[] = [
+const homeSections: SectionText[] = [
   {
     key: 'hero',
     label: 'Hero (top of page)',
@@ -98,3 +99,6 @@ export const defaultSections: SectionText[] = [
     body: pair(en.footer.tagline, uk.footer.tagline),
   },
 ]
+
+/** Home sections first, then the /services sections in page order. */
+export const defaultSections: SectionText[] = [...homeSections, ...defaultServicesSections]

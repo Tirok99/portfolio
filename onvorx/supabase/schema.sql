@@ -8,6 +8,9 @@
 --    schema half is already folded into this file (site_sections.cards/launch,
 --    the 'footer' key), but it is still REQUIRED on a fresh project for the
 --    reset_content update that restores those two columns.
+--  Then run supabase/migration-2026-10-05-services-page.sql — same story: the
+--    texts/media columns and svc* keys are already here, its reset_content
+--    update (and the svc* rows, if seed.sql was not run) are still needed.
 --  Translatable fields are jsonb: {"en": "...", "uk": "..."}.
 --
 --  ⚠  THIS FILE IS FOR A FRESH SUPABASE PROJECT.
@@ -52,7 +55,9 @@ end $$;
 -- ---- 1. section texts ------------------------------------------------------
 create table if not exists public.site_sections (
   key        text primary key
-             check (key in ('hero','services','projects','howWork','about','cta','footer')),
+             check (key in ('hero','services','projects','howWork','about','cta','footer',
+                            'svcHero','svcWebDevelopment','svcAiBuild','svcWebsiteSupport',
+                            'svcBusinessAnalysis','svcGoogleAds','svcCta')),
   eyebrow    jsonb not null default '{"en":"","uk":""}',
   title      jsonb not null default '{"en":"","uk":""}',
   body       jsonb not null default '{"en":"","uk":""}',
@@ -64,6 +69,11 @@ create table if not exists public.site_sections (
   -- post-migration shape (and so seed.sql, which writes both, loads cleanly).
   cards      jsonb,
   launch     jsonb,
+  -- /services sections only: `texts` is written by the admin Content screen,
+  -- `media` by the Cards screen (one owner each, so saves never collide).
+  -- Added live by migration-2026-10-05-services-page.sql.
+  texts      jsonb,
+  media      jsonb,
   updated_at timestamptz not null default now()
 );
 

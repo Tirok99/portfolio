@@ -60,7 +60,11 @@ function applySeoPatch(record: SeoRecord, patch: Record<string, unknown>): SeoRe
 function makeDeps(initialState: TelegramState = { screen: 'main_menu' }) {
   let state = initialState
   let managers: ManagerRecord[] = []
-  let sections: Record<string, SectionRecord> = { hero: { ...HERO }, about: { ...ABOUT } }
+  let sections: Record<string, SectionRecord> = {
+    hero: { ...HERO },
+    about: { ...ABOUT },
+    svcGoogleAds: { key: 'svcGoogleAds', eyebrow: L('', ''), title: L('Google Ads', 'Google Ads'), body: L('B', 'B'), ctaLabel: L('Plan', 'Plan') },
+  }
   let seoPages: Record<string, SeoRecord> = { home: { ...HOME_SEO } }
 
   const admins: TelegramAdminsDeps = {
@@ -339,12 +343,39 @@ describe('dispatch — Content, owner + content_manager', () => {
     expect(ctx.reply).toHaveBeenCalledWith({ text: "You don't have access to this bot." })
   })
 
-  it('owner opens content:list and sees the six blocks', async () => {
+  it('owner opens content:list and is asked for the page', async () => {
     const { deps } = makeDeps()
     const ctx = makeCtx({ callbackData: 'content:list' })
     await dispatch(ctx, ENV, deps)
     const reply = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    expect(reply.text).toBe('Content — choose a page:')
+  })
+
+  it('content:page:services lists the /services sections', async () => {
+    const { deps } = makeDeps()
+    const ctx = makeCtx({ callbackData: 'content:page:services' })
+    await dispatch(ctx, ENV, deps)
+    const reply = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0]
     expect(reply.text).toBe('Content — choose a block:')
+    const data = (reply.keyboard.inline_keyboard as { callback_data: string }[][]).flat().map((b) => b.callback_data)
+    expect(data).toContain('content:section:svcGoogleAds')
+  })
+
+  it('edits the title of a svc section through the shared content handler', async () => {
+    const { deps, getSections } = makeDeps()
+    await dispatch(makeCtx({ callbackData: 'content:section:svcGoogleAds' }), ENV, deps)
+    await dispatch(makeCtx({ callbackData: 'content:field:title' }), ENV, deps)
+    await dispatch(makeCtx({ callbackData: 'content:lang:en' }), ENV, deps)
+    await dispatch(makeCtx({ text: 'Paid search' }), ENV, deps)
+    expect(getSections().svcGoogleAds.title).toEqual({ en: 'Paid search', uk: 'Google Ads' })
+  })
+
+  it('a stale Eyebrow button on a svc section is refused', async () => {
+    const { deps } = makeDeps()
+    await dispatch(makeCtx({ callbackData: 'content:section:svcGoogleAds' }), ENV, deps)
+    const ctx = makeCtx({ callbackData: 'content:field:eyebrow' })
+    await dispatch(ctx, ENV, deps)
+    expect(ctx.reply).toHaveBeenCalledWith({ text: "That field can't be edited here." })
   })
 
   it('a content_manager opens a section detail and sees current EN/UA text', async () => {

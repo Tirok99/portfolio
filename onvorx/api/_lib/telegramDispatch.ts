@@ -262,9 +262,16 @@ async function handleCallback(
   }
 }
 
-async function showContentList(ctx: BotCtx, env: Env, deps: DispatchDeps): Promise<void> {
-  await deps.sessions.save(ctx.chatId, { screen: 'content_list' }, env)
-  await ctx.reply(menu.buildContentList())
+async function showContentPicker(ctx: BotCtx, env: Env, deps: DispatchDeps): Promise<void> {
+  await deps.sessions.save(ctx.chatId, { screen: 'content_pages' }, env)
+  await ctx.reply(menu.buildContentPagePicker())
+}
+
+async function showContentList(
+  ctx: BotCtx, env: Env, deps: DispatchDeps, page: menu.ContentPage = 'home',
+): Promise<void> {
+  await deps.sessions.save(ctx.chatId, { screen: 'content_list', data: { page } }, env)
+  await ctx.reply(menu.buildContentList(page))
 }
 
 async function showSectionDetail(
@@ -273,7 +280,7 @@ async function showSectionDetail(
   const record = await deps.content.getSection(key, env)
   if (!record) {
     await ctx.reply({ text: 'Could not load that section — please try again.' })
-    await showContentList(ctx, env, deps)
+    await showContentList(ctx, env, deps, menu.contentPageOf(key))
     return
   }
   await deps.sessions.save(ctx.chatId, { screen: 'content_detail', data: { key } }, env)
@@ -282,7 +289,11 @@ async function showSectionDetail(
 
 async function handleContentCallback(ctx: BotCtx, data: string, env: Env, deps: DispatchDeps): Promise<void> {
   if (data === 'content:list') {
-    await showContentList(ctx, env, deps)
+    await showContentPicker(ctx, env, deps)
+    return
+  }
+  if (data === 'content:page:home' || data === 'content:page:services') {
+    await showContentList(ctx, env, deps, data === 'content:page:services' ? 'services' : 'home')
     return
   }
   if (data.startsWith('content:section:')) {
@@ -295,6 +306,11 @@ async function handleContentCallback(ctx: BotCtx, data: string, env: Env, deps: 
     const key = state.data?.key as string | undefined
     if (!key) {
       await ctx.reply({ text: 'Session out of sync — please /start and try again.' })
+      return
+    }
+    // a stale button (e.g. Eyebrow) must not reach a field this section doesn't offer
+    if (!menu.sectionFieldsFor(key).includes(field)) {
+      await ctx.reply({ text: "That field can't be edited here." })
       return
     }
     await deps.sessions.save(ctx.chatId, { screen: 'content_lang', data: { key, field } }, env)
@@ -313,7 +329,7 @@ async function handleContentCallback(ctx: BotCtx, data: string, env: Env, deps: 
     const record = await deps.content.getSection(key, env)
     if (!record) {
       await ctx.reply({ text: 'Could not load that section — please try again.' })
-      await showContentList(ctx, env, deps)
+      await showContentList(ctx, env, deps, menu.contentPageOf(key))
       return
     }
     const current = menu.sectionFieldValue(record, field)
@@ -333,7 +349,7 @@ async function saveContentField(
   const record = await deps.content.getSection(key, env)
   if (!record) {
     await ctx.reply({ text: 'Could not load that section — please try again.' })
-    await showContentList(ctx, env, deps)
+    await showContentList(ctx, env, deps, menu.contentPageOf(key))
     return
   }
   const current = menu.sectionFieldValue(record, field)

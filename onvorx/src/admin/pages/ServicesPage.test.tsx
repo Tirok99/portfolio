@@ -53,8 +53,8 @@ describe('ServicesPage', () => {
     expect(screen.getByText('Web Development')).toBeInTheDocument()
     await user.click(screen.getByText('Web Development'))
     expect(screen.getByLabelText(/featured/i)).toBeInTheDocument()
-    await user.click(screen.getByRole('tab', { name: /services page/i }))
-    expect(screen.queryByLabelText(/featured/i)).not.toBeInTheDocument()
+    // the /services page has its own editor under Cards → Services
+    expect(screen.queryByRole('tab', { name: /services page/i })).not.toBeInTheDocument()
   })
 
   it('toggles Featured and saves', async () => {
@@ -67,16 +67,6 @@ describe('ServicesPage', () => {
     expect(screen.getByTestId('wd-featured')).toHaveTextContent('false')
   })
 
-  it('clears the selection when switching tabs', async () => {
-    const user = userEvent.setup()
-    wrap()
-    await user.click(screen.getByText('Web Development'))
-    expect(screen.getAllByLabelText('Title')[0]).toBeInTheDocument()
-    await user.click(screen.getByRole('tab', { name: /services page/i }))
-    expect(screen.queryByLabelText('Title')).not.toBeInTheDocument()
-    expect(screen.getByText(/no card selected/i)).toBeInTheDocument()
-  })
-
   it('clears the SaveBar after a successful save (not stuck dirty)', async () => {
     const user = userEvent.setup()
     wrap()
@@ -87,15 +77,6 @@ describe('ServicesPage', () => {
     await user.click(screen.getByRole('button', { name: /^save$/i }))
     expect(screen.getByText('All changes saved')).toBeInTheDocument()
     expect(screen.queryByText(/unsaved changes/i)).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /^save$/i })).toBeDisabled()
-  })
-
-  it('a freshly-selected untouched card on the Services page tab is not dirty', async () => {
-    const user = userEvent.setup()
-    wrap()
-    await user.click(screen.getByRole('tab', { name: /services page/i }))
-    await user.click(screen.getByText('Web Development'))
-    expect(screen.getByText('All changes saved')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^save$/i })).toBeDisabled()
   })
 

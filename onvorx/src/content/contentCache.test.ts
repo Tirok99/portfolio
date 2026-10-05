@@ -41,6 +41,10 @@ describe('contentCache', () => {
     expect(loadContentCache()).toEqual(c)
   })
 
+  it('uses the v3 key, so a cache written before the /services sections existed is ignored', () => {
+    expect(CONTENT_CACHE_KEY).toBe('onvorx.content.cache.v3')
+  })
+
   it('returns null when nothing is cached', () => {
     expect(loadContentCache()).toBeNull()
   })

@@ -10,6 +10,9 @@ import {
   buildRemoveConfirm,
   canAccessSection,
   buildContentList,
+  buildContentPagePicker,
+  contentPageOf,
+  sectionFieldsFor,
   buildSectionDetail,
   sectionFieldValue,
   buildContentFieldLangPrompt,
@@ -179,18 +182,43 @@ const HOME_SEO: SeoRecord = {
   description: L('Web solutions built around your business.', 'Веб-рішення під ваш бізнес.'),
 }
 
-describe('buildContentList', () => {
-  it('lists all six blocks, each routing to content:section:<key>, then Back to menu:main', () => {
-    const buttons = readButtons(buildContentList())
-    expect(buttons).toEqual([
+describe('buildContentPagePicker / buildContentList', () => {
+  it('asks for the page first', () => {
+    const r = buildContentPagePicker()
+    expect(r.text).toBe('Content — choose a page:')
+    expect(readButtons(r)).toEqual([
+      { text: 'Home', data: 'content:page:home' },
+      { text: 'Services', data: 'content:page:services' },
+      { text: '⬅ Back', data: 'menu:main' },
+    ])
+  })
+  it('Home lists the six home blocks, then Back to the page choice', () => {
+    expect(readButtons(buildContentList('home'))).toEqual([
       { text: 'Hero', data: 'content:section:hero' },
       { text: 'Services', data: 'content:section:services' },
       { text: 'Projects', data: 'content:section:projects' },
       { text: 'How We Work', data: 'content:section:howWork' },
       { text: 'About', data: 'content:section:about' },
       { text: 'CTA', data: 'content:section:cta' },
-      { text: '⬅ Back', data: 'menu:main' },
+      { text: '⬅ Back', data: 'content:list' },
     ])
+  })
+  it('Services lists the 7 /services sections', () => {
+    expect(readButtons(buildContentList('services'))).toEqual([
+      { text: 'Hero', data: 'content:section:svcHero' },
+      { text: 'Web Development', data: 'content:section:svcWebDevelopment' },
+      { text: 'AI Build', data: 'content:section:svcAiBuild' },
+      { text: 'Website Support', data: 'content:section:svcWebsiteSupport' },
+      { text: 'Business Analysis', data: 'content:section:svcBusinessAnalysis' },
+      { text: 'Google Ads', data: 'content:section:svcGoogleAds' },
+      { text: 'CTA', data: 'content:section:svcCta' },
+      { text: '⬅ Back', data: 'content:list' },
+    ])
+  })
+  it('svc sections expose Title and Body only', () => {
+    expect(sectionFieldsFor('svcCta')).toEqual(['title', 'body'])
+    expect(contentPageOf('svcCta')).toBe('services')
+    expect(contentPageOf('hero')).toBe('home')
   })
 })
 
@@ -204,7 +232,15 @@ describe('buildSectionDetail', () => {
       { text: 'Title', data: 'content:field:title' },
       { text: 'Body', data: 'content:field:body' },
       { text: 'CTA label', data: 'content:field:ctaLabel' },
-      { text: '⬅ Back', data: 'content:list' },
+      { text: '⬅ Back', data: 'content:page:home' },
+    ])
+  })
+  it('a svc section offers Title/Body and goes Back to the Services list', () => {
+    const r = buildSectionDetail({ ...HERO, key: 'svcGoogleAds', ctaLabel: L('Plan', 'Plan') })
+    expect(readButtons(r)).toEqual([
+      { text: 'Title', data: 'content:field:title' },
+      { text: 'Body', data: 'content:field:body' },
+      { text: '⬅ Back', data: 'content:page:services' },
     ])
   })
   it('about has no CTA label field or button (ctaLabel is null and about is not a CTA section)', () => {
@@ -340,14 +376,6 @@ describe('buildCardTypeTabs', () => {
       { text: '⬅ Back', data: 'menu:main' },
     ])
   })
-  it('services: "On the home page" / "Services page"', () => {
-    const buttons = readButtons(buildCardTypeTabs('services'))
-    expect(buttons).toEqual([
-      { text: 'On the home page', data: 'cards:services:tab:home' },
-      { text: 'Services page', data: 'cards:services:tab:page' },
-      { text: '⬅ Back', data: 'menu:main' },
-    ])
-  })
 })
 
 describe('buildProjectList', () => {
@@ -372,7 +400,7 @@ describe('buildServiceList', () => {
     const buttons = readButtons(buildServiceList('home', [SERVICE_A]))
     expect(buttons).toEqual([
       { text: '✅ Web Development', data: 'cards:card:web-development' },
-      { text: '⬅ Back', data: 'cards:services:list' },
+      { text: '⬅ Back', data: 'menu:main' },
     ])
   })
 })

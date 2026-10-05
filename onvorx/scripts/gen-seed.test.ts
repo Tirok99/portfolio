@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
-import { buildSeedSql, q } from './gen-seed'
+import { buildSeedSql, buildServicesMigrationInserts, q } from './gen-seed'
 
 /** Split an `insert ... values (a,b,c);` statement into its raw SQL literals. */
 const argsOf = (stmt: string): string[] => {
@@ -26,10 +26,10 @@ const argsOf = (stmt: string): string[] => {
   return out
 }
 
-const SECTION_COLS = ['key', 'eyebrow', 'title', 'body', 'cta_label', 'cards', 'launch']
+const SECTION_COLS = ['key', 'eyebrow', 'title', 'body', 'cta_label', 'cards', 'launch', 'texts', 'media']
 
 /** The JSON text behind one jsonb column of a site_sections insert, or `null`. */
-const jsonbArg = (stmt: string, col: 'cards' | 'launch'): string | null => {
+const jsonbArg = (stmt: string, col: 'cards' | 'launch' | 'texts' | 'media'): string | null => {
   const raw = argsOf(stmt)[SECTION_COLS.indexOf(col)]
   if (raw === 'null') return null
   const m = /^'([\s\S]*)'::jsonb$/.exec(raw)
@@ -59,15 +59,26 @@ describe('buildSeedSql', () => {
     expect(sql).not.toMatch(/^\s*commit;\s*$/im)
   })
 
-  it('inserts 7 sections, 8 seo pages', () => {
-    expect(sql.match(/insert into public\.site_sections/gi) ?? []).toHaveLength(7)
+  it('inserts the 7 /services sections with their texts and media', () => {
+    const ads = sectionInserts.find((l) => l.includes("'svcGoogleAds'"))!
+    expect(JSON.parse(jsonbArg(ads, 'media')!)).toEqual({
+      badge: { kind: 'asset', src: '/assets/services-page/badge-ads.webp' },
+    })
+    expect(JSON.parse(jsonbArg(ads, 'texts')!).tags.length).toBeGreaterThan(0)
+    const hero = sectionInserts.find((l) => l.includes("('hero',"))!
+    expect(jsonbArg(hero, 'texts')).toBeNull()
+    expect(sectionInserts).toHaveLength(14)
+  })
+
+  it('inserts 14 sections, 8 seo pages', () => {
+    expect(sql.match(/insert into public\.site_sections/gi) ?? []).toHaveLength(14)
     expect(sql.match(/insert into public\.seo_pages/gi) ?? []).toHaveLength(8)
   })
 
-  it('emits the cards/launch columns on every site_sections insert', () => {
+  it('emits the cards/launch/texts/media columns on every site_sections insert', () => {
     for (const stmt of sectionInserts) {
       expect(stmt).toMatch(
-        /insert into public\.site_sections \(key,eyebrow,title,body,cta_label,cards,launch\) values/,
+        /insert into public\.site_sections \(key,eyebrow,title,body,cta_label,cards,launch,texts,media\) values/,
       )
     }
   })
@@ -124,8 +135,13 @@ describe('buildSeedSql', () => {
       join(dirname(fileURLToPath(import.meta.url)), '..', 'supabase', 'schema.sql'),
       'utf8',
     )
-    expect(schema).toMatch(/check \(key in \('hero','services','projects','howWork','about','cta','footer'\)\)/)
+    // every key the seed inserts (footer, the svc* rows) must be in the check list
+    const check = /check \(key in \(([^)]*)\)\)/.exec(schema)![1]
+    const allowed = [...check.matchAll(/'([^']+)'/g)].map((m) => m[1])
+    for (const stmt of sectionInserts) expect(allowed).toContain(/values \('([^']+)'/.exec(stmt)![1])
     expect(schema).toMatch(/^\s*cards\s+jsonb,$/m)
+    expect(schema).toMatch(/^\s*texts\s+jsonb,$/m)
+    expect(schema).toMatch(/^\s*media\s+jsonb,$/m)
     expect(schema).toMatch(/^\s*launch\s+jsonb,$/m)
   })
 
@@ -147,5 +163,16 @@ describe('buildSeedSql', () => {
 
   it('does NOT insert any estimate_requests', () => {
     expect(sql).not.toMatch(/insert into public\.estimate_requests/i)
+  })
+})
+
+describe('buildServicesMigrationInserts', () => {
+  it('emits one non-destructive insert per svc section', () => {
+    const lines = buildServicesMigrationInserts().trim().split('\n')
+    expect(lines).toHaveLength(7)
+    for (const l of lines) {
+      expect(l).toMatch(/^insert into public\.site_sections .* on conflict \(key\) do nothing;$/)
+      expect(l).toMatch(/'svc[A-Za-z]+'/)
+    }
   })
 })

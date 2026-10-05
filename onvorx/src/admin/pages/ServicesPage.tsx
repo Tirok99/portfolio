@@ -12,9 +12,10 @@ import { useToast } from '../components/Toast'
 import { useConfirm } from '../components/ConfirmDialog'
 import { useAdminTitle } from '../useAdminTitle'
 
+// Only the home-page list: the /services page is edited under Cards → Services.
+// The old list='page' rows stay in the DB but are not shown (spec §4).
 const TABS: { key: CardListKey; label: string }[] = [
   { key: 'servicesHome', label: 'On the home page' },
-  { key: 'servicesPage', label: 'Services page' },
 ]
 
 interface Draft {
@@ -185,7 +186,7 @@ export function ServicesPage() {
     <>
       <CardScreen
         title="Services"
-        hint="Service cards shown in the Services block on the home page, and the (future) Services page. Each list is separate."
+        hint="Service cards shown in the Services block on the home page."
         tabs={TABS}
         activeList={list}
         onActiveListChange={(l) => {

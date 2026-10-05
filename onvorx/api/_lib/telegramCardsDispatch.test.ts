@@ -120,6 +120,22 @@ describe('dispatchCardsCallback — list and detail', () => {
     expect(reply.text).toBe('Projects — choose a list:')
   })
 
+  it('cards:services:list goes straight to the home list (no Services page list)', async () => {
+    const { deps, cards } = makeDeps()
+    const ctx = makeCtx({ callbackData: 'cards:services:list' })
+    await dispatchCardsCallback(ctx, 'cards:services:list', ENV, deps)
+    expect(cards.listServices).toHaveBeenCalledWith('home', ENV)
+    expect((ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0].text).toContain('home page')
+  })
+
+  it('an old "Services page" button opens the home list, never list=page', async () => {
+    const { deps, cards } = makeDeps()
+    const ctx = makeCtx({ callbackData: 'cards:services:tab:page' })
+    await dispatchCardsCallback(ctx, 'cards:services:tab:page', ENV, deps)
+    expect(cards.listServices).toHaveBeenCalledWith('home', ENV)
+    expect(cards.listServices).not.toHaveBeenCalledWith('page', ENV)
+  })
+
   it('cards:projects:tab:home lists the home cards', async () => {
     const { deps } = makeDeps()
     const ctx = makeCtx({})

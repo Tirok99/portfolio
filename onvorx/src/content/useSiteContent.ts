@@ -1,7 +1,8 @@
 import { useMemo } from 'react'
-import type { SectionCard, SectionKey, SeoPageKey } from '../admin/types'
+import type { SectionCard, SectionKey, SeoPageKey, ServicesSectionKey } from '../admin/types'
 import { useI18n } from '../i18n/i18n'
 import { useSiteContentRaw } from './SiteContentProvider'
+import { isAiBuildMedia, isAiBuildTexts, isBlockMedia, isBlockTexts } from './servicesSections'
 
 const pad2 = (n: number) => String(n).padStart(2, '0')
 
@@ -30,6 +31,30 @@ export interface ResolvedSectionCard {
   text: string
 }
 
+export interface ResolvedSvcCard {
+  iconSrc: string
+  title: string
+  text: string
+  tags: string[]
+  track?: 0 | 1
+}
+
+export interface ResolvedSvcSection {
+  eyebrow: string
+  title: string
+  body: string
+  ctaLabel: string
+  cards: ResolvedSvcCard[]
+  /** block tags; empty items are dropped */
+  tags: string[]
+  /** AI Build stack; empty items are dropped */
+  stack: string[]
+  get?: { title: string; text: string }
+  tracks: { label: string; title: string }[]
+  /** only the images that have a src */
+  images: Partial<Record<'badge' | 'picture' | 'site' | 'admin' | 'bot', string>>
+}
+
 export function useSiteContent() {
   const { data, actions } = useSiteContentRaw()
   const { lang } = useI18n()
@@ -53,6 +78,50 @@ export function useSiteContent() {
         ctaLabel: s?.ctaLabel ? pick(s.ctaLabel) : '',
         cards: s?.cards ? s.cards.map(resolveCard) : [],
         launch: s?.launch ? resolveCard(s.launch) : undefined,
+      }
+    }
+
+    const list = (items: { en: string; uk: string }[] | undefined) =>
+      (items ?? []).map(pick).filter((s) => s !== '')
+
+    const svcSection = (key: ServicesSectionKey): ResolvedSvcSection => {
+      const s = data.sections.find((x) => x.key === key)
+      const texts = s?.texts
+      const media = s?.media
+      const block = texts && isBlockTexts(texts) ? texts : undefined
+      // a "What you get" box with both fields blanked is hidden, not rendered empty
+      const get = block?.get && { title: pick(block.get.title), text: pick(block.get.text) }
+      const hasGet = Boolean(get && (get.title || get.text))
+      const images: ResolvedSvcSection['images'] = {}
+      const put = (slot: keyof ResolvedSvcSection['images'], src: string | undefined) => {
+        if (src) images[slot] = src
+      }
+      if (media && isBlockMedia(media)) {
+        put('badge', media.badge.src)
+        put('picture', media.picture?.src)
+      }
+      if (media && isAiBuildMedia(media)) {
+        put('site', media.site.src)
+        put('admin', media.admin.src)
+        put('bot', media.bot.src)
+      }
+      return {
+        eyebrow: s ? pick(s.eyebrow) : '',
+        title: s ? pick(s.title) : '',
+        body: s ? pick(s.body) : '',
+        ctaLabel: s?.ctaLabel ? pick(s.ctaLabel) : '',
+        cards: (s?.cards ?? []).map((c) => ({
+          iconSrc: c.icon.src,
+          title: pick(c.title),
+          text: pick(c.text),
+          tags: list(c.tags),
+          ...(c.track !== undefined ? { track: c.track } : {}),
+        })),
+        tags: list(block?.tags),
+        stack: list(texts && isAiBuildTexts(texts) ? texts.stack : undefined),
+        ...(hasGet ? { get } : {}),
+        tracks: (block?.tracks ?? []).map((t) => ({ label: pick(t.label), title: pick(t.title) })),
+        images,
       }
     }
 
@@ -90,6 +159,6 @@ export function useSiteContent() {
       }
     }
 
-    return { raw: data, actions, section, projectsHome, servicesHome, seoFor }
+    return { raw: data, actions, section, svcSection, projectsHome, servicesHome, seoFor }
   }, [data, actions, lang])
 }

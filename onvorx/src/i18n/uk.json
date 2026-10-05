@@ -227,114 +227,12 @@
     "back": "Back to home"
   },
   "servicesPage": {
-    "hero": {
-      "eyebrow": "Services",
-      "title": "Every stage of your web project, covered",
-      "body": "Four core service areas, from clear requirements to launch, ongoing improvements and paid traffic. Choose one or combine them around your project.",
-      "cardsLabel": "Service areas",
-      "cards": [
-        { "title": "Web Development", "tags": ["WordPress", "Webflow", "Framer"] },
-        { "title": "Website Support & Development", "tags": ["Updates", "Integrations", "Support"] },
-        { "title": "Business Analysis", "tags": ["Requirements", "Processes", "Scope"] },
-        { "title": "Google Ads", "tags": ["Search", "Analytics", "Optimization"] }
-      ]
-    },
+    "hero": { "cardsLabel": "Service areas" },
     "serviceLabel": "Service",
     "whatYouGet": "What you get",
-    "webDevelopment": {
-      "title": "Web Development",
-      "body": "Turn your designs and requirements into a website with the structure, features and integrations your business needs.",
-      "tags": ["WordPress", "Webflow", "Framer"],
-      "cta": "Get a project estimate",
-      "pictureAlt": "Website layout illustration",
-      "features": [
-        { "title": "Design implementation", "text": "Build website pages from your approved design." },
-        { "title": "Content management", "text": "Set up tools for your team to edit and publish content." },
-        { "title": "Responsive behavior", "text": "Adapt layouts and interactions for desktop, tablet and mobile." },
-        { "title": "Structure & navigation", "text": "Organize pages, content and user journeys before development." },
-        { "title": "Integrations", "text": "Connect forms, external tools and business systems." },
-        { "title": "Testing & launch", "text": "Check agreed features and prepare the website to go live." }
-      ],
-      "get": {
-        "title": "A responsive website, ready to launch",
-        "text": "Your approved design brought to life: featuring editable content and the integrations essential for your business."
-      }
-    },
-    "aiBuild": {
-      "badge": "New",
-      "title": "AI Build",
-      "body": "One connected workflow from a Figma design to a live, editable website. We set up the site, an admin panel and a Telegram bot on a single shared database, so your team can update content without touching code.",
-      "stack": ["Design", "Site", "Database", "Admin Panel", "Telegram bot"],
-      "link": "View project example",
-      "mockupsAlt": "Website, admin panel and Telegram bot built on one shared database"
-    },
-    "websiteSupport": {
-      "title": "Website Support & Development",
-      "body": "New pages, functionality and integrations for a site that is already live, delivered in agreed releases.",
-      "tags": ["WordPress", "Webflow", "Framer"],
-      "cta": "Plan your next release",
-      "pictureAlt": "Website settings and release check illustration",
-      "features": [
-        { "title": "New pages", "text": "Extend your website with new pages and landing pages." },
-        { "title": "Functionality", "text": "Add or refine features on your existing website." },
-        { "title": "Integrations", "text": "Connect your website to external tools and business systems." },
-        { "title": "Ongoing support", "text": "Maintain and improve your website at an agreed pace." },
-        { "title": "Release cycle", "text": "Group changes into planned releases with a clear scope for each one." },
-        { "title": "Taking over an existing site", "text": "Pick up a project built by another team, with access and hosting set in order." }
-      ],
-      "get": {
-        "title": "Website improvements, delivered in planned releases",
-        "text": "New pages, features and integrations - tested and delivered in agreed releases."
-      }
-    },
-    "businessAnalysis": {
-      "title": "Business Analysis",
-      "body": "Understand your processes, clarify business needs and turn them into clear requirements for implementation.",
-      "tags": ["Two tracks", "Requirements", "Specifications"],
-      "cta": "Discuss your requirements",
-      "pictureAlt": "Process flow diagram illustration",
-      "tracks": [
-        {
-          "label": "Track 01",
-          "title": "Business Process Analysis",
-          "features": [
-            { "title": "Analyze the process and identify bottlenecks", "text": "Map steps and roles to uncover delays, data issues and duplicated work." },
-            { "title": "Define the target process", "text": "Describe how the process should run once the change is in place." },
-            { "title": "Prepare requirements for automation", "text": "Turn the target process into clear requirements for implementation." }
-          ]
-        },
-        {
-          "label": "Track 02",
-          "title": "IT Business Analysis",
-          "features": [
-            { "title": "Clarify the business need", "text": "Define what the software needs to achieve and who it should serve." },
-            { "title": "Document system and integration requirements", "text": "Organize requirements by function, priority and dependency, including data exchange with existing systems." },
-            { "title": "Align business and implementation teams", "text": "Keep both sides aligned on scope, decisions and changes throughout implementation." }
-          ]
-        }
-      ],
-      "get": {
-        "title": "Clear requirements for confident implementation",
-        "text": "Documented processes, prioritized requirements and agreed scope — so your team knows what to build, why it matters and how to verify the result."
-      }
-    },
-    "googleAds": {
-      "title": "Google Ads",
-      "body": "Set up and manage campaigns to reach people searching for your products or services.",
-      "tags": ["Search", "Analytics", "Optimization"],
-      "cta": "Plan your campaigns",
-      "features": [
-        { "title": "Campaign setup", "text": "Prepare and launch campaigns around your goals." },
-        { "title": "Campaign management", "text": "Monitor performance and refine ongoing campaigns." },
-        { "title": "Audience targeting", "text": "Focus your campaigns on relevant searches and audiences." },
-        { "title": "Tracking & reporting", "text": "Set up conversion tracking and report on what the budget returns." }
-      ]
-    },
-    "cta": {
-      "eyebrow": "Start a project",
-      "title": "Tell us what needs to be built, and what already exists",
-      "body": "ONVORX will review the requirements and clarify what's needed to prepare a project estimate.",
-      "button": "Request a Project Estimate"
-    }
+    "webDevelopment": { "pictureAlt": "Website layout illustration" },
+    "aiBuild": { "mockupsAlt": "Website, admin panel and Telegram bot built on one shared database" },
+    "websiteSupport": { "pictureAlt": "Website settings and release check illustration" },
+    "businessAnalysis": { "pictureAlt": "Process flow diagram illustration" }
   }
 }
