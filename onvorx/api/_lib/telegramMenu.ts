@@ -12,8 +12,7 @@ export interface BotReply {
 
 const MENU_ITEMS: { key: string; label: string; roles: Role[]; callback: string }[] = [
   { key: 'content', label: 'Content', roles: ['owner', 'content_manager'], callback: 'content:list' },
-  { key: 'projects', label: 'Projects', roles: ['owner', 'content_manager'], callback: 'cards:projects:list' },
-  { key: 'services', label: 'Services', roles: ['owner', 'content_manager'], callback: 'cards:services:list' },
+  { key: 'cards', label: 'Cards', roles: ['owner', 'content_manager'], callback: 'cards:list' },
   { key: 'seo', label: 'SEO', roles: ['owner', 'content_manager'], callback: 'seo:list' },
   { key: 'requests', label: 'Requests', roles: ['owner', 'sales_manager'], callback: 'requests:list' },
   { key: 'admins', label: 'Administrators', roles: ['owner'], callback: 'menu:admins' },
@@ -179,36 +178,63 @@ export function buildContentValuePrompt(field: ContentField, lang: 'en' | 'uk', 
 
 // ---- SEO ----
 
-const SEO_PAGES: { key: string; label: string }[] = [
-  { key: 'home', label: 'Home' },
-  { key: 'services', label: 'Services' },
-  { key: 'projects', label: 'Projects' },
-  { key: 'about', label: 'About' },
-  { key: 'web-development', label: 'Web Development' },
-  { key: 'support', label: 'Support' },
-  { key: 'business-analysis', label: 'Business Analysis' },
-  { key: 'google-ads', label: 'Google Ads' },
+/**
+ * Same grouping as the web admin's SEO tabs: a site page, then (Services
+ * only) its blocks. A single-entry page opens its record directly.
+ */
+const SEO_GROUPS: { key: string; label: string; entries: { pageKey: string; label: string }[] }[] = [
+  { key: 'home', label: 'Home', entries: [{ pageKey: 'home', label: 'Home' }] },
+  {
+    key: 'services',
+    label: 'Services',
+    entries: [
+      { pageKey: 'services', label: 'Services page' },
+      { pageKey: 'web-development', label: 'Web Development' },
+      { pageKey: 'support', label: 'Website Support & Development' },
+      { pageKey: 'business-analysis', label: 'Business Analysis' },
+      { pageKey: 'google-ads', label: 'Google Ads' },
+    ],
+  },
+  { key: 'projects', label: 'Projects', entries: [{ pageKey: 'projects', label: 'Projects' }] },
+  { key: 'about', label: 'About', entries: [{ pageKey: 'about', label: 'About' }] },
 ]
 
 const SEO_FIELD_LABEL: Record<SeoField, string> = { title: 'Title', description: 'Description' }
 const SEO_FIELDS: SeoField[] = ['title', 'description']
 
+const seoGroupOf = (pageKey: string) => SEO_GROUPS.find((g) => g.entries.some((e) => e.pageKey === pageKey))
+
 export function buildSeoList(): BotReply {
   const kb = new InlineKeyboard()
-  SEO_PAGES.forEach((p) => kb.text(p.label, `seo:page:${p.key}`).row())
+  SEO_GROUPS.forEach((g) => {
+    const target = g.entries.length === 1 ? `seo:page:${g.entries[0].pageKey}` : `seo:tab:${g.key}`
+    kb.text(g.label, target).row()
+  })
   kb.text('⬅ Back', 'menu:main')
   return { text: 'SEO — choose a page:', keyboard: kb }
+}
+
+/** The blocks of a multi-entry page (Services); null for an unknown group. */
+export function buildSeoGroup(key: string): BotReply | null {
+  const group = SEO_GROUPS.find((g) => g.key === key && g.entries.length > 1)
+  if (!group) return null
+  const kb = new InlineKeyboard()
+  group.entries.forEach((e) => kb.text(e.label, `seo:page:${e.pageKey}`).row())
+  kb.text('⬅ Back', 'seo:list')
+  return { text: `SEO — ${group.label} — choose a block:`, keyboard: kb }
 }
 
 export function buildSeoDetail(record: SeoRecord, opts: { saved?: boolean } = {}): BotReply {
   const lines = SEO_FIELDS.map(
     (f) => `${SEO_FIELD_LABEL[f]} — EN: ${record[f].en || '(empty)'} / UA: ${record[f].uk || '(empty)'}`,
   )
+  const group = seoGroupOf(record.pageKey)
+  const label = group?.entries.find((e) => e.pageKey === record.pageKey)?.label ?? record.pageKey
   const kb = new InlineKeyboard()
   SEO_FIELDS.forEach((f) => kb.text(SEO_FIELD_LABEL[f], `seo:field:${f}`).row())
-  kb.text('⬅ Back', 'seo:list')
+  kb.text('⬅ Back', group && group.entries.length > 1 ? `seo:tab:${group.key}` : 'seo:list')
   const prefix = opts.saved ? 'Saved.\n\n' : ''
-  return { text: `${prefix}${record.pageKey}\n${lines.join('\n')}`, keyboard: kb }
+  return { text: `${prefix}${label}\n${lines.join('\n')}`, keyboard: kb }
 }
 
 export function buildSeoFieldLangPrompt(pageKey: string, field: SeoField): BotReply {
@@ -234,14 +260,64 @@ export function buildSaveFailed(backCallback: string): BotReply {
 
 // ---- Cards: Projects & Services ----
 
-export function buildCardTypeTabs(type: 'projects'): BotReply {
+export type CardsPage = 'home' | 'services'
+
+/**
+ * Same structure as the web admin's Cards screen: a site page, then the block
+ * on it. Blocks with a `callback` are edited here; the rest are edited only in
+ * the web admin, and the bot says so.
+ */
+const CARD_BLOCKS: Record<CardsPage, { key: string; label: string; callback?: string }[]> = {
+  home: [
+    { key: 'hero', label: 'Hero' },
+    { key: 'howWork', label: 'How it works' },
+    { key: 'about', label: 'About' },
+    { key: 'projects', label: 'Projects', callback: 'cards:projects:list' },
+    { key: 'services', label: 'Services', callback: 'cards:services:list' },
+  ],
+  services: [
+    { key: 'svcHero', label: 'Hero' },
+    { key: 'svcWebDevelopment', label: 'Web Development' },
+    { key: 'svcAiBuild', label: 'AI Build' },
+    { key: 'svcWebsiteSupport', label: 'Website Support' },
+    { key: 'svcBusinessAnalysis', label: 'Business Analysis' },
+    { key: 'svcGoogleAds', label: 'Google Ads' },
+  ],
+}
+
+const CARDS_PAGE_LABEL: Record<CardsPage, string> = { home: 'Home', services: 'Services' }
+
+export const isCardsPage = (v: string): v is CardsPage => v === 'home' || v === 'services'
+
+export function buildCardsPagePicker(): BotReply {
   const kb = new InlineKeyboard()
-    .text('On the home page', `cards:${type}:tab:home`)
+    .text('Home', 'cards:page:home')
     .row()
-    .text('Projects page', `cards:${type}:tab:page`)
+    .text('Services', 'cards:page:services')
     .row()
     .text('⬅ Back', 'menu:main')
-  return { text: 'Projects — choose a list:', keyboard: kb }
+  return { text: 'Cards — choose a page:', keyboard: kb }
+}
+
+export function buildCardsBlockList(page: CardsPage): BotReply {
+  const kb = new InlineKeyboard()
+  CARD_BLOCKS[page].forEach((b) => kb.text(b.label, b.callback ?? `cards:block:${b.key}`).row())
+  kb.text('⬅ Back', 'cards:list')
+  return { text: `Cards — ${CARDS_PAGE_LABEL[page]} — choose a block:`, keyboard: kb }
+}
+
+/** For a block the bot doesn't edit: where to find it in the web admin. Null otherwise. */
+export function buildCardsWebAdminOnly(key: string): BotReply | null {
+  for (const page of ['home', 'services'] as const) {
+    const block = CARD_BLOCKS[page].find((b) => b.key === key && !b.callback)
+    if (!block) continue
+    const kb = new InlineKeyboard().text('⬅ Back', `cards:page:${page}`)
+    return {
+      text: `${block.label} is edited in the web admin only: Cards → ${CARDS_PAGE_LABEL[page]} → ${block.label}.`,
+      keyboard: kb,
+    }
+  }
+  return null
 }
 
 export function buildProjectList(list: 'home' | 'page', cards: ProjectCardRecord[]): BotReply {
@@ -249,7 +325,7 @@ export function buildProjectList(list: 'home' | 'page', cards: ProjectCardRecord
   cards.forEach((c) => {
     kb.text(`${c.published ? '✅' : '🚫'} ${c.title.en || c.id}`, `cards:card:${c.id}`).row()
   })
-  kb.text('⬅ Back', 'cards:projects:list')
+  kb.text('⬅ Back', 'cards:page:home')
   if (cards.length === 0) return { text: 'No cards in this list yet.', keyboard: kb }
   return { text: `Projects — ${list === 'home' ? 'home page' : 'Projects page'}:`, keyboard: kb }
 }
@@ -259,8 +335,7 @@ export function buildServiceList(list: 'home' | 'page', cards: ServiceCardRecord
   cards.forEach((c) => {
     kb.text(`${c.published ? '✅' : '🚫'} ${c.title.en || c.id}`, `cards:card:${c.id}`).row()
   })
-  // Services has only the home list now (spec §7) — Back returns to the main menu
-  kb.text('⬅ Back', 'menu:main')
+  kb.text('⬅ Back', 'cards:page:home')
   if (cards.length === 0) return { text: 'No cards in this list yet.', keyboard: kb }
   return { text: `Services — ${list === 'home' ? 'home page' : 'Services page'}:`, keyboard: kb }
 }

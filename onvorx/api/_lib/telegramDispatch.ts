@@ -103,7 +103,7 @@ export async function dispatch(
   }
 
   if (ctx.photoDataUrl || ctx.isPhotoMessage) {
-    if (!menu.canAccessSection(role, 'projects')) {
+    if (!menu.canAccessSection(role, 'cards')) {
       await ctx.reply(menu.buildNoAccessReply())
       return
     }
@@ -163,12 +163,9 @@ async function handleCallback(
   }
 
   if (data.startsWith('cards:')) {
-    // Projects and Services currently share the exact same role requirement
-    // in MENU_ITEMS (['owner', 'content_manager']) — checking either key's
-    // access is equivalent to checking both, so one gate covers this whole
-    // prefix regardless of which type a deeper callback concerns. If a future
-    // plan gives the two types different roles, this gate must be split.
-    if (!menu.canAccessSection(role, 'projects')) {
+    // One gate for the whole prefix: every card type sits under the single
+    // Cards menu item, so they all share its roles.
+    if (!menu.canAccessSection(role, 'cards')) {
       await ctx.reply(menu.buildNoAccessReply())
       return
     }
@@ -389,6 +386,16 @@ async function handleSeoCallback(ctx: BotCtx, data: string, env: Env, deps: Disp
     await showSeoList(ctx, env, deps)
     return
   }
+  if (data.startsWith('seo:tab:')) {
+    const reply = menu.buildSeoGroup(data.slice('seo:tab:'.length))
+    if (!reply) {
+      await showSeoList(ctx, env, deps)
+      return
+    }
+    await deps.sessions.save(ctx.chatId, { screen: 'seo_group' }, env)
+    await ctx.reply(reply)
+    return
+  }
   if (data.startsWith('seo:page:')) {
     await showSeoDetail(ctx, env, deps, data.slice('seo:page:'.length))
     return
@@ -485,7 +492,7 @@ async function handleText(
   }
 
   if (state.screen === 'cards_value' || state.screen === 'cards_tags_value' || state.screen === 'cards_photo_wait') {
-    if (!menu.canAccessSection(role, 'projects')) {
+    if (!menu.canAccessSection(role, 'cards')) {
       await ctx.reply(TEXT_FALLBACK_REPLY)
       return
     }

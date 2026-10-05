@@ -111,13 +111,71 @@ function makeCtx(overrides: Partial<BotCtx>): BotCtx {
   }
 }
 
-describe('dispatchCardsCallback — list and detail', () => {
-  it('cards:projects:list shows the tab choice', async () => {
+const firstReply = (ctx: BotCtx) => (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0]
+
+describe('dispatchCardsCallback — pages and blocks', () => {
+  it('cards:list shows the page choice', async () => {
+    const { deps, getState } = makeDeps()
+    const ctx = makeCtx({})
+    await dispatchCardsCallback(ctx, 'cards:list', ENV, deps)
+    expect(firstReply(ctx).text).toBe('Cards — choose a page:')
+    expect(getState()).toEqual({ screen: 'cards_pages' })
+  })
+
+  it('cards:page:home lists the Home blocks', async () => {
+    const { deps, getState } = makeDeps()
+    const ctx = makeCtx({})
+    await dispatchCardsCallback(ctx, 'cards:page:home', ENV, deps)
+    expect(firstReply(ctx).text).toBe('Cards — Home — choose a block:')
+    expect(getState()).toEqual({ screen: 'cards_blocks', data: { page: 'home' } })
+  })
+
+  it('cards:page:services lists the /services blocks', async () => {
     const { deps } = makeDeps()
     const ctx = makeCtx({})
+    await dispatchCardsCallback(ctx, 'cards:page:services', ENV, deps)
+    expect(firstReply(ctx).text).toBe('Cards — Services — choose a block:')
+  })
+
+  it('an unknown page falls back to the page choice', async () => {
+    const { deps } = makeDeps()
+    const ctx = makeCtx({})
+    await dispatchCardsCallback(ctx, 'cards:page:bogus', ENV, deps)
+    expect(firstReply(ctx).text).toBe('Cards — choose a page:')
+  })
+
+  it('a web-admin-only block explains where it is edited and loads no cards', async () => {
+    const { deps, cards } = makeDeps()
+    const ctx = makeCtx({})
+    await dispatchCardsCallback(ctx, 'cards:block:svcWebDevelopment', ENV, deps)
+    expect(firstReply(ctx).text).toContain('Cards → Services → Web Development')
+    expect(cards.listProjects).not.toHaveBeenCalled()
+    expect(cards.listServices).not.toHaveBeenCalled()
+  })
+
+  it('an unknown block falls back to the page choice', async () => {
+    const { deps } = makeDeps()
+    const ctx = makeCtx({})
+    await dispatchCardsCallback(ctx, 'cards:block:bogus', ENV, deps)
+    expect(firstReply(ctx).text).toBe('Cards — choose a page:')
+  })
+})
+
+describe('dispatchCardsCallback — list and detail', () => {
+  it('cards:projects:list goes straight to the home list (no Projects page list)', async () => {
+    const { deps, cards } = makeDeps()
+    const ctx = makeCtx({})
     await dispatchCardsCallback(ctx, 'cards:projects:list', ENV, deps)
-    const reply = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0]
-    expect(reply.text).toBe('Projects — choose a list:')
+    expect(cards.listProjects).toHaveBeenCalledWith('home', ENV)
+    expect(firstReply(ctx).text).toContain('home page')
+  })
+
+  it('an old "Projects page" button opens the home list, never list=page', async () => {
+    const { deps, cards } = makeDeps()
+    const ctx = makeCtx({})
+    await dispatchCardsCallback(ctx, 'cards:projects:tab:page', ENV, deps)
+    expect(cards.listProjects).toHaveBeenCalledWith('home', ENV)
+    expect(cards.listProjects).not.toHaveBeenCalledWith('page', ENV)
   })
 
   it('cards:services:list goes straight to the home list (no Services page list)', async () => {

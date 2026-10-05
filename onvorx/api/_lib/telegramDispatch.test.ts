@@ -164,12 +164,12 @@ describe('dispatch — /start', () => {
 })
 
 describe('dispatch — stub sections', () => {
-  it('stub:projects replies with a coming-soon message for anyone with access', async () => {
+  it('stub:cards replies with a coming-soon message for anyone with access', async () => {
     const { deps } = makeDeps()
-    const ctx = makeCtx({ callbackData: 'stub:projects' })
+    const ctx = makeCtx({ callbackData: 'stub:cards' })
     await dispatch(ctx, ENV, deps)
     expect(ctx.answerCallback).toHaveBeenCalled()
-    expect(ctx.reply).toHaveBeenCalledWith({ text: 'projects management is coming in a later update.' })
+    expect(ctx.reply).toHaveBeenCalledWith({ text: 'cards management is coming in a later update.' })
   })
 
   it('stub:requests replies with "no access" for a role that cannot see that section', async () => {
@@ -498,9 +498,25 @@ describe('dispatch — SEO, owner + content_manager', () => {
     expect(ctx.reply).toHaveBeenCalledWith({ text: "You don't have access to this bot." })
   })
 
-  it('owner opens seo:list and sees all eight pages', async () => {
+  it('owner opens seo:list and sees the page choice', async () => {
     const { deps } = makeDeps()
     const ctx = makeCtx({ callbackData: 'seo:list' })
+    await dispatch(ctx, ENV, deps)
+    const reply = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    expect(reply.text).toBe('SEO — choose a page:')
+  })
+
+  it('seo:tab:services lists the /services page and its blocks', async () => {
+    const { deps } = makeDeps()
+    const ctx = makeCtx({ callbackData: 'seo:tab:services' })
+    await dispatch(ctx, ENV, deps)
+    const reply = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    expect(reply.text).toBe('SEO — Services — choose a block:')
+  })
+
+  it('an unknown seo:tab falls back to the page choice', async () => {
+    const { deps } = makeDeps()
+    const ctx = makeCtx({ callbackData: 'seo:tab:bogus' })
     await dispatch(ctx, ENV, deps)
     const reply = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0]
     expect(reply.text).toBe('SEO — choose a page:')
@@ -554,13 +570,21 @@ describe('dispatch — SEO, owner + content_manager', () => {
 })
 
 describe('dispatch — cards delegation', () => {
-  it('cards:projects:list is reachable by a content_manager and shows the tab choice', async () => {
+  it('cards:list is reachable by a content_manager and shows the page choice', async () => {
     const { deps, setManagers } = makeDeps()
     setManagers([MANAGER])
-    const ctx = makeCtx({ fromId: 42, callbackData: 'cards:projects:list' })
+    const ctx = makeCtx({ fromId: 42, callbackData: 'cards:list' })
     await dispatch(ctx, ENV, deps)
     const reply = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0]
-    expect(reply.text).toBe('Projects — choose a list:')
+    expect(reply.text).toBe('Cards — choose a page:')
+  })
+
+  it('cards:list is blocked for a sales_manager', async () => {
+    const { deps, setManagers } = makeDeps()
+    setManagers([SALES])
+    const ctx = makeCtx({ fromId: 77, callbackData: 'cards:list' })
+    await dispatch(ctx, ENV, deps)
+    expect(ctx.reply).toHaveBeenCalledWith({ text: "You don't have access to this bot." })
   })
 
   it('cards:services:list is blocked for a sales_manager', async () => {
@@ -582,15 +606,15 @@ describe('dispatch — cards delegation', () => {
     expect(ctx.reply).toHaveBeenCalledWith({ text: 'Please send a photo, or /start to cancel.' })
   })
 
-  it('stub:projects no longer fires — the main menu now routes Projects to cards:projects:list', async () => {
+  it('/start routes Cards to cards:list; Projects and Services are no longer top-level', async () => {
     const { deps } = makeDeps()
     const ctx = makeCtx({ text: '/start' })
     await dispatch(ctx, ENV, deps)
     const reply = (ctx.reply as ReturnType<typeof vi.fn>).mock.calls[0][0]
-    const projectsButton = (reply.keyboard.inline_keyboard as { text: string; callback_data?: string }[][])
-      .flat()
-      .find((b) => b.text === 'Projects')
-    expect(projectsButton?.callback_data).toBe('cards:projects:list')
+    const buttons = (reply.keyboard.inline_keyboard as { text: string; callback_data?: string }[][]).flat()
+    expect(buttons.find((b) => b.text === 'Cards')?.callback_data).toBe('cards:list')
+    expect(buttons.find((b) => b.text === 'Projects')).toBeUndefined()
+    expect(buttons.find((b) => b.text === 'Services')).toBeUndefined()
   })
 })
 
