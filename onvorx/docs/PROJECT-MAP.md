@@ -42,6 +42,7 @@ mindmap
 - [x] Карточки Projects/Services из бота — [plan 3](superpowers/plans/2026-09-13-telegram-bot-plan-3-projects-services.md)
 - [x] Заявки (Requests): фильтр, статус, заметки, удаление — [plan 4](superpowers/plans/2026-09-13-telegram-bot-plan-4-requests.md)
 - [x] История заметок по заявке (общая для веб и бота) — [spec](superpowers/specs/2026-09-13-request-notes-history-design.md) · [plan](superpowers/plans/2026-09-13-request-notes-history.md)
+- [x] Навигация бота как в админке (2026-10-05, без spec/plan): главное меню Content · Cards · SEO · Requests · Administrators; Cards → Home | Services → блок (Projects/Services правятся, остальные блоки отвечают «edited in the web admin»); SEO → Home | Services (страница + 4 блока) | Projects | About. Webhook бота — на постоянный алиас `portfolio-onvorx.vercel.app`, не на URL конкретного деплоя
 - [ ] Управление карточками Hero/HowWork/About из бота — **явно не запланировано** (решение пользователя: функционал бота не расширяем)
 
 ## ✅ Публичный сайт — дизайн и адаптив
