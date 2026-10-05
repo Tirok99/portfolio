@@ -74,7 +74,7 @@ describe('ServicesPage', () => {
     expect(screen.getAllByLabelText('Title')[0]).toBeInTheDocument()
     await user.click(screen.getByRole('tab', { name: /services page/i }))
     expect(screen.queryByLabelText('Title')).not.toBeInTheDocument()
-    expect(screen.getByText(/no card selected/i)).toBeInTheDocument()
+    expect(screen.getByText(/no group selected/i)).toBeInTheDocument()
   })
 
   it('clears the SaveBar after a successful save (not stuck dirty)', async () => {
@@ -90,13 +90,15 @@ describe('ServicesPage', () => {
     expect(screen.getByRole('button', { name: /^save$/i })).toBeDisabled()
   })
 
-  it('a freshly-selected untouched card on the Services page tab is not dirty', async () => {
+  it('the Services page tab edits the /services groups, not the old card list', async () => {
     const user = userEvent.setup()
     wrap()
     await user.click(screen.getByRole('tab', { name: /services page/i }))
+    expect(screen.getByText('Hero cards')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /add service/i })).not.toBeInTheDocument()
     await user.click(screen.getByText('Web Development'))
+    expect(screen.getByText('Badge')).toBeInTheDocument()
     expect(screen.getByText('All changes saved')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /^save$/i })).toBeDisabled()
   })
 
   it('deletes a card after confirmation', async () => {

@@ -31,10 +31,6 @@ export function DashboardPage() {
           <div className="admin-stat__label">Services — home</div>
         </div>
         <div className="admin-stat">
-          <div className="admin-stat__n">{data.servicesPage.length}</div>
-          <div className="admin-stat__label">Services — page</div>
-        </div>
-        <div className="admin-stat">
           <div className="admin-stat__n">{newCount}</div>
           <div className="admin-stat__label">New requests</div>
         </div>

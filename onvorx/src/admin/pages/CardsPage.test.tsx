@@ -76,6 +76,19 @@ describe('CardsPage', () => {
     expect(screen.getByText(/no card selected/i)).toBeInTheDocument()
   })
 
+  it('resets the Services sub-tab and group when switching away and back', async () => {
+    const user = userEvent.setup()
+    wrap()
+    await user.click(screen.getByRole('tab', { name: 'Services' }))
+    await user.click(screen.getByRole('tab', { name: /services page/i }))
+    await user.click(screen.getByText('Google Ads'))
+    expect(screen.getByText('Badge')).toBeInTheDocument()
+    await user.click(screen.getByRole('tab', { name: 'Hero' }))
+    await user.click(screen.getByRole('tab', { name: 'Services' }))
+    expect(screen.getByRole('tab', { name: /on the home page/i })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.queryByText('Badge')).not.toBeInTheDocument()
+  })
+
   it('resets the selected project card when switching away and back', async () => {
     const user = userEvent.setup()
     wrap()
