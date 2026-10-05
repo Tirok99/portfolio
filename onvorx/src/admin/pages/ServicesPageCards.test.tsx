@@ -49,7 +49,7 @@ const wrap = () =>
     <I18nProvider>
       <SiteContentProvider>
         <ToastProvider>
-          <ServicesPageCards tabs={[{ key: 'page', label: 'Services page' }]} activeList="page" onActiveListChange={() => {}} />
+          <ServicesPageCards />
           <ToastRegion />
         </ToastProvider>
       </SiteContentProvider>

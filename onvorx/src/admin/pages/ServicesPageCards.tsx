@@ -157,16 +157,8 @@ function GroupEditor({ sectionKey, section }: { sectionKey: Group; section: Sect
   )
 }
 
-/** Cards → Services → Services page: the /services cards and images (spec §6.2). */
-export function ServicesPageCards<K extends string>({
-  tabs,
-  activeList,
-  onActiveListChange,
-}: {
-  tabs: { key: K; label: string }[]
-  activeList: K
-  onActiveListChange: (l: K) => void
-}) {
+/** Cards → Services: the /services page cards and images (spec §6.2). */
+export function ServicesPageCards() {
   const { data } = useSiteContentRaw()
   const [selected, setSelected] = useState<Group | null>(null)
   const section = selected ? data.sections.find((s) => s.key === selected) : undefined
@@ -186,9 +178,6 @@ export function ServicesPageCards<K extends string>({
     <CardScreen
       title="Services"
       hint="Cards and images on the /services page. Texts are edited under Content → Services."
-      tabs={tabs}
-      activeList={activeList}
-      onActiveListChange={onActiveListChange}
       list={list}
       editor={editor}
     />

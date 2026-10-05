@@ -3,7 +3,6 @@ import type { CardListKey, L, ServiceCard } from '../types'
 import { useSiteContentRaw } from '../../content/SiteContentProvider'
 import { CardList } from '../components/CardList'
 import { CardScreen } from './CardScreen'
-import { ServicesPageCards } from './ServicesPageCards'
 import { ImageUpload } from '../components/ImageUpload'
 import { LocalizedField } from '../components/LocalizedField'
 import { Toggle } from '../components/Toggle'
@@ -13,9 +12,10 @@ import { useToast } from '../components/Toast'
 import { useConfirm } from '../components/ConfirmDialog'
 import { useAdminTitle } from '../useAdminTitle'
 
+// Only the home-page list: the /services page is edited under Cards → Services.
+// The old list='page' rows stay in the DB but are not shown (spec §4).
 const TABS: { key: CardListKey; label: string }[] = [
   { key: 'servicesHome', label: 'On the home page' },
-  { key: 'servicesPage', label: 'Services page' },
 ]
 
 interface Draft {
@@ -181,21 +181,6 @@ export function ServicesPage() {
         hint="Pick a card from the list, or add a new one."
       />
     )
-
-  // The old list='page' service cards are no longer rendered anywhere; this
-  // tab now edits the /services page itself (spec §6.2). The rows stay in the DB.
-  if (list === 'servicesPage') {
-    return (
-      <ServicesPageCards
-        tabs={TABS}
-        activeList={list}
-        onActiveListChange={(l) => {
-          setList(l)
-          setSelectedId(null)
-        }}
-      />
-    )
-  }
 
   return (
     <>

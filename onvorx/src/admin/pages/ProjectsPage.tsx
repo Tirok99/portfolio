@@ -13,9 +13,10 @@ import { useToast } from '../components/Toast'
 import { useConfirm } from '../components/ConfirmDialog'
 import { useAdminTitle } from '../useAdminTitle'
 
+// Only the home-page list is edited for now; the Projects-page list
+// ('projectsPage') comes back as a tab when the /projects page exists.
 const TABS: { key: CardListKey; label: string }[] = [
   { key: 'projectsHome', label: 'On the home page' },
-  { key: 'projectsPage', label: 'Projects page' },
 ]
 
 interface Draft {
@@ -200,7 +201,7 @@ export function ProjectsPage() {
     <>
       <CardScreen
         title="Projects"
-        hint="Project cards shown in the Projects block on the home page, and the (future) Projects page. Each list is separate."
+        hint="Project cards shown in the Projects block on the home page."
         tabs={TABS}
         activeList={list}
         onActiveListChange={(l) => {

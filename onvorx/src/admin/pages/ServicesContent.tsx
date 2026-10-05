@@ -167,7 +167,7 @@ export function ServicesContent() {
   return (
     <>
       <p className="admin-page__hint">
-        Texts on the /services page. Cards and images are edited under Cards → Services → Services page.
+        Texts on the /services page. Cards and images are edited under Cards → Services.
       </p>
       {sections.map((s) => (
         <SvcSectionEditor key={s.key} section={s} />
