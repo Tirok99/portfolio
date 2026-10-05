@@ -1,12 +1,14 @@
 import { lazy, Suspense } from "react";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { I18nProvider } from "./i18n/i18n";
 import { SiteContentProvider } from "./content/SiteContentProvider";
 import { Layout } from "./components/Layout/Layout";
 import { HomePage } from "./pages/HomePage";
+import { ServicesPage } from "./pages/ServicesPage";
 import { StubPage } from "./pages/StubPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { STUB_ROUTES } from "./data/nav";
+import { SERVICE_REDIRECTS } from "./data/servicesPage";
 
 const AdminApp = lazy(() => import("./admin/AdminApp"));
 
@@ -18,6 +20,10 @@ export default function App() {
           <Routes>
             <Route element={<Layout />}>
               <Route index element={<HomePage />} />
+              <Route path="/services" element={<ServicesPage />} />
+              {Object.entries(SERVICE_REDIRECTS).map(([from, to]) => (
+                <Route key={from} path={from} element={<Navigate to={to} replace />} />
+              ))}
               {STUB_ROUTES.map((path) => (
                 <Route key={path} path={path} element={<StubPage />} />
               ))}

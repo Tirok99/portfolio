@@ -47,6 +47,19 @@ body {
   padding-inline: var(--gutter);
 }
 
+/* /services blocks sit on the 1:1 Figma width (see --container-wide) */
+.services-hero__container,
+.web-development__container,
+.ai-build__container,
+.website-support__container,
+.business-analysis__container,
+.google-ads__container {
+  width: 100%;
+  max-width: var(--container-wide);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
 /* ---- Section shell ---- */
 .section {
   position: relative;

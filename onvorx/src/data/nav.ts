@@ -12,10 +12,4 @@ export const MAIN_NAV: NavLink[] = [
 ];
 
 /** Routes that render the generic "coming soon" stub for now. */
-export const STUB_ROUTES = [
-  "/services",
-  "/about",
-  "/web-development",
-  "/support",
-  "/business-analysis",
-] as const;
+export const STUB_ROUTES = ["/about"] as const;

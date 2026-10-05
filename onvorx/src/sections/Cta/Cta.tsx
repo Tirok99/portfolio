@@ -5,9 +5,17 @@ import { Icon } from "../../components/Icon/Icon";
 import { Reveal } from "../../components/Reveal/Reveal";
 import "./Cta.css";
 
-export function Cta() {
+export interface CtaContent {
+  eyebrow: string;
+  title: string;
+  body: string;
+  ctaLabel: string;
+}
+
+/** `content` overrides the store-managed Home texts (e.g. /services uses its own copy). */
+export function Cta({ content }: { content?: CtaContent } = {}) {
   const { section } = useSiteContent();
-  const cta = section("cta");
+  const cta = content ?? section("cta");
   const { open } = useEstimateForm();
   const { pathname } = useLocation();
 

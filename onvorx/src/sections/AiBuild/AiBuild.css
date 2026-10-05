@@ -1,0 +1,192 @@
+/* Figma: Services _en_vscode / ai-build (1600 × 429) */
+.ai-build {
+  background: #0a0a0c;
+  scroll-margin-top: var(--header-h);
+}
+
+.ai-build__inner {
+  display: grid;
+  grid-template-columns: minmax(0, 660px) minmax(0, 672px);
+  align-items: center;
+  gap: clamp(2rem, 3.2vw, 50px);
+  padding: 28px clamp(1rem, 3.5vw, 56px);
+}
+
+/* ---- content ---- */
+.ai-build__content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 30px;
+  min-width: 0;
+  padding-inline: 5px;
+}
+
+.ai-build__badge-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ai-build__pill {
+  padding: 6px 10px;
+  border-top: 1px solid #f12535;
+  border-left: 1px solid #f12535;
+  border-radius: 20px;
+  background: linear-gradient(270deg, rgba(241, 37, 53, 0.15) 0%, rgba(126, 18, 24, 0.15) 100%);
+  color: var(--accent);
+  font-size: clamp(1rem, 0.85rem + 0.5vw, 1.25rem); /* 16 → 20 */
+  font-weight: var(--fw-semibold);
+  line-height: 1.2;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.ai-build__title {
+  color: #fff;
+  font-size: clamp(1.5rem, 1.2rem + 1vw, 1.875rem); /* 24 → 30 */
+  font-weight: var(--fw-bold);
+  line-height: 1.2;
+  letter-spacing: -0.014em;
+}
+
+.ai-build__description {
+  max-width: 660px;
+  color: #a0a0ad;
+  font-size: var(--fs-body);
+  line-height: 1.6;
+}
+
+.ai-build__stack {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: var(--fw-semibold);
+  line-height: 1.3;
+}
+
+.ai-build__stack-item {
+  display: inline-flex;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.ai-build__stack-sep {
+  color: var(--accent);
+}
+
+.ai-build__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--accent);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-bold);
+  transition: color var(--dur) var(--ease);
+}
+
+.ai-build__link:hover {
+  color: var(--accent-glow);
+}
+
+/* Figma: the 18px arrow rotated 45° → points down-right */
+.ai-build__link-arrow {
+  transform: rotate(45deg);
+  transition: transform var(--dur) var(--ease);
+}
+
+.ai-build__link:hover .ai-build__link-arrow {
+  transform: rotate(45deg) translateX(3px);
+}
+
+/* ---- mockups ----
+   Fixed composition from Figma (672 × 373), scaled as one unit so the three
+   screens never drift apart. Positions are % of that stage. */
+.ai-build__mockups {
+  min-width: 0;
+}
+
+.ai-build__stage {
+  position: relative;
+  width: 100%;
+  max-width: 672px;
+  aspect-ratio: 672 / 373;
+}
+
+.ai-build__mockup {
+  position: absolute;
+  max-width: none;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.35);
+}
+
+.ai-build__mockup--site {
+  left: 18.75%;
+  top: 11.8%;
+  width: 64.14%;
+  height: auto;
+  aspect-ratio: 558.37 / 383.08;
+}
+
+.ai-build__mockup--admin {
+  left: 57.14%;
+  top: 60.05%;
+  width: 42.86%;
+  height: 34.58%;
+  border-radius: clamp(8px, 2.2%, 15px);
+}
+
+.ai-build__mockup--bot {
+  left: 13.99%;
+  top: 58.71%;
+  width: 13.99%;
+  height: 37.53%;
+  border-radius: clamp(6px, 2.2%, 15px);
+}
+
+/* ================= Responsive ================= */
+
+@media (max-width: 1279px) {
+  .ai-build__inner {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+/* stack: text first, then the composition at full width */
+@media (max-width: 1023px) {
+  .ai-build__inner {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 32px;
+    padding-block: 48px;
+  }
+
+  /* the composition's left 14% is empty in Figma — nudge it so the screens
+     read as centred under the text */
+  .ai-build__stage {
+    margin-inline: auto;
+    transform: translateX(-7%);
+  }
+}
+
+@media (max-width: 639px) {
+  .ai-build__inner {
+    padding-block: 40px;
+  }
+
+  .ai-build__content {
+    gap: 20px;
+  }
+
+  /* the stage's own left gutter (empty 14%) wastes width on a phone —
+     pull the composition left so the screens use the full column */
+  .ai-build__stage {
+    width: 112%;
+    max-width: none;
+    margin-left: -12%;
+    transform: none;
+  }
+}

@@ -1,0 +1,237 @@
+/* Figma: Services _en_vscode / hero (1600 × 800 incl. header).
+   Height follows the content (no 100vh): header + intro + cards. */
+.services-hero {
+  background: #010206;
+}
+
+.services-hero__container {
+  position: relative;
+}
+
+/* ---- decor ---- */
+.services-hero__decor {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-decor);
+  pointer-events: none;
+}
+
+/* Figma: 740px at x=940 of the 1600 canvas, flush with the section top,
+   overhanging the right edge by 80px. Expressed as % of the container so it
+   tracks the layout at every width. */
+.services-hero__radar {
+  position: absolute;
+  top: 0;
+  right: -4%;
+  width: 45.4%;
+  height: auto;
+  aspect-ratio: 1;
+  max-width: none;
+  opacity: 0.9;
+}
+
+/* same wave asset as Home's hero; sits behind the service cards, its lower
+   half clipped by the section */
+.services-hero__wave {
+  position: absolute;
+  left: -4.4%;
+  bottom: 0;
+  width: max(900px, 104.4%);
+  height: auto;
+  max-width: none;
+  opacity: 0.55;
+  transform: translateY(36%);
+}
+
+/* ---- layout ---- */
+.services-hero__inner {
+  position: relative;
+  z-index: var(--z-content);
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(3rem, 8.7vw, 139px);
+  padding-inline: clamp(1rem, 6.25vw, 100px);
+  padding-top: calc(var(--header-h) + clamp(3rem, 7.4vw, 118px));
+  padding-bottom: clamp(2.5rem, 5.4vw, 86px);
+}
+
+.services-hero__intro {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 20px;
+  max-width: 660px;
+}
+
+.services-hero__eyebrow {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--accent);
+  font-size: 11.5px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.services-hero__eyebrow-line {
+  width: 34px;
+  height: 2px;
+  background: var(--accent);
+}
+
+.services-hero__title {
+  max-width: 620px;
+  /* reset.css balances headings; Figma breaks greedily ("…your web / project, covered") */
+  text-wrap: wrap;
+  color: #fff;
+  font-size: clamp(2rem, 1.35rem + 2.2vw, 3rem); /* 32 → 48 */
+  font-weight: var(--fw-bold);
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+}
+
+.services-hero__description {
+  max-width: 560px;
+  color: #a8abb3;
+  font-size: clamp(0.9375rem, 0.9rem + 0.18vw, 1.03125rem); /* 15 → 16.5 */
+  line-height: 1.65;
+}
+
+/* ---- service cards ----
+   Primary navigation into the page — never hidden in a horizontal scroll.
+   4 → 2 → 1 columns, switched by the space the cards actually get
+   (container query), so a card never drops below ~250px. */
+.services-hero__cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+}
+
+@container (max-width: 1060px) {
+  .services-hero__cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
+
+@container (max-width: 540px) {
+  .services-hero__cards {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+}
+
+.services-hero__card-cell {
+  display: flex;
+}
+
+.services-hero__card {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 123px;
+  padding: 20px 22px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  background: #101014;
+  color: #fff;
+  transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease),
+    transform var(--dur) var(--ease);
+}
+
+.services-hero__card:hover {
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  background: #14141a;
+  transform: translateY(-2px);
+}
+
+.services-hero__card-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.services-hero__card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+}
+
+.services-hero__card-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 15.5px;
+  font-weight: var(--fw-bold);
+  line-height: 1.3;
+}
+
+.services-hero__card-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  transition: transform var(--dur) var(--ease);
+}
+
+.services-hero__card:hover .services-hero__card-arrow {
+  transform: translateX(4px);
+}
+
+.services-hero__card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.services-hero__card-tag {
+  padding: 5px 9px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.07);
+  color: #c8c8d0;
+  font-size: 11px;
+  font-weight: var(--fw-medium);
+  line-height: 1.2;
+}
+
+/* ================= Responsive ================= */
+
+/* tablet: the radar would sit under the headline — push it up/right and
+   let it recede into the background */
+@media (max-width: 1023px) {
+  .services-hero__radar {
+    top: -4%;
+    right: -18%;
+    width: 62%;
+    opacity: 0.45;
+  }
+}
+
+@media (max-width: 600px) {
+  /* 3+ lines on a phone — balance again so "covered" never hangs alone */
+  .services-hero__title {
+    text-wrap: balance;
+  }
+
+  .services-hero__radar {
+    top: 40px;
+    right: -38%;
+    width: 300px;
+    opacity: 0.35;
+  }
+
+  .services-hero__card {
+    min-height: 0;
+    padding: 16px 18px;
+    gap: 14px;
+  }
+}

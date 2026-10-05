@@ -47,7 +47,11 @@ export function SiteHeader() {
             <ul className="site-header__nav-list">
               {MAIN_NAV.map((item) => (
                 <li key={item.to}>
-                  <Link to={item.to} className="site-header__nav-link">
+                  <Link
+                    to={item.to}
+                    className="site-header__nav-link"
+                    aria-current={location.pathname === item.to ? "page" : undefined}
+                  >
                     {t(item.key)}
                   </Link>
                 </li>
@@ -92,7 +96,11 @@ export function SiteHeader() {
             </li>
             {MAIN_NAV.map((item) => (
               <li key={item.to}>
-                <Link to={item.to} className="site-header__drawer-link">
+                <Link
+                  to={item.to}
+                  className="site-header__drawer-link"
+                  aria-current={location.pathname === item.to ? "page" : undefined}
+                >
                   {t(item.key)}
                 </Link>
               </li>

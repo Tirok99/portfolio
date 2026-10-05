@@ -57,6 +57,26 @@
   color: var(--accent);
 }
 
+/* current page — Figma: 2px red rule under the label */
+.site-header__nav-link[aria-current="page"] {
+  position: relative;
+  opacity: 1;
+}
+
+.site-header__nav-link[aria-current="page"]::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -7px;
+  height: 2px;
+  background: var(--accent);
+}
+
+.site-header__drawer-link[aria-current="page"] {
+  color: var(--accent);
+}
+
 .site-header__actions {
   display: flex;
   align-items: center;

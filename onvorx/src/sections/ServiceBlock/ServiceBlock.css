@@ -1,0 +1,392 @@
+/* Shared layout for the four /services detail blocks
+   (Figma: web-development, website-support, business-analysis, google-ads).
+   Desktop: 460px aside (intro + picture) | features column.
+   The four Figma frames differ slightly in tag/button/feature styling; this
+   follows the majority (blocks 02–04) so all four read as one system. */
+
+.service-block {
+  --svc-bg: #010206;
+  --svc-title: #fff;
+  --svc-text: #a0a0ad;
+  --svc-tag-bg: rgba(255, 255, 255, 0.08);
+  --svc-tag-fg: rgba(255, 255, 255, 0.85);
+  --svc-divider: rgba(255, 255, 255, 0.14);
+  --svc-icon-bg: #131519;
+  --svc-get-bg: linear-gradient(180deg, #101518 0%, #0b0d0f 100%);
+  --svc-get-ring: rgba(255, 255, 255, 0.22);
+
+  background: var(--svc-bg);
+  color: var(--svc-title);
+  scroll-margin-top: var(--header-h);
+}
+
+.service-block[data-theme="light"] {
+  --svc-bg: #f6f6f8;
+  --svc-title: #0b0b0f;
+  --svc-text: #6b6b75;
+  --svc-tag-bg: #e5e5eb;
+  --svc-tag-fg: #404047;
+  --svc-divider: rgba(0, 0, 0, 0.08);
+  --svc-icon-bg: #fff;
+  --svc-get-bg: linear-gradient(180deg, #fff 0%, #f6f6f8 100%);
+  --svc-get-ring: transparent;
+}
+
+/* ---- layout ---- */
+.service-block__inner {
+  display: grid;
+  /* Figma 460 : 972 — kept as a ratio so the features column doesn't get
+     squeezed first on narrower desktops; the aside never drops below 280px */
+  grid-template-columns: minmax(280px, 460fr) minmax(0, 972fr);
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    "intro body"
+    "picture body";
+  column-gap: clamp(2.5rem, 4.5vw, 72px);
+  row-gap: 30px;
+  padding: 28px clamp(1rem, 3.5vw, 56px);
+}
+
+.service-block__inner--no-picture {
+  grid-template-rows: auto;
+  grid-template-areas: "intro body";
+}
+
+/* ---- intro (aside) ---- */
+.service-block__intro {
+  grid-area: intro;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 30px;
+  min-width: 0;
+  padding-inline: 5px;
+}
+
+.service-block__head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.service-block__badge {
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+}
+
+.service-block__label {
+  color: var(--svc-text);
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.service-block__title {
+  max-width: 430px;
+  color: var(--svc-title);
+  font-size: clamp(1.875rem, 1.4rem + 1.5vw, 2.5rem); /* 30 → 40 */
+  font-weight: var(--fw-bold);
+  line-height: 1.1;
+  letter-spacing: -0.016em;
+}
+
+.service-block__description {
+  max-width: 440px;
+  color: var(--svc-text);
+  font-size: var(--fs-body);
+  line-height: 1.6;
+}
+
+.service-block__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.service-block__tag {
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: var(--svc-tag-bg);
+  color: var(--svc-tag-fg);
+  font-size: 12.5px;
+  font-weight: var(--fw-semibold);
+  line-height: 1.2;
+}
+
+.service-block__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 13px 22px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 14.5px;
+  font-weight: var(--fw-bold);
+  line-height: 1.2;
+  transition: background var(--dur) var(--ease), transform var(--dur) var(--ease);
+}
+
+.service-block__cta:hover {
+  background: var(--accent-hover);
+  transform: translateY(-2px);
+}
+
+.service-block__cta-arrow {
+  flex-shrink: 0;
+  transition: transform var(--dur) var(--ease);
+}
+
+.service-block__cta:hover .service-block__cta-arrow {
+  transform: translateX(4px);
+}
+
+/* ---- picture ---- */
+.service-block__picture {
+  grid-area: picture;
+  align-self: start;
+  min-width: 0;
+  padding-inline: 5px;
+}
+
+.service-block__picture img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Figma: the web mockup sits in a 418px slot inside the 450px aside */
+.web-development .service-block__picture img {
+  max-width: 418px;
+}
+
+/* ---- body: features + "what you get" ---- */
+.service-block__body {
+  grid-area: body;
+  display: flex;
+  flex-direction: column;
+  gap: 45px;
+  min-width: 0;
+}
+
+.service-block__tracks {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.service-block__track {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.service-block__track-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 12px;
+  row-gap: 4px;
+  padding: 10px 5px;
+}
+
+.service-block__track-label {
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.service-block__track-title {
+  color: var(--svc-title);
+  font-size: 17px;
+  font-weight: var(--fw-semibold);
+  line-height: 1.3;
+}
+
+.service-block__features {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.service-block__feature {
+  display: flex;
+  align-items: center;
+  gap: clamp(1rem, 2.2vw, 32px);
+  padding: 10px 5px;
+}
+
+.service-block__feature + .service-block__feature {
+  border-top: 1px solid var(--svc-divider);
+}
+
+.service-block__feature:last-child {
+  border-bottom: 1px solid var(--svc-divider);
+}
+
+.service-block__feature-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--accent);
+  border-radius: 50%;
+  background: var(--svc-icon-bg);
+}
+
+.service-block__feature-icon img {
+  max-width: 20px;
+  max-height: 20px;
+}
+
+.service-block__feature-body {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.service-block__feature-title {
+  color: var(--svc-title);
+  font-size: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem); /* 17 → 19 */
+  font-weight: var(--fw-bold);
+  line-height: 1.25;
+  letter-spacing: -0.005em;
+}
+
+.service-block__feature-text {
+  color: var(--svc-text);
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+
+.service-block__get {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 28px 18px;
+  border: 1px solid #f12535;
+  border-radius: 10px;
+  background: var(--svc-get-bg);
+  box-shadow: 0 0 0 1px var(--svc-get-ring);
+}
+
+.service-block__get-eyebrow {
+  color: var(--accent);
+  font-size: clamp(0.8125rem, 0.75rem + 0.25vw, 1rem); /* 13 → 16 */
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.service-block__get-title {
+  max-width: 750px;
+  color: var(--svc-title);
+  font-size: clamp(1.25rem, 1.1rem + 0.5vw, 1.5rem); /* 20 → 24 */
+  font-weight: var(--fw-bold);
+  line-height: 1.25;
+  letter-spacing: -0.014em;
+}
+
+.service-block__get-text {
+  max-width: 880px;
+  color: var(--svc-text);
+  font-size: var(--fs-body);
+  line-height: 1.6;
+}
+
+/* ================= Responsive ================= */
+
+/* Tablet: the two columns can't hold a readable features list any more.
+   Intro + illustration share the first row, features take the full width. */
+@media (max-width: 1023px) {
+  .service-block__inner {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.85fr);
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "intro picture"
+      "body body";
+    row-gap: 40px;
+    padding-block: 48px;
+  }
+
+  .service-block__inner--no-picture {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "intro"
+      "body";
+  }
+
+  .service-block__picture {
+    align-self: center;
+  }
+}
+
+/* Phone: one column. The illustration is secondary — the list of work comes
+   first, the picture closes the block. */
+@media (max-width: 639px) {
+  .service-block__inner,
+  .service-block__inner--no-picture {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "intro"
+      "body"
+      "picture";
+    row-gap: 32px;
+    padding-block: 40px;
+  }
+
+  .service-block__intro {
+    gap: 20px;
+  }
+
+  .service-block__badge {
+    width: 52px;
+    height: 52px;
+  }
+
+  .service-block__picture img,
+  .web-development .service-block__picture img {
+    max-width: 380px;
+    margin-inline: auto;
+  }
+
+  .service-block__body {
+    gap: 32px;
+  }
+
+  .service-block__tracks {
+    gap: 28px;
+  }
+
+  .service-block__feature {
+    align-items: flex-start;
+  }
+
+  .service-block__feature-icon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .service-block__feature-icon img {
+    max-width: 18px;
+    max-height: 18px;
+  }
+
+  .service-block__get {
+    padding: 16px 18px;
+  }
+}
+
+@media (max-width: 479px) {
+  .service-block__cta {
+    width: 100%;
+  }
+}
