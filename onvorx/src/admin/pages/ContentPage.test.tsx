@@ -85,6 +85,58 @@ describe('ContentPage', () => {
     expect(await screen.findByText(/save failed/i)).toBeInTheDocument()
   })
 
+  it('has Home and Services tabs; Home is the default', async () => {
+    const user = userEvent.setup()
+    wrap()
+    expect(screen.getByRole('tab', { name: 'Home' })).toHaveAttribute('aria-selected', 'true')
+    await user.click(screen.getByRole('tab', { name: 'Services' }))
+    for (const label of ['Hero', 'Web Development', 'AI Build', 'Website Support & Development',
+      'Business Analysis', 'Google Ads', 'Call-to-action']) {
+      expect(screen.getByRole('heading', { level: 2, name: label })).toBeInTheDocument()
+    }
+    expect(screen.queryByRole('heading', { name: /footer tagline/i })).not.toBeInTheDocument()
+  })
+
+  it('shows only the fields each /services section uses', async () => {
+    const user = userEvent.setup()
+    wrap()
+    await user.click(screen.getByRole('tab', { name: 'Services' }))
+    const box = (name: string) => screen.getByRole('heading', { level: 2, name }).closest('details')!
+    expect(within(box('AI Build')).getByLabelText('Badge')).toBeInTheDocument()
+    expect(within(box('AI Build')).getByLabelText('Link text')).toBeInTheDocument()
+    expect(within(box('AI Build')).getByLabelText('Stack 1 EN')).toBeInTheDocument()
+    expect(within(box('Web Development')).queryByLabelText('Eyebrow')).not.toBeInTheDocument()
+    expect(within(box('Web Development')).getByLabelText('Button label')).toBeInTheDocument()
+    expect(within(box('Business Analysis')).getByLabelText('Track 02 — title')).toBeInTheDocument()
+    expect(within(box('Google Ads')).queryByLabelText('What you get — title')).not.toBeInTheDocument()
+    expect(within(box('Hero')).queryByLabelText('Button label')).not.toBeInTheDocument()
+  })
+
+  it('saving tags sends only texts — never cards or media', async () => {
+    const user = userEvent.setup()
+    wrap()
+    await user.click(screen.getByRole('tab', { name: 'Services' }))
+    const wd = screen.getByRole('heading', { level: 2, name: 'Web Development' }).closest('details')!
+    await user.click(within(wd).getByRole('button', { name: 'Add tag' }))
+    await user.type(within(wd).getByLabelText('Tags 4 EN'), 'Astro')
+    await user.click(within(wd).getByRole('button', { name: /^save$/i }))
+    const [key, patch] = vi.mocked(adminApi.saveSection).mock.calls.at(-1)!
+    expect(key).toBe('svcWebDevelopment')
+    expect(Object.keys(patch)).toEqual(['texts'])
+    expect((patch.texts as { tags: { en: string }[] }).tags.map((t) => t.en))
+      .toEqual(['WordPress', 'Webflow', 'Framer', 'Astro'])
+  })
+
+  it('Discard restores the stored texts', async () => {
+    const user = userEvent.setup()
+    wrap()
+    await user.click(screen.getByRole('tab', { name: 'Services' }))
+    const ai = screen.getByRole('heading', { level: 2, name: 'AI Build' }).closest('details')!
+    await user.click(within(ai).getByRole('button', { name: 'Remove: Stack 1' }))
+    await user.click(within(ai).getByRole('button', { name: /discard/i }))
+    expect(within(ai).getByLabelText('Stack 1 EN')).toHaveValue('Design')
+  })
+
   it('footer only shows a Tagline field, no Eyebrow/Title/Button label', () => {
     wrap()
     const footerHeading = screen.getByRole('heading', { name: /footer tagline/i })

@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react'
-import type { L, SectionKey, SectionText } from '../types'
+import type { HomeSectionKey, L, SectionText } from '../types'
 import { useSiteContentRaw } from '../../content/SiteContentProvider'
 import { LocalizedField } from '../components/LocalizedField'
 import { SaveBar } from '../components/SaveBar'
 import { useToast } from '../components/Toast'
 import { useAdminTitle } from '../useAdminTitle'
+import { ServicesContent } from './ServicesContent'
 
 type Draft = Pick<SectionText, 'eyebrow' | 'title' | 'body'> & {
   ctaLabel?: L
@@ -90,24 +91,50 @@ function SectionEditor({ section }: { section: SectionText }) {
   )
 }
 
-const ORDER: SectionKey[] = ['hero', 'services', 'projects', 'howWork', 'about', 'cta', 'footer']
+const ORDER: HomeSectionKey[] = ['hero', 'services', 'projects', 'howWork', 'about', 'cta', 'footer']
+
+type PageTab = 'home' | 'services'
+const PAGE_TABS: { key: PageTab; label: string }[] = [
+  { key: 'home', label: 'Home' },
+  { key: 'services', label: 'Services' },
+]
 
 export function ContentPage() {
   useAdminTitle('Content')
   const { data } = useSiteContentRaw()
+  const [tab, setTab] = useState<PageTab>('home')
   const sections = ORDER.map((k) => data.sections.find((s) => s.key === k)).filter(
     (s): s is SectionText => Boolean(s),
   )
   return (
     <section className="admin-page">
       <h1>Content</h1>
-      <p className="admin-page__hint">
-        The heading and text for each block on the home page. Changes appear on the
-        site immediately after you save.
-      </p>
-      {sections.map((s) => (
-        <SectionEditor key={s.key} section={s} />
-      ))}
+      <div className="admin-tabs" role="tablist" aria-label="Page">
+        {PAGE_TABS.map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            role="tab"
+            aria-selected={t.key === tab}
+            className={`admin-tab${t.key === tab ? ' is-active' : ''}`}
+            onClick={() => setTab(t.key)}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+      {tab === 'home' && (
+        <>
+          <p className="admin-page__hint">
+            The heading and text for each block on the home page. Changes appear on the
+            site immediately after you save.
+          </p>
+          {sections.map((s) => (
+            <SectionEditor key={s.key} section={s} />
+          ))}
+        </>
+      )}
+      {tab === 'services' && <ServicesContent />}
     </section>
   )
 }
