@@ -39,9 +39,14 @@ async function loadState(ctx: BotCtx, env: Env, deps: CardsDispatchDeps): Promis
 
 // ---- list / detail rendering ----
 
-async function showTabs(ctx: BotCtx, type: 'projects', env: Env, deps: CardsDispatchDeps): Promise<void> {
-  await deps.sessions.save(ctx.chatId, { screen: 'cards_tabs', data: { type } }, env)
-  await ctx.reply(menu.buildCardTypeTabs(type))
+async function showPages(ctx: BotCtx, env: Env, deps: CardsDispatchDeps): Promise<void> {
+  await deps.sessions.save(ctx.chatId, { screen: 'cards_pages' }, env)
+  await ctx.reply(menu.buildCardsPagePicker())
+}
+
+async function showBlocks(ctx: BotCtx, page: menu.CardsPage, env: Env, deps: CardsDispatchDeps): Promise<void> {
+  await deps.sessions.save(ctx.chatId, { screen: 'cards_blocks', data: { page } }, env)
+  await ctx.reply(menu.buildCardsBlockList(page))
 }
 
 async function showList(ctx: BotCtx, type: CardType, list: CardList, env: Env, deps: CardsDispatchDeps): Promise<void> {
@@ -400,17 +405,30 @@ export async function dispatchCardsPhoto(
 export async function dispatchCardsCallback(
   ctx: BotCtx, data: string, env: Env, deps: CardsDispatchDeps = defaultCardsDispatchDeps,
 ): Promise<void> {
-  if (data === 'cards:projects:list') {
-    await showTabs(ctx, 'projects', env, deps)
+  if (data === 'cards:list') {
+    await showPages(ctx, env, deps)
     return
   }
-  // Services has only the home list; an old "Services page" button lands there too (spec §7)
+  if (data.startsWith('cards:page:')) {
+    const page = data.slice('cards:page:'.length)
+    if (menu.isCardsPage(page)) await showBlocks(ctx, page, env, deps)
+    else await showPages(ctx, env, deps)
+    return
+  }
+  if (data.startsWith('cards:block:')) {
+    const reply = menu.buildCardsWebAdminOnly(data.slice('cards:block:'.length))
+    if (reply) await ctx.reply(reply)
+    else await showPages(ctx, env, deps)
+    return
+  }
+  // Projects and Services edit only their home lists, like the web admin; old
+  // "Projects page" / "Services page" buttons in the chat land there too.
+  if (data === 'cards:projects:list' || data.startsWith('cards:projects:tab:')) {
+    await showList(ctx, 'projects', 'home', env, deps)
+    return
+  }
   if (data === 'cards:services:list' || data.startsWith('cards:services:tab:')) {
     await showList(ctx, 'services', 'home', env, deps)
-    return
-  }
-  if (data.startsWith('cards:projects:tab:')) {
-    await showList(ctx, 'projects', data.split(':')[3] as CardList, env, deps)
     return
   }
 

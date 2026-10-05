@@ -18,11 +18,14 @@ import {
   buildContentFieldLangPrompt,
   buildContentValuePrompt,
   buildSeoList,
+  buildSeoGroup,
   buildSeoDetail,
   buildSeoFieldLangPrompt,
   buildSeoValuePrompt,
   buildSaveFailed,
-  buildCardTypeTabs,
+  buildCardsPagePicker,
+  buildCardsBlockList,
+  buildCardsWebAdminOnly,
   buildProjectList,
   buildServiceList,
   buildProjectDetail,
@@ -59,21 +62,20 @@ const MANAGER: ManagerRecord = {
 }
 
 describe('buildMainMenu', () => {
-  it('owner sees all six sections', () => {
+  it('owner sees all five sections — Cards replaces Projects/Services', () => {
     const buttons = readButtons(buildMainMenu('owner'))
     expect(buttons.map((b) => b.text)).toEqual([
-      'Content', 'Projects', 'Services', 'SEO', 'Requests', 'Administrators',
+      'Content', 'Cards', 'SEO', 'Requests', 'Administrators',
     ])
     expect(buttons.find((b) => b.text === 'Administrators')?.data).toBe('menu:admins')
     expect(buttons.find((b) => b.text === 'Content')?.data).toBe('content:list')
     expect(buttons.find((b) => b.text === 'SEO')?.data).toBe('seo:list')
-    expect(buttons.find((b) => b.text === 'Projects')?.data).toBe('cards:projects:list')
-    expect(buttons.find((b) => b.text === 'Services')?.data).toBe('cards:services:list')
+    expect(buttons.find((b) => b.text === 'Cards')?.data).toBe('cards:list')
     expect(buttons.find((b) => b.text === 'Requests')?.data).toBe('requests:list')
   })
   it('content_manager sees only content sections, no Administrators', () => {
     const buttons = readButtons(buildMainMenu('content_manager'))
-    expect(buttons.map((b) => b.text)).toEqual(['Content', 'Projects', 'Services', 'SEO'])
+    expect(buttons.map((b) => b.text)).toEqual(['Content', 'Cards', 'SEO'])
   })
   it('sales_manager sees only Requests', () => {
     const buttons = readButtons(buildMainMenu('sales_manager'))
@@ -121,6 +123,11 @@ describe('canAccessSection', () => {
   it('sales_manager can access requests but not content', () => {
     expect(canAccessSection('sales_manager', 'requests')).toBe(true)
     expect(canAccessSection('sales_manager', 'content')).toBe(false)
+  })
+  it('cards is open to owner and content_manager, closed to sales_manager', () => {
+    expect(canAccessSection('owner', 'cards')).toBe(true)
+    expect(canAccessSection('content_manager', 'cards')).toBe(true)
+    expect(canAccessSection('sales_manager', 'cards')).toBe(false)
   })
   it('returns false for an unknown section key', () => {
     expect(canAccessSection('owner', 'not-a-real-section')).toBe(false)
@@ -287,19 +294,33 @@ describe('buildContentValuePrompt', () => {
 })
 
 describe('buildSeoList', () => {
-  it('lists all eight pages, then Back to menu:main', () => {
+  it('lists the four site pages; single-entry pages open their record, Services opens its blocks', () => {
     const buttons = readButtons(buildSeoList())
     expect(buttons).toEqual([
       { text: 'Home', data: 'seo:page:home' },
-      { text: 'Services', data: 'seo:page:services' },
+      { text: 'Services', data: 'seo:tab:services' },
       { text: 'Projects', data: 'seo:page:projects' },
       { text: 'About', data: 'seo:page:about' },
-      { text: 'Web Development', data: 'seo:page:web-development' },
-      { text: 'Support', data: 'seo:page:support' },
-      { text: 'Business Analysis', data: 'seo:page:business-analysis' },
-      { text: 'Google Ads', data: 'seo:page:google-ads' },
       { text: '⬅ Back', data: 'menu:main' },
     ])
+  })
+})
+
+describe('buildSeoGroup', () => {
+  it('services: the page itself plus its four blocks, then Back to the page list', () => {
+    const r = buildSeoGroup('services')!
+    expect(r.text).toContain('Services')
+    expect(readButtons(r)).toEqual([
+      { text: 'Services page', data: 'seo:page:services' },
+      { text: 'Web Development', data: 'seo:page:web-development' },
+      { text: 'Website Support & Development', data: 'seo:page:support' },
+      { text: 'Business Analysis', data: 'seo:page:business-analysis' },
+      { text: 'Google Ads', data: 'seo:page:google-ads' },
+      { text: '⬅ Back', data: 'seo:list' },
+    ])
+  })
+  it('returns null for an unknown group', () => {
+    expect(buildSeoGroup('nope')).toBeNull()
   })
 })
 
@@ -312,6 +333,15 @@ describe('buildSeoDetail', () => {
       { text: 'Description', data: 'seo:field:description' },
       { text: '⬅ Back', data: 'seo:list' },
     ])
+  })
+  it('a /services block record goes Back to the Services block list', () => {
+    const r = buildSeoDetail({ ...HOME_SEO, pageKey: 'web-development' })
+    expect(r.text).toContain('Web Development')
+    expect(readButtons(r).at(-1)).toEqual({ text: '⬅ Back', data: 'seo:tab:services' })
+  })
+  it('the /services page record itself also goes Back to the Services block list', () => {
+    const r = buildSeoDetail({ ...HOME_SEO, pageKey: 'services' })
+    expect(readButtons(r).at(-1)).toEqual({ text: '⬅ Back', data: 'seo:tab:services' })
   })
   it('prefixes "Saved." when opts.saved is true', () => {
     expect(buildSeoDetail(HOME_SEO, { saved: true }).text.startsWith('Saved.\n\n')).toBe(true)
@@ -367,40 +397,81 @@ const SERVICE_A: ServiceCardRecord = {
   iconPath: 'services/icon.png',
 }
 
-describe('buildCardTypeTabs', () => {
-  it('projects: "On the home page" / "Projects page"', () => {
-    const buttons = readButtons(buildCardTypeTabs('projects'))
-    expect(buttons).toEqual([
-      { text: 'On the home page', data: 'cards:projects:tab:home' },
-      { text: 'Projects page', data: 'cards:projects:tab:page' },
+describe('buildCardsPagePicker', () => {
+  it('Home / Services, then Back to the main menu', () => {
+    expect(readButtons(buildCardsPagePicker())).toEqual([
+      { text: 'Home', data: 'cards:page:home' },
+      { text: 'Services', data: 'cards:page:services' },
       { text: '⬅ Back', data: 'menu:main' },
     ])
   })
 })
 
+describe('buildCardsBlockList', () => {
+  it('home: Hero, How it works, About, Projects, Services — like the web admin', () => {
+    expect(readButtons(buildCardsBlockList('home'))).toEqual([
+      { text: 'Hero', data: 'cards:block:hero' },
+      { text: 'How it works', data: 'cards:block:howWork' },
+      { text: 'About', data: 'cards:block:about' },
+      { text: 'Projects', data: 'cards:projects:list' },
+      { text: 'Services', data: 'cards:services:list' },
+      { text: '⬅ Back', data: 'cards:list' },
+    ])
+  })
+  it('services: the six /services blocks that carry cards or images', () => {
+    expect(readButtons(buildCardsBlockList('services'))).toEqual([
+      { text: 'Hero', data: 'cards:block:svcHero' },
+      { text: 'Web Development', data: 'cards:block:svcWebDevelopment' },
+      { text: 'AI Build', data: 'cards:block:svcAiBuild' },
+      { text: 'Website Support', data: 'cards:block:svcWebsiteSupport' },
+      { text: 'Business Analysis', data: 'cards:block:svcBusinessAnalysis' },
+      { text: 'Google Ads', data: 'cards:block:svcGoogleAds' },
+      { text: '⬅ Back', data: 'cards:list' },
+    ])
+  })
+})
+
+describe('buildCardsWebAdminOnly', () => {
+  it('points a home block at its place in the web admin and goes Back to Home', () => {
+    const r = buildCardsWebAdminOnly('howWork')!
+    expect(r.text).toContain('web admin')
+    expect(r.text).toContain('Cards → Home → How it works')
+    expect(readButtons(r)).toEqual([{ text: '⬅ Back', data: 'cards:page:home' }])
+  })
+  it('points a /services block at its place and goes Back to Services', () => {
+    const r = buildCardsWebAdminOnly('svcAiBuild')!
+    expect(r.text).toContain('Cards → Services → AI Build')
+    expect(readButtons(r)).toEqual([{ text: '⬅ Back', data: 'cards:page:services' }])
+  })
+  it('returns null for blocks the bot edits itself, or unknown keys', () => {
+    expect(buildCardsWebAdminOnly('projects')).toBeNull()
+    expect(buildCardsWebAdminOnly('nope')).toBeNull()
+  })
+})
+
 describe('buildProjectList', () => {
-  it('shows each card with a published marker, then Back', () => {
+  it('shows each card with a published marker, then Back to the Home blocks', () => {
     const r = buildProjectList('home', [PROJECT_A, PROJECT_NO_IMAGE])
     const buttons = readButtons(r)
     expect(buttons).toEqual([
       { text: '✅ Encryptia Cloud', data: 'cards:card:encryptia-cloud' },
       { text: '🚫 Draft', data: 'cards:card:no-image' },
-      { text: '⬅ Back', data: 'cards:projects:list' },
+      { text: '⬅ Back', data: 'cards:page:home' },
     ])
   })
   it('empty list still offers Back', () => {
-    const r = buildProjectList('page', [])
+    const r = buildProjectList('home', [])
     expect(r.text).toContain('No cards')
-    expect(readButtons(r)).toEqual([{ text: '⬅ Back', data: 'cards:projects:list' }])
+    expect(readButtons(r)).toEqual([{ text: '⬅ Back', data: 'cards:page:home' }])
   })
 })
 
 describe('buildServiceList', () => {
-  it('shows each card with a published marker, then Back', () => {
+  it('shows each card with a published marker, then Back to the Home blocks', () => {
     const buttons = readButtons(buildServiceList('home', [SERVICE_A]))
     expect(buttons).toEqual([
       { text: '✅ Web Development', data: 'cards:card:web-development' },
-      { text: '⬅ Back', data: 'menu:main' },
+      { text: '⬅ Back', data: 'cards:page:home' },
     ])
   })
 })
