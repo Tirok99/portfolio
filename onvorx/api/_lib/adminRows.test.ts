@@ -119,3 +119,81 @@ describe('estimateFromRow', () => {
     })
   })
 })
+
+describe('sectionRow — /services sections (spec §5.5)', () => {
+  const img = (src: string) => ({ kind: 'asset', src })
+  const card = (title: string, extra: Record<string, unknown> = {}) => ({
+    icon: img('/assets/services-page/icons/code.svg'), title: L(title), text: L('t'), ...extra,
+  })
+
+  it('accepts the 7 svc keys', () => {
+    for (const k of ['svcHero', 'svcWebDevelopment', 'svcAiBuild', 'svcWebsiteSupport',
+      'svcBusinessAnalysis', 'svcGoogleAds', 'svcCta']) expect(isSectionKey(k)).toBe(true)
+  })
+
+  it('keeps block texts with tags and an optional get', () => {
+    const texts = { tags: [L('WordPress')], get: { title: L('G'), text: L('g') } }
+    expect(sectionRow('svcWebDevelopment', { texts })).toEqual({ texts })
+    expect(sectionRow('svcGoogleAds', { texts: { tags: [] } })).toEqual({ texts: { tags: [] } })
+  })
+
+  it('requires exactly 2 tracks on Business Analysis, and none elsewhere', () => {
+    const head = { label: L('Track 01'), title: L('T') }
+    expect(sectionRow('svcBusinessAnalysis', { texts: { tags: [], tracks: [head, head] } }))
+      .toEqual({ texts: { tags: [], tracks: [head, head] } })
+    expect(sectionRow('svcBusinessAnalysis', { texts: { tags: [], tracks: [head] } })).toEqual({})
+    expect(sectionRow('svcBusinessAnalysis', { texts: { tags: [] } })).toEqual({})
+    expect(sectionRow('svcWebDevelopment', { texts: { tags: [], tracks: [head, head] } })).toEqual({})
+  })
+
+  it('keeps AI Build texts as a stack of L', () => {
+    expect(sectionRow('svcAiBuild', { texts: { stack: [L('Design'), L('Site')] } }))
+      .toEqual({ texts: { stack: [L('Design'), L('Site')] } })
+    expect(sectionRow('svcAiBuild', { texts: { stack: ['Design'] } })).toEqual({})
+  })
+
+  it('drops texts / media on keys that do not own them', () => {
+    expect(sectionRow('hero', { texts: { tags: [] }, media: { badge: img('/b.webp') } })).toEqual({})
+    expect(sectionRow('svcHero', { texts: { tags: [] } })).toEqual({})
+    expect(sectionRow('svcCta', { media: { badge: img('/b.webp') } })).toEqual({})
+  })
+
+  it('drops texts with a non-L tag', () => {
+    expect(sectionRow('svcWebDevelopment', { texts: { tags: ['WordPress'] } })).toEqual({})
+  })
+
+  it('keeps block media with a badge and an optional picture', () => {
+    expect(sectionRow('svcWebDevelopment', { media: { badge: img('/b.webp'), picture: img('/p.webp') } }))
+      .toEqual({ media: { badge: img('/b.webp'), picture: img('/p.webp') } })
+    expect(sectionRow('svcGoogleAds', { media: { badge: img('/b.webp') } }))
+      .toEqual({ media: { badge: img('/b.webp') } })
+    expect(sectionRow('svcGoogleAds', { media: {} })).toEqual({})
+  })
+
+  it('keeps AI Build media only with all three mockups', () => {
+    const media = { site: img('/s.webp'), admin: img('/a.webp'), bot: img('/b.webp') }
+    expect(sectionRow('svcAiBuild', { media })).toEqual({ media })
+    expect(sectionRow('svcAiBuild', { media: { site: img('/s.webp') } })).toEqual({})
+  })
+
+  it('requires exactly 4 svcHero cards, each may carry tags', () => {
+    const four = [1, 2, 3, 4].map((n) => card(`C${n}`, { tags: [L('x')] }))
+    expect(sectionRow('svcHero', { cards: four })).toEqual({ cards: four })
+    expect(sectionRow('svcHero', { cards: four.slice(0, 3) })).toEqual({})
+  })
+
+  it('requires track 0 or 1 on every Business Analysis card', () => {
+    const ok = [card('A', { track: 0 }), card('B', { track: 1 })]
+    expect(sectionRow('svcBusinessAnalysis', { cards: ok })).toEqual({ cards: ok })
+    expect(sectionRow('svcBusinessAnalysis', { cards: [card('A')] })).toEqual({})
+    expect(sectionRow('svcBusinessAnalysis', { cards: [card('A', { track: 2 })] })).toEqual({})
+  })
+
+  it('accepts an empty feature list on a block', () => {
+    expect(sectionRow('svcWebDevelopment', { cards: [] })).toEqual({ cards: [] })
+  })
+
+  it('leaves the Home keys unchanged (no tags/track rules there)', () => {
+    expect(sectionRow('hero', { cards: [card('A')] })).toEqual({ cards: [card('A')] })
+  })
+})

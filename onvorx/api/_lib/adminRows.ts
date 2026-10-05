@@ -1,6 +1,8 @@
 export interface L { en: string; uk: string }
 
-const SECTION_KEYS = ['hero', 'services', 'projects', 'howWork', 'about', 'cta', 'footer'] as const
+const HOME_SECTION_KEYS = ['hero', 'services', 'projects', 'howWork', 'about', 'cta', 'footer'] as const
+const SVC_BLOCK_KEYS = ['svcWebDevelopment', 'svcWebsiteSupport', 'svcBusinessAnalysis', 'svcGoogleAds'] as const
+const SECTION_KEYS = [...HOME_SECTION_KEYS, 'svcHero', ...SVC_BLOCK_KEYS, 'svcAiBuild', 'svcCta'] as const
 const SEO_KEYS = [
   'home', 'services', 'projects', 'about',
   'web-development', 'support', 'business-analysis', 'google-ads',
@@ -25,25 +27,63 @@ const isImageRefLike = (v: unknown): boolean =>
   typeof (v as Record<string, unknown>).kind === 'string' &&
   typeof (v as Record<string, unknown>).src === 'string'
 
+const isObject = (v: unknown): v is Record<string, unknown> =>
+  typeof v === 'object' && v !== null && !Array.isArray(v)
+const isLArray = (v: unknown): boolean => Array.isArray(v) && v.every(isL)
+const isBlockKey = (k: string): boolean => (SVC_BLOCK_KEYS as readonly string[]).includes(k)
+
 const isCard = (v: unknown): boolean => {
-  if (typeof v !== 'object' || v === null) return false
-  const c = v as Record<string, unknown>
-  if (!isImageRefLike(c.icon)) return false
-  if (!isL(c.title)) return false
-  if (!isL(c.text)) return false
-  if (c.sub !== undefined && !isL(c.sub)) return false
+  if (!isObject(v)) return false
+  if (!isImageRefLike(v.icon)) return false
+  if (!isL(v.title)) return false
+  if (!isL(v.text)) return false
+  if (v.sub !== undefined && !isL(v.sub)) return false
+  if (v.tags !== undefined && !isLArray(v.tags)) return false
+  if (v.track !== undefined && v.track !== 0 && v.track !== 1) return false
   return true
 }
 
-/** section patch → DB column subset. Only well-typed L fields survive. */
-export function sectionRow(_key: string, patch: Patch): Patch {
+/** spec §5.5: per-key rules on top of the per-card shape check. */
+const isCardsFor = (key: string, v: unknown): boolean => {
+  if (!Array.isArray(v) || !v.every(isCard)) return false
+  if (key === 'svcHero') return v.length === 4
+  if (key === 'svcBusinessAnalysis') return v.every((c) => c.track === 0 || c.track === 1)
+  return true
+}
+
+const isTrackHead = (v: unknown): boolean => isObject(v) && isL(v.label) && isL(v.title)
+
+/** spec §5.3 `texts` — Content-owned; only the 4 blocks and AI Build have one. */
+const isTextsFor = (key: string, v: unknown): boolean => {
+  if (!isObject(v)) return false
+  if (key === 'svcAiBuild') return isLArray(v.stack)
+  if (!isBlockKey(key)) return false
+  if (!isLArray(v.tags)) return false
+  if (v.get !== undefined && !(isObject(v.get) && isL(v.get.title) && isL(v.get.text))) return false
+  if (key === 'svcBusinessAnalysis')
+    return Array.isArray(v.tracks) && v.tracks.length === 2 && v.tracks.every(isTrackHead)
+  return v.tracks === undefined
+}
+
+/** spec §5.3 `media` — Cards-owned; only the 4 blocks and AI Build have one. */
+const isMediaFor = (key: string, v: unknown): boolean => {
+  if (!isObject(v)) return false
+  if (key === 'svcAiBuild') return isImageRefLike(v.site) && isImageRefLike(v.admin) && isImageRefLike(v.bot)
+  if (!isBlockKey(key)) return false
+  return isImageRefLike(v.badge) && (v.picture === undefined || isImageRefLike(v.picture))
+}
+
+/** section patch → DB column subset. Only well-typed fields survive. */
+export function sectionRow(key: string, patch: Patch): Patch {
   const out: Patch = {}
   if (isL(patch.eyebrow)) out.eyebrow = patch.eyebrow
   if (isL(patch.title)) out.title = patch.title
   if (isL(patch.body)) out.body = patch.body
   if (isL(patch.ctaLabel)) out.cta_label = patch.ctaLabel
-  if (Array.isArray(patch.cards) && patch.cards.every(isCard)) out.cards = patch.cards
+  if (isCardsFor(key, patch.cards)) out.cards = patch.cards
   if (isCard(patch.launch)) out.launch = patch.launch
+  if (isTextsFor(key, patch.texts)) out.texts = patch.texts
+  if (isMediaFor(key, patch.media)) out.media = patch.media
   return out
 }
 

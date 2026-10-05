@@ -49,6 +49,20 @@ describe('resetContent', () => {
     expect('cards' in about).toBe(false)
     expect('launch' in about).toBe(false)
   })
+  it('carries svc texts and media through to the rpc', async () => {
+    const rpc = vi.fn().mockResolvedValue({ error: null })
+    const texts = { tags: [L('WordPress')] }
+    const media = { badge: { kind: 'asset', src: '/b.webp' } }
+    await resetContent({ rpc } as never, {
+      ...content,
+      sections: [...content.sections, { key: 'svcGoogleAds', title: L('Google Ads'), texts, media }],
+    })
+    const p = rpc.mock.calls[0][1].payload
+    const ads = p.sections.find((s: { key: string }) => s.key === 'svcGoogleAds')
+    expect(ads.texts).toEqual(texts)
+    expect(ads.media).toEqual(media)
+    expect('texts' in p.sections.find((s: { key: string }) => s.key === 'hero')).toBe(false)
+  })
   it('surfaces an rpc error', async () => {
     const rpc = vi.fn().mockResolvedValue({ error: { message: 'boom' } })
     expect(await resetContent({ rpc } as never, content)).toEqual({ error: 'boom' })
