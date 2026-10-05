@@ -46,7 +46,7 @@ body {
 .ai-build__container,
 .website-support__container,
 .business-analysis__container,
-.google-ads__container {
+.paid-search__container {
   width: 100%;
   max-width: var(--container-max);
   margin-inline: auto;

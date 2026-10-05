@@ -162,7 +162,7 @@
       { "label": "Web Development", "to": "/web-development" },
       { "label": "Website Support & Development", "to": "/support" },
       { "label": "Business Analysis", "to": "/business-analysis" },
-      { "label": "Google Ads", "to": "/services#google-ads" }
+      { "label": "Google Ads", "to": "/services#paid-search" }
     ],
     "email": "info@onvorx.com",
     "telegram": "t.me/onvorx",

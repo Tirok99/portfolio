@@ -79,7 +79,9 @@ export const SERVICE_BLOCKS: Record<ServiceContentKey, ServiceBlockConfig> = {
     ],
   },
   googleAds: {
-    id: "google-ads",
+    // not "google-ads": EasyList hides #google-ads / .google-ads, so ad
+    // blockers would drop the whole section
+    id: "paid-search",
     contentKey: "googleAds",
     number: "04",
     theme: "light",

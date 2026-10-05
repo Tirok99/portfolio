@@ -1,5 +1,6 @@
 /* Shared layout for the four /services detail blocks
-   (Figma: web-development, website-support, business-analysis, google-ads).
+   (Figma: web-development, website-support, business-analysis, google-ads;
+   the last one renders as `paid-search` — see SERVICE_BLOCKS.googleAds).
    Desktop: 460px aside (intro + picture) | features column.
    The four Figma frames differ slightly in tag/button/feature styling; this
    follows the majority (blocks 02–04) so all four read as one system. */

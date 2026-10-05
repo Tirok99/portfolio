@@ -27,7 +27,7 @@ describe('/services', () => {
     ['/web-development', '#web-development'],
     ['/support', '#website-support'],
     ['/business-analysis', '#business-analysis'],
-    ['/google-ads', '#google-ads'],
+    ['/google-ads', '#paid-search'],
   ])('redirects %s to its block on /services', (from, hash) => {
     window.history.pushState({}, '', from)
     render(<App />)
