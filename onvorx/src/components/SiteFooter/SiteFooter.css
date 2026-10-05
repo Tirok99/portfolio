@@ -39,7 +39,10 @@
 
 .site-footer__top {
   display: grid;
-  grid-template-columns: minmax(260px, 1.4fr) auto auto auto;
+  /* Figma: brand 380 | nav | services | contact, packed left 80px apart —
+     doesn't spread out as the container widens */
+  grid-template-columns: minmax(260px, 380px) auto auto auto;
+  justify-content: start;
   gap: clamp(2rem, 5vw, 5rem);
   padding-bottom: clamp(11rem, 19vw, 15rem);
 }

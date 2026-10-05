@@ -50,7 +50,8 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  width: clamp(320px, 33vw, 480px);
+  /* Figma: hub ≈ 1.43 × the column gap, so its connector lines reach into the cards */
+  width: clamp(320px, 63vw - 26.5rem, 566px);
   transform: translate(-50%, -50%);
   z-index: 0;
   pointer-events: none;
@@ -66,7 +67,8 @@
   z-index: 1;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  column-gap: clamp(2rem, 22vw, 21rem);
+  /* Figma: 396 at 1600; falls off steeply so mid-width cards keep room */
+  column-gap: clamp(16rem, 44vw - 18.5rem, 24.75rem);
   row-gap: clamp(1.5rem, 3vw, 2rem);
 }
 
@@ -79,7 +81,7 @@
   flex: 1;
   align-items: center;
   gap: var(--space-4);
-  min-height: clamp(178px, 20vw, 200px);
+  min-height: clamp(178px, 13.1vw, 210px);
   padding: clamp(1.5rem, 2.6vw, 1.75rem);
   border-radius: var(--radius-lg);
   background: var(--card-bg);
@@ -135,7 +137,7 @@
 }
 
 .services__card-preview {
-  width: clamp(80px, 9vw, 112px);
+  width: clamp(80px, 8.75vw, 140px);
   height: auto;
   flex-shrink: 0;
   border-radius: var(--radius-sm);

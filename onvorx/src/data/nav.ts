@@ -6,6 +6,7 @@ export interface NavLink {
 
 /** Primary navigation shown in the site header. */
 export const MAIN_NAV: NavLink[] = [
+  { key: "nav.home", to: "/" },
   { key: "nav.services", to: "/services" },
   { key: "nav.projects", to: "/#projects" },
   { key: "nav.about", to: "/about" },

@@ -1,7 +1,7 @@
 /* ============================================
    Design tokens
    Source of truth: Figma "onvorx_v0.5" / layout-en-vscode
-   Desktop reference = 1440 (Figma comp 1600 scaled ~0.9)
+   Desktop reference = Figma comp 1600, 1:1 (container = 1600 + 2 × gutter)
    ============================================ */
 
 :root {
@@ -57,12 +57,9 @@
   --space-24: 6rem;
 
   /* ---- Layout ---- */
-  --container-max: 1440px;
-  /* 1:1 Figma canvas (1600) + 2 × --gutter. Used by /services blocks for now;
-     Home moves onto it (and --container-max retires) in a follow-up pass. */
-  --container-wide: 1630px;
+  --container-max: 1630px; /* Figma canvas 1600 + 2 × --gutter */
   --gutter: 15px;
-  --content-px: clamp(1rem, 0.5rem + 3.2vw, 3rem);   /* inner section padding: 16 -> 48 */
+  --content-px: clamp(1rem, 0.5rem + 3.5vw, 4rem);   /* inner section padding: 16 -> 64 (Figma) */
   --section-py: clamp(3.5rem, 2rem + 6.5vw, 6rem);   /* 56 -> 96 */
   --header-h: 72px;
 

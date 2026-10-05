@@ -58,7 +58,7 @@
 .how-work__description {
   color: var(--text-2);
   font-size: var(--fs-body);
-  max-width: 52ch;
+  max-width: 560px; /* Figma */
 }
 
 /* ---- timeline ---- */

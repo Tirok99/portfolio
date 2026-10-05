@@ -23,7 +23,7 @@
   gap: var(--space-6);
   min-height: var(--header-h);
   padding-block: 0.75rem;
-  padding-inline: clamp(0px, 2vw, 3.0625rem); /* aligns with --content-px on wide screens */
+  padding-inline: clamp(0px, 4vw, 4rem); /* Figma: 64px; tracks --content-px */
 }
 
 @media (min-width: 901px) {
@@ -45,6 +45,7 @@
 }
 
 .site-header__nav-link {
+  white-space: nowrap;
   font-size: var(--fs-title-sm);
   font-weight: var(--fw-medium);
   color: var(--text);

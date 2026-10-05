@@ -89,11 +89,6 @@ export function SiteHeader() {
       >
         <nav aria-label={t("nav.menu")}>
           <ul className="site-header__drawer-list">
-            <li>
-              <Link to="/" className="site-header__drawer-link">
-                {t("nav.home")}
-              </Link>
-            </li>
             {MAIN_NAV.map((item) => (
               <li key={item.to}>
                 <Link
