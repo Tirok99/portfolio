@@ -281,3 +281,12 @@
 .admin-notes__item { background: var(--surface-2, #fbfbfc); border-radius: var(--radius-sm, 8px); padding: 0.6rem 0.75rem; }
 .admin-notes__meta { display: block; font-size: 0.78rem; color: var(--text-3, #8a8d95); margin-bottom: 0.2rem; }
 .admin-notes__body { margin: 0; font-size: 0.88rem; white-space: pre-wrap; }
+
+/* --- localized list (tags, stack) --- */
+.admin-llist { border: 0; padding: 0; margin: 0 0 1rem; min-width: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+.admin-llist__row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto auto auto; gap: 0.4rem; align-items: center; }
+.admin-llist > .admin-btn { align-self: flex-start; }
+@media (max-width: 560px) {
+  .admin-llist__row { grid-template-columns: minmax(0, 1fr) auto auto auto; }
+  .admin-llist__row > .admin-input:nth-child(2) { grid-column: 1; grid-row: 2; }
+}
