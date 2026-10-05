@@ -20,7 +20,7 @@ type CardKind = 'project' | 'service'
 const cardsUrl = (type: CardKind) => `/api/admin/cards?type=${type}`
 
 export const adminApi = {
-  saveSection: (key: SectionKey, patch: Partial<Pick<SectionText, 'eyebrow' | 'title' | 'body' | 'ctaLabel' | 'cards' | 'launch'>>) =>
+  saveSection: (key: SectionKey, patch: Partial<Pick<SectionText, 'eyebrow' | 'title' | 'body' | 'ctaLabel' | 'cards' | 'launch' | 'texts' | 'media'>>) =>
     call<void>('/api/admin/content', 'PUT', { kind: 'section', key, patch }),
   saveSeo: (pageKey: SeoPageKey, patch: Partial<Pick<SeoEntry, 'title' | 'description'>>) =>
     call<void>('/api/admin/content', 'PUT', { kind: 'seo', pageKey, patch }),

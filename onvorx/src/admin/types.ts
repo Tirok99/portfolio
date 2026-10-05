@@ -10,7 +10,7 @@ export interface ImageRef {
   path?: string
 }
 
-export type SectionKey =
+export type HomeSectionKey =
   | 'hero'
   | 'services'
   | 'projects'
@@ -19,13 +19,65 @@ export type SectionKey =
   | 'cta'
   | 'footer'
 
+/** The four numbered blocks on /services (spec §5.1). */
+export type ServiceBlockKey =
+  | 'svcWebDevelopment'
+  | 'svcWebsiteSupport'
+  | 'svcBusinessAnalysis'
+  | 'svcGoogleAds'
+
+export type ServicesSectionKey = 'svcHero' | ServiceBlockKey | 'svcAiBuild' | 'svcCta'
+
+export type SectionKey = HomeSectionKey | ServicesSectionKey
+
 export interface SectionCard {
   icon: ImageRef
   title: L
   /** HowWork cards only */
   sub?: L
   text: L
+  /** svcHero cards only — the small tags under the card title */
+  tags?: L[]
+  /** svcBusinessAnalysis feature items only — which of the 2 tracks */
+  track?: 0 | 1
 }
+
+export interface TrackHead {
+  label: L
+  title: L
+}
+
+/** `texts` of the 4 service blocks — Content-owned (spec §5.3). */
+export interface ServiceBlockTexts {
+  tags: L[]
+  /** "What you get" box — absent on svcGoogleAds */
+  get?: { title: L; text: L }
+  /** svcBusinessAnalysis only, exactly 2 */
+  tracks?: [TrackHead, TrackHead]
+}
+
+/** `texts` of svcAiBuild — Content-owned. */
+export interface AiBuildTexts {
+  stack: L[]
+}
+
+export type SectionTexts = ServiceBlockTexts | AiBuildTexts
+
+/** `media` of the 4 service blocks — Cards-owned (spec §5.3). */
+export interface ServiceBlockMedia {
+  badge: ImageRef
+  /** absent on svcGoogleAds */
+  picture?: ImageRef
+}
+
+/** `media` of svcAiBuild — Cards-owned. */
+export interface AiBuildMedia {
+  site: ImageRef
+  admin: ImageRef
+  bot: ImageRef
+}
+
+export type SectionMedia = ServiceBlockMedia | AiBuildMedia
 
 export interface SectionText {
   key: SectionKey
@@ -35,12 +87,16 @@ export interface SectionText {
   title: L
   /** maps to the section's description / lede */
   body: L
-  /** Hero + CTA only — the button text */
+  /** Hero + CTA (Home), every svc section except svcHero — button / link text */
   ctaLabel?: L
-  /** Hero/HowWork/About only — the section's fixed-count content cards */
+  /** Hero/HowWork/About cards; svcHero cards; svc block feature items */
   cards?: SectionCard[]
   /** Hero only — the standalone "Launch" card */
   launch?: SectionCard
+  /** svc blocks + svcAiBuild — short text lists (Content-owned) */
+  texts?: SectionTexts
+  /** svc blocks + svcAiBuild — images (Cards-owned) */
+  media?: SectionMedia
 }
 
 export interface ProjectCard {
