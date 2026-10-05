@@ -25,7 +25,7 @@ export function Cta({ content }: { content?: CtaContent } = {}) {
         <div className="cta__decor" aria-hidden="true">
           <img
             className="cta__rings"
-            src="/assets/decor/rings.png"
+            src="/assets/decor/rings.webp"
             alt=""
             width={1254}
             height={1254}
@@ -35,7 +35,7 @@ export function Cta({ content }: { content?: CtaContent } = {}) {
             <div className="cta__wave-rotate">
               <img
                 className="cta__wave-red"
-                src="/assets/decor/wave-red-tight.png"
+                src="/assets/decor/wave-red-tight.webp"
                 alt=""
                 loading="lazy"
                 decoding="async"

@@ -7,10 +7,10 @@ import "./Services.css";
 
 /** design preview assets keyed by service slug */
 const PREVIEWS: Record<string, string> = {
-  "web-development": "/assets/services/preview-web.png",
-  support: "/assets/services/preview-support.png",
-  "business-analysis": "/assets/services/preview-analysis.png",
-  "google-ads": "/assets/services/preview-ads.png",
+  "web-development": "/assets/services/preview-web.webp",
+  support: "/assets/services/preview-support.webp",
+  "business-analysis": "/assets/services/preview-analysis.webp",
+  "google-ads": "/assets/services/preview-ads.webp",
 };
 const FALLBACK_PREVIEW = PREVIEWS["web-development"];
 
@@ -35,7 +35,7 @@ export function Services() {
 
           <div className="services__body">
             <div className="services__hub" aria-hidden="true">
-              <img src="/assets/services/hub.png" alt="" loading="lazy" decoding="async" />
+              <img src="/assets/services/hub.webp" alt="" loading="lazy" decoding="async" />
             </div>
 
             <ul className="services__grid">
@@ -87,7 +87,7 @@ export function Services() {
       </div>
 
       <div className="services__wave" aria-hidden="true">
-        <img src="/assets/decor/wave-particles-tight.png" alt="" loading="lazy" decoding="async" />
+        <img src="/assets/decor/wave-particles-tight.webp" alt="" loading="lazy" decoding="async" />
       </div>
     </section>
   );

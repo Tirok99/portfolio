@@ -8,8 +8,8 @@ interface LogoProps {
 }
 
 const SRC: Record<"white" | "dark", string> = {
-  white: "/assets/logo-white.png",
-  dark: "/assets/logo-dark.png",
+  white: "/assets/logo-white.webp",
+  dark: "/assets/logo-dark.webp",
 };
 
 /**

@@ -41,7 +41,7 @@ export function HowWork() {
       </div>
 
       <div className="how-work__wave" aria-hidden="true">
-        <img src="/assets/decor/wave-particles-tight.png" alt="" loading="lazy" decoding="async" />
+        <img src="/assets/decor/wave-particles-tight.webp" alt="" loading="lazy" decoding="async" />
       </div>
     </section>
   );

@@ -49,7 +49,7 @@ export function AiBuild() {
             <div role="img" aria-label={t("servicesPage.aiBuild.mockupsAlt")} className="ai-build__stage">
               <img
                 className="ai-build__mockup ai-build__mockup--site"
-                src={`${ASSETS}/ai-mockup-site.png`}
+                src={`${ASSETS}/ai-mockup-site.webp`}
                 alt=""
                 width={1357}
                 height={931}
@@ -58,7 +58,7 @@ export function AiBuild() {
               />
               <img
                 className="ai-build__mockup ai-build__mockup--admin"
-                src={`${ASSETS}/ai-mockup-admin.png`}
+                src={`${ASSETS}/ai-mockup-admin.webp`}
                 alt=""
                 width={1107}
                 height={497}
@@ -67,7 +67,7 @@ export function AiBuild() {
               />
               <img
                 className="ai-build__mockup ai-build__mockup--bot"
-                src={`${ASSETS}/ai-mockup-bot.png`}
+                src={`${ASSETS}/ai-mockup-bot.webp`}
                 alt=""
                 width={370}
                 height={548}

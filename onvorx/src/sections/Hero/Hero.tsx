@@ -17,7 +17,7 @@ export function Hero() {
   return (
     <section className="section hero" data-theme="dark" id="top">
       <div className="hero__decor" aria-hidden="true">
-        <img className="hero__wave hero__wave--left" src="/assets/decor/wave-grey-tight.png" alt="" />
+        <img className="hero__wave hero__wave--left" src="/assets/decor/wave-grey-tight.webp" alt="" />
       </div>
 
       <div className="hero__container">
@@ -47,14 +47,14 @@ export function Hero() {
           <div className="hero__visual">
             <img
               className="hero__radar"
-              src="/assets/hero/radar.png"
+              src="/assets/hero/radar.webp"
               alt={t("hero.visualAlt")}
               loading="eager"
               decoding="async"
             />
             <img
               className="hero__central-decor"
-              src="/assets/hero/central-decor.png"
+              src="/assets/hero/central-decor.webp"
               alt={t("hero.visualAlt")}
               loading="lazy"
               decoding="async"

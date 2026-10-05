@@ -31,7 +31,7 @@ export function SiteFooter() {
     <footer className="site-footer" data-theme="dark">
       <div className="site-footer__decor" aria-hidden="true">
         <img
-          src="/assets/decor/wave-particles-tight.png"
+          src="/assets/decor/wave-particles-tight.webp"
           alt=""
           loading="lazy"
           decoding="async"

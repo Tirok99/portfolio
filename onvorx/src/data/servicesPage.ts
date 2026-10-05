@@ -35,8 +35,8 @@ export const SERVICE_BLOCKS: Record<ServiceContentKey, ServiceBlockConfig> = {
     contentKey: "webDevelopment",
     number: "01",
     theme: "dark",
-    badge: `${ASSETS}/badge-web.png`,
-    picture: { src: `${ASSETS}/picture-web.png`, width: 960, height: 720 },
+    badge: `${ASSETS}/badge-web.webp`,
+    picture: { src: `${ASSETS}/picture-web.webp`, width: 960, height: 720 },
     featureIcons: [
       `${ICONS}/code.svg`,
       `${ICONS}/cms.svg`,
@@ -51,8 +51,8 @@ export const SERVICE_BLOCKS: Record<ServiceContentKey, ServiceBlockConfig> = {
     contentKey: "websiteSupport",
     number: "02",
     theme: "light",
-    badge: `${ASSETS}/badge-support.png`,
-    picture: { src: `${ASSETS}/picture-support.png`, width: 960, height: 600 },
+    badge: `${ASSETS}/badge-support.webp`,
+    picture: { src: `${ASSETS}/picture-support.webp`, width: 960, height: 600 },
     featureIcons: [
       `${ICONS}/pages.svg`,
       `${ICONS}/gear.svg`,
@@ -67,8 +67,8 @@ export const SERVICE_BLOCKS: Record<ServiceContentKey, ServiceBlockConfig> = {
     contentKey: "businessAnalysis",
     number: "03",
     theme: "dark",
-    badge: `${ASSETS}/badge-analysis.png`,
-    picture: { src: `${ASSETS}/picture-analysis.png`, width: 960, height: 686 },
+    badge: `${ASSETS}/badge-analysis.webp`,
+    picture: { src: `${ASSETS}/picture-analysis.webp`, width: 960, height: 686 },
     featureIcons: [
       `${ICONS}/integration.svg`,
       `${ICONS}/target.svg`,
@@ -83,7 +83,7 @@ export const SERVICE_BLOCKS: Record<ServiceContentKey, ServiceBlockConfig> = {
     contentKey: "googleAds",
     number: "04",
     theme: "light",
-    badge: `${ASSETS}/badge-ads.png`,
+    badge: `${ASSETS}/badge-ads.webp`,
     featureIcons: [
       `${ICONS}/browser.svg`,
       `${ICONS}/sliders.svg`,

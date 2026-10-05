@@ -19,7 +19,7 @@ export function ServicesHero() {
         <div className="services-hero__decor" aria-hidden="true">
           <img
             className="services-hero__radar"
-            src="/assets/services-page/hero-radar.png"
+            src="/assets/services-page/hero-radar.webp"
             alt=""
             width={1110}
             height={1110}
@@ -28,7 +28,7 @@ export function ServicesHero() {
           />
           <img
             className="services-hero__wave"
-            src="/assets/decor/wave-grey-tight.png"
+            src="/assets/decor/wave-grey-tight.webp"
             alt=""
             width={1470}
             height={360}

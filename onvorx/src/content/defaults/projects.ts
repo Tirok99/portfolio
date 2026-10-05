@@ -27,7 +27,7 @@ const cards: ProjectCard[] = (en.projects.items as unknown as RawProject[]).map(
       title: pair(p.title, u?.title),
       tags: [...p.tags],
       description: pair(p.text, u?.text),
-      image: { kind: 'asset', src: p.image ?? `/assets/projects/${p.id}.png` },
+      image: { kind: 'asset', src: p.image ?? `/assets/projects/${p.id}.webp` },
       imageAlt: pair(p.imageAlt, u?.imageAlt),
     }
   },
