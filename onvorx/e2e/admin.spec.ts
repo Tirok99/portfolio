@@ -35,14 +35,16 @@ test('owner edits a section title and the optimistic save sticks in the form', a
   await page.goto('/admin/content')
   await expect(page.getByRole('heading', { level: 1, name: 'Content' })).toBeVisible()
 
-  const heroFieldset = page.locator('fieldset').filter({ hasText: /^Hero/ })
-  const titleField = heroFieldset.getByRole('textbox', { name: 'Title' }).first()
+  // Each block is a collapsed <details> disclosure — open Hero before editing.
+  const heroBlock = page.locator('details').filter({ has: page.getByRole('heading', { name: /^Hero/ }) })
+  await heroBlock.locator('summary').click()
+  const titleField = heroBlock.getByRole('textbox', { name: 'Title' }).first()
   await titleField.fill('E2E hero headline')
-  await heroFieldset.getByRole('button', { name: 'Save' }).click()
+  await heroBlock.getByRole('button', { name: 'Save' }).click()
   // Scope the wait to the Hero block — a page-wide "All changes saved" match
   // would resolve instantly against an untouched sibling SaveBar.
-  await expect(heroFieldset.getByText('All changes saved')).toBeVisible()
-  await expect(heroFieldset.getByRole('button', { name: 'Save' })).toBeDisabled()
+  await expect(heroBlock.getByText('All changes saved')).toBeVisible()
+  await expect(heroBlock.getByRole('button', { name: 'Save' })).toBeDisabled()
 
   // The `onvorx.admin.v1` working store is retired: the optimistic edit is held
   // in the provider's in-memory state (and pushed to Supabase via the mocked
