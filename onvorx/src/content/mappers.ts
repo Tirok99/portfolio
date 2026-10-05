@@ -1,12 +1,17 @@
 import type {
+  ImageRef,
   L,
   ProjectCard,
   SectionCard,
   SectionKey,
+  SectionMedia,
   SectionText,
+  SectionTexts,
   SeoEntry,
   SeoPageKey,
+  ServiceBlockTexts,
   ServiceCard,
+  TrackHead,
 } from '../admin/types'
 import type {
   DbContentRows,
@@ -39,6 +44,19 @@ const isLLike = (v: unknown): v is L =>
   typeof (v as Record<string, unknown>).en === 'string' &&
   typeof (v as Record<string, unknown>).uk === 'string'
 
+const isObj = (v: unknown): v is Record<string, unknown> =>
+  typeof v === 'object' && v !== null && !Array.isArray(v)
+
+const asImageRef = (v: unknown): ImageRef | undefined => {
+  if (!isObj(v) || typeof v.src !== 'string') return undefined
+  const ref: ImageRef = { kind: v.kind === 'upload' ? 'upload' : 'asset', src: v.src }
+  if (typeof v.path === 'string' && v.path) ref.path = v.path
+  return ref
+}
+
+/** Keeps the well-formed `L` entries of an array; anything else is dropped. */
+const asLList = (v: unknown[]): L[] => v.filter(isLLike).map(asL)
+
 /**
  * `cards`/`launch` arrive as raw JSONB, so — unlike every other column here —
  * their shape is not guaranteed: `sectionRow()` validates admin writes, but a
@@ -50,20 +68,16 @@ const isLLike = (v: unknown): v is L =>
  * this client-bundle module keeps no dependency on `api/_lib`.
  */
 const asCard = (v: unknown): SectionCard | undefined => {
-  if (typeof v !== 'object' || v === null || Array.isArray(v)) return undefined
-  const c = v as Record<string, unknown>
-  if (!isLLike(c.title) || !isLLike(c.text)) return undefined
-  const icon = (typeof c.icon === 'object' && c.icon !== null ? c.icon : {}) as Record<string, unknown>
+  if (!isObj(v)) return undefined
+  if (!isLLike(v.title) || !isLLike(v.text)) return undefined
   const card: SectionCard = {
-    icon: {
-      kind: icon.kind === 'upload' ? 'upload' : 'asset',
-      src: typeof icon.src === 'string' ? icon.src : '',
-    },
-    title: asL(c.title),
-    text: asL(c.text),
+    icon: asImageRef(v.icon) ?? { kind: 'asset', src: '' },
+    title: asL(v.title),
+    text: asL(v.text),
   }
-  if (typeof icon.path === 'string' && icon.path) card.icon.path = icon.path
-  if (isLLike(c.sub)) card.sub = asL(c.sub)
+  if (isLLike(v.sub)) card.sub = asL(v.sub)
+  if (Array.isArray(v.tags)) card.tags = asLList(v.tags)
+  if (v.track === 0 || v.track === 1) card.track = v.track
   return card
 }
 
@@ -72,6 +86,37 @@ const asCards = (v: unknown): SectionCard[] | undefined =>
   Array.isArray(v)
     ? v.map(asCard).filter((c): c is SectionCard => c !== undefined)
     : undefined
+
+const asTrackHead = (v: unknown): TrackHead | undefined =>
+  isObj(v) && isLLike(v.label) && isLLike(v.title) ? { label: asL(v.label), title: asL(v.title) } : undefined
+
+/** Same idea as `asCard`: `sectionRow()` validates admin writes, a hand-edited row may not be. */
+const asTexts = (v: unknown): SectionTexts | undefined => {
+  if (!isObj(v)) return undefined
+  if (Array.isArray(v.stack)) return { stack: asLList(v.stack) }
+  if (!Array.isArray(v.tags)) return undefined
+  const t: ServiceBlockTexts = { tags: asLList(v.tags) }
+  if (isObj(v.get) && isLLike(v.get.title) && isLLike(v.get.text))
+    t.get = { title: asL(v.get.title), text: asL(v.get.text) }
+  if (Array.isArray(v.tracks) && v.tracks.length === 2) {
+    const a = asTrackHead(v.tracks[0])
+    const b = asTrackHead(v.tracks[1])
+    if (a && b) t.tracks = [a, b]
+  }
+  return t
+}
+
+const asMedia = (v: unknown): SectionMedia | undefined => {
+  if (!isObj(v)) return undefined
+  const site = asImageRef(v.site)
+  const admin = asImageRef(v.admin)
+  const bot = asImageRef(v.bot)
+  if (site && admin && bot) return { site, admin, bot }
+  const badge = asImageRef(v.badge)
+  if (!badge) return undefined
+  const picture = asImageRef(v.picture)
+  return picture ? { badge, picture } : { badge }
+}
 
 function rowToSection(row: DbSectionRow): SectionText {
   const s: SectionText = {
@@ -86,6 +131,10 @@ function rowToSection(row: DbSectionRow): SectionText {
   if (cards) s.cards = cards
   const launch = asCard(row.launch)
   if (launch) s.launch = launch
+  const texts = asTexts(row.texts)
+  if (texts) s.texts = texts
+  const media = asMedia(row.media)
+  if (media) s.media = media
   return s
 }
 
@@ -129,9 +178,15 @@ const bySort = <T extends { sort: number }>(a: T, b: T) => a.sort - b.sort
 
 /** Postgres rows → the content slice of `AdminData` (no `requests`, no `version`). */
 export function rowsToSiteContent(rows: DbContentRows): SiteContent {
-  const sections = [...rows.sections]
-    .sort((a, b) => SECTION_ORDER.indexOf(a.key as SectionKey) - SECTION_ORDER.indexOf(b.key as SectionKey))
-    .map(rowToSection)
+  // A section with no row yet (production DB before its migration ran) falls
+  // back to the bundled default instead of disappearing from the page.
+  const present = new Set(rows.sections.map((r) => r.key))
+  const missing = defaultSections
+    .filter((s) => !present.has(s.key))
+    .map((s) => JSON.parse(JSON.stringify(s)) as SectionText)
+  const sections = [...rows.sections.map(rowToSection), ...missing].sort(
+    (a, b) => SECTION_ORDER.indexOf(a.key) - SECTION_ORDER.indexOf(b.key),
+  )
 
   const seo = [...rows.seo]
     .sort((a, b) => SEO_ORDER.indexOf(a.page_key as SeoPageKey) - SEO_ORDER.indexOf(b.page_key as SeoPageKey))

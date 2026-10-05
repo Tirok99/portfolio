@@ -1,11 +1,12 @@
 import type { SiteContent } from './mappers'
 
 /**
- * Local mirror of the last-known-good remote `SiteContent`. Bumped to `v2` when
- * the shape changed (Plan 3); a stale `v1` key is simply ignored and overwritten
- * on the next successful `refetch()`.
+ * Local mirror of the last-known-good remote `SiteContent`. Bumped to `v3` when
+ * the /services sections were added: a `v2` cache has no `svc*` sections and
+ * would otherwise replace the defaults with a page that has no content. A stale
+ * key is simply ignored and overwritten on the next successful `refetch()`.
  */
-export const CONTENT_CACHE_KEY = 'onvorx.content.cache.v2'
+export const CONTENT_CACHE_KEY = 'onvorx.content.cache.v3'
 
 /** Read the cached remote content, or `null` on missing / malformed data. */
 export function loadContentCache(): SiteContent | null {

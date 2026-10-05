@@ -161,3 +161,61 @@ describe('rowsToSiteContent', () => {
     expect(hero.launch).toBeUndefined()
   })
 })
+
+describe('rowsToSiteContent — /services sections', () => {
+  const svcRow = (over: Partial<DbContentRows['sections'][number]>): DbContentRows['sections'][number] => ({
+    key: 'svcWebDevelopment', eyebrow: L(''), title: L('Web Development'), body: L('B'), cta_label: L('Go'),
+    cards: null, launch: null, ...over,
+  })
+
+  it('maps block texts, media and card tags/track', () => {
+    const c = rowsToSiteContent(withSections([
+      svcRow({
+        texts: { tags: [L('WordPress')], get: { title: L('G'), text: L('g') } },
+        media: { badge: { kind: 'upload', src: 'https://cdn/b.webp', path: 'cards/b.webp' } },
+      }),
+      svcRow({
+        key: 'svcBusinessAnalysis',
+        texts: { tags: [], tracks: [{ label: L('T1'), title: L('A') }, { label: L('T2'), title: L('B') }] },
+        cards: [{ icon: { kind: 'asset', src: '/i.svg' }, title: L('x'), text: L('y'), track: 1 }],
+      }),
+      svcRow({ key: 'svcHero', cards: [{ icon: { kind: 'asset', src: '/i.svg' }, title: L('x'), text: L(''), tags: [L('a')] }] }),
+    ]))
+    const wd = c.sections.find((s) => s.key === 'svcWebDevelopment')!
+    expect(wd.texts).toEqual({ tags: [L('WordPress')], get: { title: L('G'), text: L('g') } })
+    expect(wd.media).toEqual({ badge: { kind: 'upload', src: 'https://cdn/b.webp', path: 'cards/b.webp' } })
+    const ba = c.sections.find((s) => s.key === 'svcBusinessAnalysis')!
+    expect(ba.texts).toMatchObject({ tracks: [{ label: L('T1') }, { label: L('T2') }] })
+    expect(ba.cards![0].track).toBe(1)
+    expect(c.sections.find((s) => s.key === 'svcHero')!.cards![0].tags).toEqual([L('a')])
+  })
+
+  it('maps AI Build texts and media', () => {
+    const img = { kind: 'asset', src: '/m.webp' }
+    const c = rowsToSiteContent(withSections([
+      svcRow({ key: 'svcAiBuild', texts: { stack: [L('Design')] }, media: { site: img, admin: img, bot: img } }),
+    ]))
+    const ai = c.sections.find((s) => s.key === 'svcAiBuild')!
+    expect(ai.texts).toEqual({ stack: [L('Design')] })
+    expect(ai.media).toEqual({ site: { kind: 'asset', src: '/m.webp' }, admin: { kind: 'asset', src: '/m.webp' }, bot: { kind: 'asset', src: '/m.webp' } })
+  })
+
+  it('ignores malformed hand-edited texts/media instead of throwing', () => {
+    const c = rowsToSiteContent(withSections([
+      svcRow({ texts: { tags: 'WordPress' }, media: { badge: 42 } }),
+      svcRow({ key: 'svcGoogleAds', texts: { tags: [L('ok'), 'bad', null] }, media: null }),
+    ]))
+    const wd = c.sections.find((s) => s.key === 'svcWebDevelopment')!
+    expect(wd.texts).toBeUndefined()
+    expect(wd.media).toBeUndefined()
+    expect(c.sections.find((s) => s.key === 'svcGoogleAds')!.texts).toEqual({ tags: [L('ok')] })
+  })
+
+  it('fills sections that have no row yet (DB not migrated) from the defaults', () => {
+    const c = rowsToSiteContent(rows) // only hero + about rows
+    expect(c.sections.map((s) => s.key)).toEqual(defaultSections.map((s) => s.key))
+    const ads = c.sections.find((s) => s.key === 'svcGoogleAds')!
+    expect(ads.title.en).toBe('Google Ads')
+    expect(c.sections.find((s) => s.key === 'hero')!.title).toEqual(L('T')) // DB row still wins
+  })
+})

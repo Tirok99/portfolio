@@ -8,6 +8,9 @@ export interface DbSectionRow {
   cta_label: L | null
   cards: SectionCard[] | null
   launch: SectionCard | null
+  /** svc sections only — raw JSONB, shape-checked by mappers.ts */
+  texts?: unknown
+  media?: unknown
 }
 
 export interface DbSeoRow {
