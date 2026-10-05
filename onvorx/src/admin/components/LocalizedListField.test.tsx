@@ -18,9 +18,18 @@ const value = () => JSON.parse(screen.getByTestId('value').textContent!) as L[]
 const two = [{ en: 'A', uk: 'А' }, { en: 'B', uk: 'Б' }]
 
 describe('LocalizedListField', () => {
-  it('edits EN and UA separately', async () => {
+  it('shows one language at a time, EN by default', () => {
+    render(<Harness initial={two} />)
+    expect(screen.getByRole('button', { name: 'EN' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByLabelText('Tags 1 EN')).toHaveValue('A')
+    expect(screen.queryByLabelText('Tags 1 UA')).not.toBeInTheDocument()
+  })
+
+  it('switching to UA edits the UA text and keeps EN', async () => {
     const user = userEvent.setup()
     render(<Harness initial={two} />)
+    await user.click(screen.getByRole('button', { name: 'UA' }))
+    expect(screen.queryByLabelText('Tags 2 EN')).not.toBeInTheDocument()
     await user.type(screen.getByLabelText('Tags 2 UA'), '!')
     expect(value()[1]).toEqual({ en: 'B', uk: 'Б!' })
   })
