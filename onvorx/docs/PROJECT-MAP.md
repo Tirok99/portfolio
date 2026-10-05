@@ -57,7 +57,7 @@ mindmap
 - [x] `/services` — собрана из Figma "Services _en_vscode": hero, 4 сервисных блока (Web Development, Website Support, Business Analysis, Google Ads) + AI Build + CTA
 - [x] `/web-development`, `/support`, `/business-analysis`, `/google-ads` — больше не отдельные страницы, редиректят на свой блок `/services#…`
 - [x] Фикс: блок Google Ads пропадал у посетителей с адблоком (EasyList скрывает `#google-ads` / `.google-ads`) — id/класс блока переименован в `paid-search`, якорь теперь `/services#paid-search`. **Не называть DOM-id/классы `google-ads`, `ads`, `ad-*`.**
-- [ ] `/services` — редактирование из админки (единые табы Content/Cards/SEO) — [spec](superpowers/specs/2026-10-05-services-admin-design.md), plan ещё не написан
+- [ ] `/services` — редактирование из админки (единые табы Content/Cards/SEO) — [spec](superpowers/specs/2026-10-05-services-admin-design.md) · [plan](superpowers/plans/2026-10-05-services-admin.md), реализация не начата
 - [ ] `/about` — заглушка
 - [ ] `/projects` — отдельной страницы нет вообще (в навигации ведёт на якорь `/#projects` на главной)
 - [ ] `/projects/:id` — карточка проекта, ссылки есть, роута нет
