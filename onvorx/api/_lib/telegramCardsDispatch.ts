@@ -39,7 +39,7 @@ async function loadState(ctx: BotCtx, env: Env, deps: CardsDispatchDeps): Promis
 
 // ---- list / detail rendering ----
 
-async function showTabs(ctx: BotCtx, type: CardType, env: Env, deps: CardsDispatchDeps): Promise<void> {
+async function showTabs(ctx: BotCtx, type: 'projects', env: Env, deps: CardsDispatchDeps): Promise<void> {
   await deps.sessions.save(ctx.chatId, { screen: 'cards_tabs', data: { type } }, env)
   await ctx.reply(menu.buildCardTypeTabs(type))
 }
@@ -400,13 +400,17 @@ export async function dispatchCardsPhoto(
 export async function dispatchCardsCallback(
   ctx: BotCtx, data: string, env: Env, deps: CardsDispatchDeps = defaultCardsDispatchDeps,
 ): Promise<void> {
-  if (data === 'cards:projects:list' || data === 'cards:services:list') {
-    await showTabs(ctx, data.split(':')[1] as CardType, env, deps)
+  if (data === 'cards:projects:list') {
+    await showTabs(ctx, 'projects', env, deps)
     return
   }
-  if (data.startsWith('cards:projects:tab:') || data.startsWith('cards:services:tab:')) {
-    const parts = data.split(':') // ['cards', type, 'tab', list]
-    await showList(ctx, parts[1] as CardType, parts[3] as CardList, env, deps)
+  // Services has only the home list; an old "Services page" button lands there too (spec §7)
+  if (data === 'cards:services:list' || data.startsWith('cards:services:tab:')) {
+    await showList(ctx, 'services', 'home', env, deps)
+    return
+  }
+  if (data.startsWith('cards:projects:tab:')) {
+    await showList(ctx, 'projects', data.split(':')[3] as CardList, env, deps)
     return
   }
 

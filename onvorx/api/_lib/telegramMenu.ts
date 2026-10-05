@@ -88,14 +88,27 @@ export function buildRemoveConfirm(target: ManagerRecord): BotReply {
 
 // ---- Content ----
 
-const CONTENT_SECTIONS: { key: string; label: string }[] = [
-  { key: 'hero', label: 'Hero' },
-  { key: 'services', label: 'Services' },
-  { key: 'projects', label: 'Projects' },
-  { key: 'howWork', label: 'How We Work' },
-  { key: 'about', label: 'About' },
-  { key: 'cta', label: 'CTA' },
-]
+export type ContentPage = 'home' | 'services'
+
+const CONTENT_SECTIONS: Record<ContentPage, { key: string; label: string }[]> = {
+  home: [
+    { key: 'hero', label: 'Hero' },
+    { key: 'services', label: 'Services' },
+    { key: 'projects', label: 'Projects' },
+    { key: 'howWork', label: 'How We Work' },
+    { key: 'about', label: 'About' },
+    { key: 'cta', label: 'CTA' },
+  ],
+  services: [
+    { key: 'svcHero', label: 'Hero' },
+    { key: 'svcWebDevelopment', label: 'Web Development' },
+    { key: 'svcAiBuild', label: 'AI Build' },
+    { key: 'svcWebsiteSupport', label: 'Website Support' },
+    { key: 'svcBusinessAnalysis', label: 'Business Analysis' },
+    { key: 'svcGoogleAds', label: 'Google Ads' },
+    { key: 'svcCta', label: 'CTA' },
+  ],
+}
 
 const CTA_SECTIONS = ['hero', 'cta']
 
@@ -106,7 +119,11 @@ const CONTENT_FIELD_LABEL: Record<ContentField, string> = {
   ctaLabel: 'CTA label',
 }
 
-function sectionFieldsFor(key: string): ContentField[] {
+export const contentPageOf = (key: string): ContentPage => (key.startsWith('svc') ? 'services' : 'home')
+
+/** The bot edits only Title + Body of the /services sections (spec §7). */
+export function sectionFieldsFor(key: string): ContentField[] {
+  if (contentPageOf(key) === 'services') return ['title', 'body']
   return CTA_SECTIONS.includes(key) ? ['eyebrow', 'title', 'body', 'ctaLabel'] : ['eyebrow', 'title', 'body']
 }
 
@@ -114,10 +131,20 @@ export function sectionFieldValue(record: SectionRecord, field: ContentField): {
   return field === 'ctaLabel' ? (record.ctaLabel ?? { en: '', uk: '' }) : record[field]
 }
 
-export function buildContentList(): BotReply {
+export function buildContentPagePicker(): BotReply {
   const kb = new InlineKeyboard()
-  CONTENT_SECTIONS.forEach((s) => kb.text(s.label, `content:section:${s.key}`).row())
-  kb.text('⬅ Back', 'menu:main')
+    .text('Home', 'content:page:home')
+    .row()
+    .text('Services', 'content:page:services')
+    .row()
+    .text('⬅ Back', 'menu:main')
+  return { text: 'Content — choose a page:', keyboard: kb }
+}
+
+export function buildContentList(page: ContentPage): BotReply {
+  const kb = new InlineKeyboard()
+  CONTENT_SECTIONS[page].forEach((s) => kb.text(s.label, `content:section:${s.key}`).row())
+  kb.text('⬅ Back', 'content:list')
   return { text: 'Content — choose a block:', keyboard: kb }
 }
 
@@ -129,7 +156,7 @@ export function buildSectionDetail(record: SectionRecord, opts: { saved?: boolea
   })
   const kb = new InlineKeyboard()
   fields.forEach((f) => kb.text(CONTENT_FIELD_LABEL[f], `content:field:${f}`).row())
-  kb.text('⬅ Back', 'content:list')
+  kb.text('⬅ Back', `content:page:${contentPageOf(record.key)}`)
   const prefix = opts.saved ? 'Saved.\n\n' : ''
   return { text: `${prefix}${record.key}\n${lines.join('\n')}`, keyboard: kb }
 }
@@ -207,15 +234,14 @@ export function buildSaveFailed(backCallback: string): BotReply {
 
 // ---- Cards: Projects & Services ----
 
-export function buildCardTypeTabs(type: 'projects' | 'services'): BotReply {
-  const pageLabel = type === 'projects' ? 'Projects page' : 'Services page'
+export function buildCardTypeTabs(type: 'projects'): BotReply {
   const kb = new InlineKeyboard()
     .text('On the home page', `cards:${type}:tab:home`)
     .row()
-    .text(pageLabel, `cards:${type}:tab:page`)
+    .text('Projects page', `cards:${type}:tab:page`)
     .row()
     .text('⬅ Back', 'menu:main')
-  return { text: type === 'projects' ? 'Projects — choose a list:' : 'Services — choose a list:', keyboard: kb }
+  return { text: 'Projects — choose a list:', keyboard: kb }
 }
 
 export function buildProjectList(list: 'home' | 'page', cards: ProjectCardRecord[]): BotReply {
@@ -233,7 +259,8 @@ export function buildServiceList(list: 'home' | 'page', cards: ServiceCardRecord
   cards.forEach((c) => {
     kb.text(`${c.published ? '✅' : '🚫'} ${c.title.en || c.id}`, `cards:card:${c.id}`).row()
   })
-  kb.text('⬅ Back', 'cards:services:list')
+  // Services has only the home list now (spec §7) — Back returns to the main menu
+  kb.text('⬅ Back', 'menu:main')
   if (cards.length === 0) return { text: 'No cards in this list yet.', keyboard: kb }
   return { text: `Services — ${list === 'home' ? 'home page' : 'Services page'}:`, keyboard: kb }
 }
