@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, within, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { I18nProvider } from '../../i18n/i18n'
 import { SiteContentProvider } from '../../content/SiteContentProvider'
@@ -21,6 +21,23 @@ vi.mock('../../admin/api', () => ({
     deleteImage: vi.fn().mockResolvedValue(undefined),
   },
 }))
+
+// skip the real FileReader/canvas pipeline — these tests are about the draft, not decoding
+vi.mock('../lib/image', () => ({
+  fileToImageRef: vi.fn(async (file: File) => ({ kind: 'upload', src: `data:${file.name}` })),
+}))
+
+/** uploadImage calls that stay pending until the test resolves them, in any order */
+function deferUploads() {
+  const pending: Record<string, (v: { url: string; path: string }) => void> = {}
+  vi.mocked(adminApi.uploadImage).mockImplementation(
+    (_folder, _data, fileName) => new Promise((resolve) => { pending[fileName] = resolve }),
+  )
+  return (fileName: string) => pending[fileName]({ url: `https://cdn/${fileName}`, path: `cards/${fileName}` })
+}
+const png = (name: string) => new File(['x'], name, { type: 'image/png' })
+const fileInput = (label: string, nth = 0) =>
+  screen.getAllByText(label)[nth].closest('.admin-imageupload')!.querySelector('input[type=file]') as HTMLInputElement
 
 beforeEach(() => {
   localStorage.clear()
@@ -116,5 +133,39 @@ describe('ServicesPageCards', () => {
     await user.click(screen.getByText('Google Ads'))
     await user.click(screen.getByText('Web Development'))
     expect(screen.getByText('All changes saved')).toBeInTheDocument()
+  })
+
+  it('two uploads finishing out of order both land in the draft', async () => {
+    const user = userEvent.setup()
+    const finish = deferUploads()
+    wrap()
+    await user.click(screen.getByText('Web Development'))
+    await user.upload(fileInput('Badge'), png('badge.png'))
+    await user.upload(fileInput('Illustration'), png('picture.png'))
+    finish('badge.png')
+    await waitFor(() => expect(screen.getByText(/unsaved changes/i)).toBeInTheDocument())
+    finish('picture.png')
+    await waitFor(() => expect(document.querySelector('img[src="https://cdn/picture.png"]')).not.toBeNull())
+    await user.click(screen.getByRole('button', { name: /^save$/i }))
+    const media = lastPatch()[1].media as { badge: { src: string }; picture: { src: string } }
+    expect(media.badge.src).toBe('https://cdn/badge.png')
+    expect(media.picture.src).toBe('https://cdn/picture.png')
+  })
+
+  it('typing in another item while an icon uploads is kept', async () => {
+    const user = userEvent.setup()
+    const finish = deferUploads()
+    wrap()
+    await user.click(screen.getByText('Google Ads'))
+    await user.upload(fileInput('Icon', 0), png('icon.png'))
+    const title2 = screen.getAllByLabelText('Title')[1]
+    await user.clear(title2)
+    await user.type(title2, 'Edited while uploading')
+    finish('icon.png')
+    await waitFor(() => expect(document.querySelector('img[src="https://cdn/icon.png"]')).not.toBeNull())
+    await user.click(screen.getByRole('button', { name: /^save$/i }))
+    const cards = lastPatch()[1].cards as SectionCard[]
+    expect(cards[0].icon.src).toBe('https://cdn/icon.png')
+    expect(cards[1].title.en).toBe('Edited while uploading')
   })
 })

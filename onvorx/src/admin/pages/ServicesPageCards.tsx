@@ -1,5 +1,13 @@
 import { useMemo, useState, type ReactNode } from 'react'
-import type { ImageRef, SectionCard, SectionMedia, SectionText, ServicesSectionKey } from '../types'
+import type {
+  AiBuildMedia,
+  ImageRef,
+  SectionCard,
+  SectionMedia,
+  SectionText,
+  ServiceBlockMedia,
+  ServicesSectionKey,
+} from '../types'
 import { useSiteContentRaw } from '../../content/SiteContentProvider'
 import { defaultSections } from '../../content/defaults/sections'
 import { isAiBuildMedia, isBlockMedia, mergeTrack } from '../../content/servicesSections'
@@ -41,6 +49,11 @@ interface Draft {
   media?: SectionMedia
 }
 
+const blockMedia = (m: SectionMedia | undefined): ServiceBlockMedia =>
+  m && isBlockMedia(m) ? m : { badge: emptyImage() }
+const aiMedia = (m: SectionMedia | undefined): AiBuildMedia =>
+  m && isAiBuildMedia(m) ? m : { site: emptyImage(), admin: emptyImage(), bot: emptyImage() }
+
 function GroupEditor({ sectionKey, section }: { sectionKey: Group; section: SectionText }) {
   const { actions } = useSiteContentRaw()
   const toast = useToast()
@@ -65,10 +78,17 @@ function GroupEditor({ sectionKey, section }: { sectionKey: Group; section: Sect
     }
   }
 
-  const setCards = (cards: SectionCard[]) => setDraft((d) => ({ ...d, cards }))
-  const setMedia = (media: SectionMedia) => setDraft((d) => ({ ...d, media }))
+  // Every draft change is computed from the CURRENT draft: an image upload
+  // resolves seconds after the render that started it, and a snapshot taken
+  // back then would undo whatever else was edited (or uploaded) meanwhile.
+  const setCards = (update: (prev: SectionCard[]) => SectionCard[]) =>
+    setDraft((d) => ({ ...d, cards: update(d.cards) }))
   const setCard = (i: number, patch: Partial<SectionCard>) =>
-    setCards(draft.cards.map((c, j) => (j === i ? { ...c, ...patch } : c)))
+    setCards((cards) => cards.map((c, j) => (j === i ? { ...c, ...patch } : c)))
+  const setBlockMedia = (patch: Partial<ServiceBlockMedia>) =>
+    setDraft((d) => ({ ...d, media: { ...blockMedia(d.media), ...patch } }))
+  const setAiMedia = (patch: Partial<AiBuildMedia>) =>
+    setDraft((d) => ({ ...d, media: { ...aiMedia(d.media), ...patch } }))
 
   const image = (label: string, value: ImageRef, onSet: (ref: ImageRef) => void, variant: 'icon' | 'photo') => (
     <ImageUpload
@@ -94,25 +114,22 @@ function GroupEditor({ sectionKey, section }: { sectionKey: Group; section: Sect
       </fieldset>
     ))
   } else if (sectionKey === 'svcAiBuild') {
-    const media =
-      draft.media && isAiBuildMedia(draft.media)
-        ? draft.media
-        : { site: emptyImage(), admin: emptyImage(), bot: emptyImage() }
+    const media = aiMedia(draft.media)
     body = (
       <>
-        {image('Site mockup', media.site, (site) => setMedia({ ...media, site }), 'photo')}
-        {image('Admin panel mockup', media.admin, (admin) => setMedia({ ...media, admin }), 'photo')}
-        {image('Telegram bot mockup', media.bot, (bot) => setMedia({ ...media, bot }), 'photo')}
+        {image('Site mockup', media.site, (site) => setAiMedia({ site }), 'photo')}
+        {image('Admin panel mockup', media.admin, (admin) => setAiMedia({ admin }), 'photo')}
+        {image('Telegram bot mockup', media.bot, (bot) => setAiMedia({ bot }), 'photo')}
       </>
     )
   } else {
-    const media = draft.media && isBlockMedia(draft.media) ? draft.media : { badge: emptyImage() }
+    const media = blockMedia(draft.media)
     const icon = placeholderIcon(sectionKey)
     body = (
       <>
-        {image('Badge', media.badge, (badge) => setMedia({ ...media, badge }), 'icon')}
+        {image('Badge', media.badge, (badge) => setBlockMedia({ badge }), 'icon')}
         {!NO_PICTURE.includes(sectionKey) &&
-          image('Illustration', media.picture ?? emptyImage(), (picture) => setMedia({ ...media, picture }), 'photo')}
+          image('Illustration', media.picture ?? emptyImage(), (picture) => setBlockMedia({ picture }), 'photo')}
         {sectionKey === 'svcBusinessAnalysis' ? (
           ([0, 1] as const).map((track) => (
             <FeatureListEditor
@@ -120,7 +137,9 @@ function GroupEditor({ sectionKey, section }: { sectionKey: Group; section: Sect
               label={`Track 0${track + 1} features`}
               items={draft.cards.filter((c) => c.track === track)}
               newItemIcon={icon}
-              onChange={(next) => setCards(mergeTrack(draft.cards, track, next))}
+              onChange={(update) =>
+                setCards((cards) => mergeTrack(cards, track, update(cards.filter((c) => c.track === track))))
+              }
             />
           ))
         ) : (

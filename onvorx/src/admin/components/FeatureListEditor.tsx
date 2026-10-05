@@ -13,17 +13,23 @@ export function FeatureListEditor({
 }: {
   label: string
   items: SectionCard[]
-  onChange: (next: SectionCard[]) => void
+  /**
+   * Updater-style: receives a function of the CURRENT list. An icon upload
+   * resolves seconds after its render, so building the next list from `items`
+   * captured back then would undo edits made while it was in flight.
+   */
+  onChange: (update: (prev: SectionCard[]) => SectionCard[]) => void
   /** icon a new item starts with — the block's first built-in feature icon */
   newItemIcon: ImageRef
 }) {
   const set = (i: number, patch: Partial<SectionCard>) =>
-    onChange(items.map((c, j) => (j === i ? { ...c, ...patch } : c)))
-  const move = (i: number, j: number) => {
-    const next = [...items]
-    ;[next[i], next[j]] = [next[j], next[i]]
-    onChange(next)
-  }
+    onChange((prev) => prev.map((c, j) => (j === i ? { ...c, ...patch } : c)))
+  const move = (i: number, j: number) =>
+    onChange((prev) => {
+      const next = [...prev]
+      ;[next[i], next[j]] = [next[j], next[i]]
+      return next
+    })
 
   return (
     <fieldset className="admin-group">
@@ -57,7 +63,7 @@ export function FeatureListEditor({
                 type="button"
                 className="admin-btn admin-btn--danger"
                 aria-label={`Remove: ${name}`}
-                onClick={() => onChange(items.filter((_, j) => j !== i))}
+                onClick={() => onChange((prev) => prev.filter((_, j) => j !== i))}
               >
                 Remove
               </button>
@@ -81,7 +87,7 @@ export function FeatureListEditor({
         type="button"
         className="admin-btn"
         aria-label={`Add item to ${label}`}
-        onClick={() => onChange([...items, { icon: { ...newItemIcon }, title: emptyL(), text: emptyL() }])}
+        onClick={() => onChange((prev) => [...prev, { icon: { ...newItemIcon }, title: emptyL(), text: emptyL() }])}
       >
         + Add item
       </button>

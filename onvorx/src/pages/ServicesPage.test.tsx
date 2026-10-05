@@ -103,6 +103,17 @@ describe('/services — content from the store', () => {
     expect(builtIn.getAttribute('width')).toBe('960')
   })
 
+  it('hides "What you get" when both of its fields are blanked', () => {
+    const { container } = renderWith((c) => {
+      sec(c, 'svcWebDevelopment').texts = {
+        tags: [],
+        get: { title: { en: '', uk: '' }, text: { en: '', uk: '' } },
+      }
+    })
+    expect(container.querySelector('#web-development .service-block__get')).toBeNull()
+    expect(container.querySelector('#website-support .service-block__get')).not.toBeNull()
+  })
+
   it('uses the svcCta texts for the bottom call-to-action', () => {
     renderWith((c) => {
       sec(c, 'svcCta').title = { en: 'Let us talk', uk: '' }

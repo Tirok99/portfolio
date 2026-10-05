@@ -89,6 +89,9 @@ export function useSiteContent() {
       const texts = s?.texts
       const media = s?.media
       const block = texts && isBlockTexts(texts) ? texts : undefined
+      // a "What you get" box with both fields blanked is hidden, not rendered empty
+      const get = block?.get && { title: pick(block.get.title), text: pick(block.get.text) }
+      const hasGet = Boolean(get && (get.title || get.text))
       const images: ResolvedSvcSection['images'] = {}
       const put = (slot: keyof ResolvedSvcSection['images'], src: string | undefined) => {
         if (src) images[slot] = src
@@ -116,7 +119,7 @@ export function useSiteContent() {
         })),
         tags: list(block?.tags),
         stack: list(texts && isAiBuildTexts(texts) ? texts.stack : undefined),
-        ...(block?.get ? { get: { title: pick(block.get.title), text: pick(block.get.text) } } : {}),
+        ...(hasGet ? { get } : {}),
         tracks: (block?.tracks ?? []).map((t) => ({ label: pick(t.label), title: pick(t.title) })),
         images,
       }
