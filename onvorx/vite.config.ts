@@ -13,6 +13,7 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     css: false,
     // Playwright specs live in ./e2e and are run via `npm run e2e`, not Vitest.
-    exclude: [...configDefaults.exclude, 'e2e/**'],
+    // .claude/ holds local Claude Code skills with their own (bun) tests.
+    exclude: [...configDefaults.exclude, 'e2e/**', '.claude/**'],
   },
 })
