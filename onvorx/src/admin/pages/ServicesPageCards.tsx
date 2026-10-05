@@ -117,6 +117,11 @@ function GroupEditor({ sectionKey, section }: { sectionKey: Group; section: Sect
     const media = aiMedia(draft.media)
     body = (
       <>
+        {/* AI Build has no cards of its own — only the 3 mockups live here */}
+        <p className="admin-page__hint">
+          Title, text, badge and stack of this block are edited in{' '}
+          <a href="/admin/content?tab=services">Content → Services → AI Build</a>.
+        </p>
         {image('Site mockup', media.site, (site) => setAiMedia({ site }), 'photo')}
         {image('Admin panel mockup', media.admin, (admin) => setAiMedia({ admin }), 'photo')}
         {image('Telegram bot mockup', media.bot, (bot) => setAiMedia({ bot }), 'photo')}

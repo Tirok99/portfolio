@@ -97,6 +97,16 @@ describe('ContentPage', () => {
     expect(screen.queryByRole('heading', { name: /footer tagline/i })).not.toBeInTheDocument()
   })
 
+  it('?tab=services opens the Services tab directly', () => {
+    window.history.pushState({}, '', '/admin/content?tab=services')
+    try {
+      wrap()
+      expect(screen.getByRole('tab', { name: 'Services' })).toHaveAttribute('aria-selected', 'true')
+    } finally {
+      window.history.pushState({}, '', '/')
+    }
+  })
+
   it('shows only the fields each /services section uses', async () => {
     const user = userEvent.setup()
     wrap()

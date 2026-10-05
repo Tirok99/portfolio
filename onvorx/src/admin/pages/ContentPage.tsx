@@ -102,7 +102,10 @@ const PAGE_TABS: { key: PageTab; label: string }[] = [
 export function ContentPage() {
   useAdminTitle('Content')
   const { data } = useSiteContentRaw()
-  const [tab, setTab] = useState<PageTab>('home')
+  // `?tab=services` deep-links here from Cards → Services → AI Build
+  const [tab, setTab] = useState<PageTab>(() =>
+    new URLSearchParams(window.location.search).get('tab') === 'services' ? 'services' : 'home',
+  )
   const sections = ORDER.map((k) => data.sections.find((s) => s.key === k)).filter(
     (s): s is SectionText => Boolean(s),
   )

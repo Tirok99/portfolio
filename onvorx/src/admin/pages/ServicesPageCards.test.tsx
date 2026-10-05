@@ -74,6 +74,15 @@ describe('ServicesPageCards', () => {
     expect(screen.getAllByText(/^Item \d$/)).toHaveLength(4)
   })
 
+  it('AI Build points to Content for its texts', async () => {
+    const user = userEvent.setup()
+    wrap()
+    await user.click(screen.getByText('AI Build'))
+    expect(screen.getByText(/title, text, badge and stack of this block/i)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /content → services → ai build/i }))
+      .toHaveAttribute('href', '/admin/content?tab=services')
+  })
+
   it('Hero cards: exactly 4 cards, no add button', async () => {
     const user = userEvent.setup()
     wrap()
